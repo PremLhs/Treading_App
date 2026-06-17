@@ -1,0 +1,202 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Trading Site{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <a href="#mainContent" class="skip-link">Skip to content</a>
+
+    <div class="app-shell">
+        <header class="site-header">
+            <div class="container header-inner">
+                <div class="brand-block">
+                    <a href="{% url 'dashboard' %}" class="brand-link">
+                        <div class="brand-mark">
+                            <span>TS</span>
+                        </div>
+                        <div class="brand-text">
+                            <strong>Trading Site</strong>
+                            <span>Professional market workspace</span>
+                        </div>
+                    </a>
+                </div>
+
+                <nav class="site-nav" aria-label="Main navigation">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard' %}" class="nav-item">Dashboard</a>
+                        <a href="{% url 'reversal_dates' %}" class="nav-item">Reversal Date</a>
+                        <a href="{% url 'amavasya' %}" class="nav-item">Amavasya</a>
+                        <a href="{% url 'purnima' %}" class="nav-item">Purnima</a>
+                        <a href="{% url 'pushya' %}" class="nav-item">Pushya</a>
+                        <a href="{% url 'trayodashi' %}" class="nav-item">Trayodashi</a>
+                        <a href="{% url 'calendar' %}" class="nav-item">Calendar</a>
+
+
+                        <div class="notification-bell-wrap">
+                            <button type="button" class="notification-bell-btn" id="notificationBellBtn" aria-label="Notifications">
+                                <span class="notification-bell-icon">🔔</span>
+                                {% if notification_unread_count > 0 %}
+                                    <span class="notification-bell-badge" id="notificationBellBadge">{{ notification_unread_count }}</span>
+                                {% endif %}
+                            </button>
+
+                            <div class="notification-dropdown" id="notificationDropdown">
+                                <div class="notification-dropdown-header">
+                                    <strong>Notifications</strong>
+                                </div>
+
+                                <div class="notification-dropdown-body" id="notificationDropdownBody">
+                                    {% if global_notifications %}
+                                        {% for item in global_notifications %}
+                                            <a href="{{ item.page_url }}"
+                                               class="notification-dropdown-item {{ item.color_class }} {% if not item.read %}is-unread{% endif %}"
+                                               data-notification-id="{{ item.id }}">
+                                                <div class="notification-dropdown-title">{{ item.message }}</div>
+                                                <div class="notification-dropdown-subtitle">{{ item.submessage }}</div>
+                                            </a>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="notification-empty">No notifications available.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'logout' %}" class="nav-item nav-item-cta">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="nav-item">Login</a>
+                        <a href="{% url 'register' %}" class="nav-item nav-item-cta">Create Account</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </header>
+
+        <main id="mainContent" class="main-wrap">
+            <div class="container">
+                {% if messages %}
+                    <div class="flash-stack">
+                        {% for message in messages %}
+                            <div class="flash-message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% include "notification_banner.html" %}
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    {% if popup_notifications %}
+    <div class="notification-modal-backdrop" id="notificationModal">
+        <div class="notification-modal-card">
+            <div class="notification-modal-header">
+                <h3>Event Alerts</h3>
+            </div>
+
+            <div class="notification-modal-body">
+                {% for item in popup_notifications %}
+                    <div class="notification-modal-item {{ item.color_class }}">
+                        <div class="notification-modal-title">{{ item.message }}</div>
+                        <div class="notification-modal-subtitle">{{ item.submessage }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="notification-modal-actions">
+                <button type="button" class="notification-ok-btn" id="notificationModalOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie("csrftoken");
+
+        const bellBtn = document.getElementById("notificationBellBtn");
+        const dropdown = document.getElementById("notificationDropdown");
+        const modal = document.getElementById("notificationModal");
+        const modalOkBtn = document.getElementById("notificationModalOkBtn");
+
+        if (bellBtn && dropdown) {
+            bellBtn.addEventListener("click", function (e) {
+                e.stopPropagation();
+                dropdown.classList.toggle("show");
+            });
+
+            document.addEventListener("click", function (e) {
+                if (!dropdown.contains(e.target) && !bellBtn.contains(e.target)) {
+                    dropdown.classList.remove("show");
+                }
+            });
+        }
+
+        if (modal && modalOkBtn) {
+            modalOkBtn.addEventListener("click", async function () {
+                try {
+                    await fetch("{% url 'mark_notifications_popup_shown' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": csrftoken,
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                        body: ""
+                    });
+                } catch (error) {
+                    console.error("Popup mark error:", error);
+                }
+
+                modal.style.display = "none";
+            });
+        }
+
+        document.querySelectorAll(".notification-dropdown-item").forEach(function (item) {
+            item.addEventListener("click", async function () {
+                const notificationId = item.getAttribute("data-notification-id");
+
+                try {
+                    await fetch("{% url 'mark_notification_read' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": csrftoken,
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                        body: new URLSearchParams({
+                            notification_id: notificationId
+                        })
+                    });
+                } catch (error) {
+                    console.error("Read mark error:", error);
+                }
+            });
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

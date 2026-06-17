@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="auth-card">
+        <h1>Login</h1>
+        <p class="subtitle">Sign in to open your trading dashboard</p>
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="form-group">
+                <label>Mobile Number</label>
+                {{ form.mobile }}
+                {{ form.mobile.errors }}
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                {{ form.password }}
+                {{ form.password.errors }}
+            </div>
+
+            <button type="submit" class="btn-primary">
+                Login
+            </button>
+        </form>
+
+        <p class="auth-link">
+            <a href="{% url 'forgot_password' %}">
+                Forgot Password?
+            </a>
+        </p>
+
+        <p class="auth-link">
+            No account?
+            <a href="{% url 'register' %}">
+                Create one
+            </a>
+        </p>
+
+    </div>
+</section>
+{% endblock %}

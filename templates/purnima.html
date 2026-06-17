@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}Purnima Calendar{% endblock %}
+
+{% block content %}
+<section class="page-shell">
+    <div class="hero-banner">
+        <div class="hero-banner-content">
+            <span class="hero-tag">Moon Cycle Data</span>
+            <h1>Purnima Calendar</h1>
+            <p>Explore year-wise Purnima records with a fast search experience, professional summary cards, and clean tabular presentation.</p>
+        </div>
+
+        <div class="hero-banner-actions">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            <a href="{% url 'amavasya' %}" class="btn btn-secondary">Amavasya</a>
+        </div>
+    </div>
+
+    <div class="panel-card premium-table-panel">
+        <div class="panel-head panel-head-split">
+            <div>
+                <span class="panel-kicker">Year Search</span>
+                <h3>Purnima Lookup</h3>
+            </div>
+            <button type="button" class="btn btn-secondary" id="togglePurnimaSearchBtn">Open Search</button>
+        </div>
+
+        <div class="panel-body">
+            {% if error_message %}
+                <div class="inline-alert inline-alert-danger" id="purnimaStatusMessage">
+                    {{ error_message }}
+                </div>
+            {% else %}
+                <div class="inline-alert inline-alert-success" id="purnimaStatusMessage">
+                    Default year Purnima data loaded successfully.
+                </div>
+            {% endif %}
+
+            <div class="search-expand-box" id="purnimaSearchBox">
+                <div class="search-grid">
+                    <div class="field-wrap">
+                        <label for="purnimaYearInput">Year</label>
+                        <input
+                            type="number"
+                            id="purnimaYearInput"
+                            class="toolbar-input"
+                            placeholder="Enter year like 2026"
+                            value="{{ year }}"
+                            min="{{ min_year|default:1900 }}"
+                            max="{{ max_year|default:2100 }}"
+                        >
+                    </div>
+
+                    <div class="field-wrap search-action-wrap">
+                        <label>&nbsp;</label>
+                        <button type="button" class="btn btn-primary toolbar-btn" id="purnimaSearchBtn">
+                            Get Purnima Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-grid moon-summary-grid">
+                <div class="summary-card">
+                    <span>Selected Year</span>
+                    <strong id="purnimaSelectedYear">{{ year }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Total Records</span>
+                    <strong id="purnimaTotalRecords">{{ total_records }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Minimum Year</span>
+                    <strong id="purnimaMinYear">{{ min_year|default:"-" }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Maximum Year</span>
+                    <strong id="purnimaMaxYear">{{ max_year|default:"-" }}</strong>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="reversal-table moon-table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Title</th>
+                            <th>Start</th>
+                            <th>End</th>
+                        </tr>
+                    </thead>
+                    <tbody id="purnimaResultsBody">
+                        {% if rows %}
+                            {% for item in rows %}
+                                <tr>
+                                    <td>{{ item.month }}</td>
+                                    <td>{{ item.title }}</td>
+                                    <td>{{ item.start }}</td>
+                                    <td>{{ item.end }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="empty-cell">No Purnima data found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const toggleBtn = document.getElementById("togglePurnimaSearchBtn");
+    const searchBox = document.getElementById("purnimaSearchBox");
+    const searchBtn = document.getElementById("purnimaSearchBtn");
+    const yearInput = document.getElementById("purnimaYearInput");
+    const resultsBody = document.getElementById("purnimaResultsBody");
+    const statusMessage = document.getElementById("purnimaStatusMessage");
+
+    function renderRows(rows) {
+        if (!rows || !rows.length) {
+            resultsBody.innerHTML = '<tr><td colspan="4" class="empty-cell">No Purnima data found.</td></tr>';
+            return;
+        }
+
+        resultsBody.innerHTML = rows.map(item => `
+            <tr>
+                <td>${item.month}</td>
+                <td>${item.title}</td>
+                <td>${item.start}</td>
+                <td>${item.end}</td>
+            </tr>
+        `).join("");
+    }
+
+    function updateSummary(data) {
+        document.getElementById("purnimaSelectedYear").textContent = data.year ?? "-";
+        document.getElementById("purnimaTotalRecords").textContent = data.total_records ?? 0;
+        document.getElementById("purnimaMinYear").textContent = data.min_year ?? "-";
+        document.getElementById("purnimaMaxYear").textContent = data.max_year ?? "-";
+    }
+
+    async function fetchPurnimaData() {
+        const year = yearInput.value.trim();
+
+        if (!year) {
+            statusMessage.textContent = "Please enter a year.";
+            statusMessage.className = "inline-alert inline-alert-danger";
+            return;
+        }
+
+        searchBtn.disabled = true;
+        searchBtn.textContent = "Loading...";
+        statusMessage.textContent = "Loading Purnima data...";
+        statusMessage.className = "inline-alert inline-alert-success";
+
+        try {
+            const response = await fetch(`/api/purnima/?year=${encodeURIComponent(year)}`);
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                statusMessage.textContent = result.message || "Something went wrong.";
+                statusMessage.className = "inline-alert inline-alert-danger";
+                return;
+            }
+
+            renderRows(result.data.rows);
+            updateSummary(result.data);
+            statusMessage.textContent = `Purnima data loaded for ${result.data.year}.`;
+            statusMessage.className = "inline-alert inline-alert-success";
+        } catch (error) {
+            statusMessage.textContent = "Server error. Please try again.";
+            statusMessage.className = "inline-alert inline-alert-danger";
+        } finally {
+            searchBtn.disabled = false;
+            searchBtn.textContent = "Get Purnima Data";
+        }
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener("click", function () {
+            searchBox.classList.toggle("active");
+            toggleBtn.textContent = searchBox.classList.contains("active")
+                ? "Close Search"
+                : "Open Search";
+
+            if (searchBox.classList.contains("active")) {
+                yearInput.focus();
+            }
+        });
+    }
+
+    if (searchBtn) {
+        searchBtn.addEventListener("click", fetchPurnimaData);
+    }
+
+    if (yearInput) {
+        yearInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                fetchPurnimaData();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

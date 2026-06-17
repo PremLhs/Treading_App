@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Trayodashi Calendar{% endblock %}
+
+{% block content %}
+<section class="page-shell">
+    <div class="hero-banner">
+        <div class="hero-banner-content">
+            <span class="hero-tag">Tithi Calendar</span>
+            <h1>Trayodashi Dates</h1>
+            <p>Check all Krishna Paksha and Shukla Paksha Trayodashi dates year-wise in a clean searchable view.</p>
+        </div>
+
+        <div class="hero-banner-actions">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="panel-card quick-panel">
+        <div class="panel-head">
+            <span class="panel-kicker">Year Search</span>
+            <h3>Load Trayodashi Data</h3>
+        </div>
+
+        <div class="panel-body">
+            {% if error_message %}
+                <div class="status-box status-box-danger" id="statusMessage">{{ error_message }}</div>
+            {% else %}
+                <div class="status-box status-box-success" id="statusMessage">Default year data loaded successfully.</div>
+            {% endif %}
+
+            <div class="year-toolbar">
+                <div class="field-wrap year-field">
+                    <label for="yearInput">Enter Year</label>
+                    <input
+                        type="number"
+                        id="yearInput"
+                        class="toolbar-select"
+                        value="{{ year }}"
+                        min="{{ min_year|default:1900 }}"
+                        max="{{ max_year|default:2100 }}"
+                        placeholder="Enter year like 2024"
+                    >
+                </div>
+
+                <button type="button" class="btn btn-primary toolbar-btn year-btn" id="searchBtn">
+                    Load Year Data
+                </button>
+            </div>
+
+            {% if min_year and max_year %}
+            <div class="year-chip-row">
+                {% for y in ""|center:0 %}
+                {% endfor %}
+                {% for y in years_list %}
+                    <a href="{% url 'trayodashi' %}?year={{ y }}" class="quick-chip {% if y == year %}active{% endif %}">
+                        {{ y }}
+                    </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="overview-grid overview-grid-compact">
+        <div class="panel-card info-stat-card">
+            <div class="panel-head">
+                <span class="panel-kicker">Selected Year</span>
+                <h3 id="selectedYear">{{ year }}</h3>
+            </div>
+        </div>
+
+        <div class="panel-card info-stat-card">
+            <div class="panel-head">
+                <span class="panel-kicker">Available Range</span>
+                <h3 id="yearRange">
+                    {% if min_year and max_year %}{{ min_year }} - {{ max_year }}{% else %}N/A{% endif %}
+                </h3>
+            </div>
+        </div>
+
+        <div class="panel-card info-stat-card">
+            <div class="panel-head">
+                <span class="panel-kicker">Total Records</span>
+                <h3 id="totalRecords">{{ total_records }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-card premium-chart-panel">
+        <div class="chart-panel-top">
+            <div>
+                <span class="panel-kicker">Year-wise Listing</span>
+                <h3>Trayodashi Date Table</h3>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="reversal-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Paksha</th>
+                        <th>Title</th>
+                        <th>Start</th>
+                        <th>End</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                    {% for item in rows %}
+                    <tr>
+                        <td>{{ item.month }}</td>
+                        <td>{{ item.paksha }}</td>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.start }}</td>
+                        <td>{{ item.end }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty-cell">No data found for this year.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const yearInput = document.getElementById("yearInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const resultsBody = document.getElementById("resultsBody");
+    const statusMessage = document.getElementById("statusMessage");
+    const selectedYear = document.getElementById("selectedYear");
+    const totalRecords = document.getElementById("totalRecords");
+
+    function renderRows(rows) {
+        if (!rows || !rows.length) {
+            resultsBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="empty-cell">No data found for this year.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        resultsBody.innerHTML = rows.map(item => `
+            <tr>
+                <td>${item.month}</td>
+                <td>${item.paksha}</td>
+                <td>${item.title || "Trayodashi"}</td>
+                <td>${item.start}</td>
+                <td>${item.end}</td>
+            </tr>
+        `).join("");
+    }
+
+    async function loadTrayodashiYear() {
+        const year = yearInput.value.trim();
+
+        if (!year) {
+            statusMessage.textContent = "Please enter a year.";
+            statusMessage.className = "status-box status-box-danger";
+            return;
+        }
+
+        searchBtn.disabled = true;
+        searchBtn.textContent = "Loading...";
+        statusMessage.textContent = "Loading Trayodashi data...";
+        statusMessage.className = "status-box status-box-success";
+
+        try {
+            const response = await fetch(`/api/trayodashi/?year=${encodeURIComponent(year)}`);
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                statusMessage.textContent = result.message || "Something went wrong.";
+                statusMessage.className = "status-box status-box-danger";
+                renderRows([]);
+                totalRecords.textContent = "0";
+                selectedYear.textContent = year;
+                return;
+            }
+
+            renderRows(result.data.rows);
+            selectedYear.textContent = result.data.year;
+            totalRecords.textContent = result.data.total_records;
+            statusMessage.textContent = result.message;
+            statusMessage.className = "status-box status-box-success";
+        } catch (error) {
+            statusMessage.textContent = "Server error. Please try again.";
+            statusMessage.className = "status-box status-box-danger";
+        } finally {
+            searchBtn.disabled = false;
+            searchBtn.textContent = "Load Year Data";
+        }
+    }
+
+    if (searchBtn) {
+        searchBtn.addEventListener("click", loadTrayodashiYear);
+    }
+
+    if (yearInput) {
+        yearInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                loadTrayodashiYear();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

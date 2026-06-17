@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% block title %}Pushya Nakshatra{% endblock %}
+
+{% block content %}
+<section class="page-shell">
+    <div class="hero-banner">
+        <div class="hero-banner-content">
+            <span class="hero-tag">Nakshatra Calendar</span>
+            <h1>Pushya Nakshatra</h1>
+            <p>View Pushya Nakshatra records by year with start, end, and duration details.</p>
+        </div>
+        <div class="hero-banner-actions">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="panel-card toolbar-panel">
+        <div class="panel-head">
+            <span class="panel-kicker">Filter Data</span>
+            <h3>Select Year</h3>
+        </div>
+
+        <div class="panel-body">
+            <div class="calendar-toolbar">
+                <div class="field-wrap">
+                    <label for="yearSelect">Year</label>
+                    <select id="yearSelect" class="toolbar-select">
+                        {% for year in available_years %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="button" class="btn btn-primary toolbar-btn" id="loadDataBtn">Load Data</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-strip">
+        <div class="stat-card">
+            <span>Total Events</span>
+            <strong id="totalCount">{{ total_count }}</strong>
+        </div>
+        <div class="stat-card">
+            <span>Selected Year</span>
+            <strong id="selectedYear">{{ selected_year }}</strong>
+        </div>
+        <div class="stat-card">
+            <span>Event Type</span>
+            <strong>Pushya Nakshatra</strong>
+        </div>
+    </div>
+
+    <div class="panel-card broker-card panel-success" id="statusBox">
+        <div class="panel-body">
+            <p class="panel-main-text">
+                {% if rows %}
+                    Pushya Nakshatra data loaded successfully.
+                {% else %}
+                    No Pushya Nakshatra data found for the selected year.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="panel-card quick-panel">
+        <div class="panel-head">
+            <span class="panel-kicker">Calendar Data</span>
+            <h3>Pushya Nakshatra Dates</h3>
+        </div>
+
+        <div class="panel-body">
+            <div class="table-wrap">
+                <table class="reversal-table">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Month</th>
+                            <th>Title</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Duration (Hours)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        {% for item in rows %}
+                        <tr>
+                            <td>{{ item.year }}</td>
+                            <td>{{ item.month }}</td>
+                            <td>{{ item.title }}</td>
+                            <td>{{ item.start_display }}</td>
+                            <td>{{ item.end_display }}</td>
+                            <td>{{ item.duration_hours }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="empty-cell">No Pushya Nakshatra data found for the selected year.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const yearSelect = document.getElementById("yearSelect");
+    const loadDataBtn = document.getElementById("loadDataBtn");
+    const resultsBody = document.getElementById("resultsBody");
+    const totalCount = document.getElementById("totalCount");
+    const selectedYear = document.getElementById("selectedYear");
+    const statusBox = document.getElementById("statusBox");
+
+    function setStatus(message, ok = true) {
+        statusBox.className = ok
+            ? "panel-card broker-card panel-success"
+            : "panel-card broker-card panel-danger";
+
+        statusBox.innerHTML = `
+            <div class="panel-body">
+                <p class="panel-main-text">${message}</p>
+            </div>
+        `;
+    }
+
+    function renderRows(rows) {
+        if (!rows || !rows.length) {
+            resultsBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="empty-cell">No Pushya Nakshatra data found for the selected year.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        resultsBody.innerHTML = rows.map(item => `
+            <tr>
+                <td>${item.year}</td>
+                <td>${item.month}</td>
+                <td>${item.title}</td>
+                <td>${item.start_display}</td>
+                <td>${item.end_display}</td>
+                <td>${item.duration_hours}</td>
+            </tr>
+        `).join("");
+    }
+
+    async function loadPushyaData() {
+        const year = yearSelect.value;
+
+        if (!year) {
+            setStatus("Please select a year.", false);
+            return;
+        }
+
+        loadDataBtn.disabled = true;
+        loadDataBtn.textContent = "Loading...";
+
+        try {
+            const response = await fetch(`/api/pushya/?year=${encodeURIComponent(year)}`);
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                setStatus(result.message || "Something went wrong.", false);
+                return;
+            }
+
+            renderRows(result.data.rows);
+            totalCount.textContent = result.data.total_count;
+            selectedYear.textContent = result.data.year;
+
+            if (result.data.rows.length) {
+                setStatus(`Pushya Nakshatra data loaded for ${result.data.year}.`, true);
+            } else {
+                setStatus(`No Pushya Nakshatra data found for ${result.data.year}.`, false);
+            }
+        } catch (error) {
+            setStatus("Server error. Please try again.", false);
+        } finally {
+            loadDataBtn.disabled = false;
+            loadDataBtn.textContent = "Load Data";
+        }
+    }
+
+    if (loadDataBtn) {
+        loadDataBtn.addEventListener("click", loadPushyaData);
+    }
+});
+</script>
+{% endblock %}

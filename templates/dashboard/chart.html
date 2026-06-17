@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% block title %}Trading Dashboard{% endblock %}
+
+{% block content %}
+<section class="page-shell">
+    <div class="hero-banner">
+        <div class="hero-banner-content">
+            <span class="hero-tag">Live Trading Workspace</span>
+            <h1>Trading Dashboard</h1>
+            <p>Monitor broker connection, switch between instruments quickly, and analyze price action with a premium embedded chart interface.</p>
+        </div>
+
+        <div class="hero-banner-actions">
+            <a href="{% url 'reversal_dates' %}" class="btn btn-secondary">Reversal Date</a>
+            <a href="{% url 'amavasya' %}" class="btn btn-secondary">Amavasya</a>
+            <a href="{% url 'purnima' %}" class="btn btn-secondary">Purnima</a>
+            <a href="{% url 'trayodashi' %}" class="btn btn-secondary">Trayodashi</a>
+            <a href="{% url 'pushya' %}" class="btn btn-secondary">Pushya</a>
+            <a href="{% url 'calendar' %}" class="btn btn-secondary">Calendar</a>
+            
+
+            <div class="status-pill {% if broker_connected %}online{% else %}offline{% endif %}">
+                <span class="status-dot"></span>
+                {% if broker_connected %}Broker Connected{% else %}Broker Not Connected{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="overview-grid">
+        <div class="panel-card broker-card {% if broker_connected %}panel-success{% else %}panel-danger{% endif %}">
+            <div class="panel-head">
+                <span class="panel-kicker">Broker Message</span>
+                <h3>Connection Status</h3>
+            </div>
+            <div class="panel-body">
+                <p class="panel-main-text">{{ broker_message }}</p>
+            </div>
+        </div>
+
+        <div class="panel-card debug-panel">
+            <div class="panel-head">
+                <span class="panel-kicker">Environment Diagnostics</span>
+                <h3>System Readiness</h3>
+            </div>
+            <div class="panel-body">
+                <div class="debug-grid">
+                    <div class="debug-tile">
+                        <span>API Key Present</span>
+                        <strong>{{ env_status.api_key_present }}</strong>
+                    </div>
+                    <div class="debug-tile">
+                        <span>Client Code Present</span>
+                        <strong>{{ env_status.client_code_present }}</strong>
+                    </div>
+                    <div class="debug-tile">
+                        <span>Password Present</span>
+                        <strong>{{ env_status.password_present }}</strong>
+                    </div>
+                    <div class="debug-tile">
+                        <span>TOTP Secret Present</span>
+                        <strong>{{ env_status.totp_secret_present }}</strong>
+                    </div>
+                    <div class="debug-tile">
+                        <span>SmartAPI Module Present</span>
+                        <strong>{{ env_status.smartapi_module_present }}</strong>
+                    </div>
+                    <div class="debug-tile debug-tile-wide">
+                        <span>Import Error</span>
+                        <strong>{{ env_status.smartapi_import_error|default:"None" }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-card toolbar-panel">
+        <div class="panel-head">
+            <span class="panel-kicker">Chart Controls</span>
+            <h3>Load Symbol & Interval</h3>
+        </div>
+
+        <div class="panel-body">
+            <form method="get" class="symbol-form">
+                <div class="field-wrap">
+                    <label for="symbol">Symbol</label>
+                    <select name="symbol" id="symbol" class="toolbar-select">
+                        <optgroup label="Indices">
+                            {% for item in index_symbols %}
+                                <option value="{{ item }}" {% if item == tv_symbol %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="Stocks">
+                            {% for item in stock_symbols %}
+                                <option value="{{ item }}" {% if item == tv_symbol %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="field-wrap">
+                    <label for="interval">Interval</label>
+                    <select name="interval" id="interval" class="toolbar-select">
+                        <option value="1" {% if tv_interval == '1' %}selected{% endif %}>1 Min</option>
+                        <option value="3" {% if tv_interval == '3' %}selected{% endif %}>3 Min</option>
+                        <option value="5" {% if tv_interval == '5' %}selected{% endif %}>5 Min</option>
+                        <option value="15" {% if tv_interval == '15' %}selected{% endif %}>15 Min</option>
+                        <option value="30" {% if tv_interval == '30' %}selected{% endif %}>30 Min</option>
+                        <option value="60" {% if tv_interval == '60' %}selected{% endif %}>1 Hour</option>
+                        <option value="D" {% if tv_interval == 'D' %}selected{% endif %}>1 Day</option>
+                        <option value="W" {% if tv_interval == 'W' %}selected{% endif %}>1 Week</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary toolbar-btn">Load Chart</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="panel-card quick-panel">
+        <div class="panel-head">
+            <span class="panel-kicker">Quick Access</span>
+            <h3>Popular Symbols</h3>
+        </div>
+
+        <div class="panel-body">
+            <div class="quick-symbols">
+                {% for item in index_symbols %}
+                    <a href="{% url 'dashboard' %}?symbol={{ item|urlencode }}&interval={{ tv_interval }}"
+                       class="quick-chip index-chip {% if item == tv_symbol %}active{% endif %}">
+                        {{ item }}
+                    </a>
+                {% endfor %}
+                {% for item in stock_symbols %}
+                    <a href="{% url 'dashboard' %}?symbol={{ item|urlencode }}&interval={{ tv_interval }}"
+                       class="quick-chip {% if item == tv_symbol %}active{% endif %}">
+                        {{ item|cut:"NSE:" }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-card chart-panel premium-chart-panel">
+        <div class="chart-panel-top">
+            <div>
+                <span class="panel-kicker">Advanced Chart</span>
+                <h3>Live Market View</h3>
+            </div>
+
+            <div class="chart-badges">
+                <span class="chart-badge">Symbol: {{ tv_symbol }}</span>
+                <span class="chart-badge">Interval: {{ tv_interval }}</span>
+            </div>
+        </div>
+
+        <div class="tradingview-widget-container chart-box">
+            <div id="tradingview_chart_container"></div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const chartContainer = document.getElementById("tradingview_chart_container");
+
+    if (!chartContainer) return;
+
+    if (typeof TradingView !== "undefined") {
+        new TradingView.widget({
+            width: "100%",
+            height: "100%",
+            symbol: "{{ tv_symbol|escapejs }}",
+            interval: "{{ tv_interval|escapejs }}",
+            timezone: "Asia/Kolkata",
+            theme: "dark",
+            style: "1",
+            locale: "en",
+            toolbar_bg: "#0f172a",
+            enable_publishing: false,
+            allow_symbol_change: true,
+            container_id: "tradingview_chart_container",
+            withdateranges: true,
+            hide_side_toolbar: false,
+            details: true,
+            hotlist: true,
+            calendar: false,
+            studies: [
+                "RSI@tv-basicstudies",
+                "MACD@tv-basicstudies",
+                "Volume@tv-basicstudies"
+            ]
+        });
+    } else {
+        chartContainer.innerHTML = "<div class='chart-fallback'>TradingView chart failed to load.</div>";
+    }
+});
+</script>
+{% endblock %}

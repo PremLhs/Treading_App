@@ -1,0 +1,7 @@
+Django>=5.2,<6.1
+python-dotenv>=1.0.1
+requests>=2.32.3
+pyotp>=2.9.0
+smartapi-python
+whitenoise>=6.8.2
+gunicorn>=23.0.0

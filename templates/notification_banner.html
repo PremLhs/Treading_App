@@ -1,0 +1,34 @@
+{% if global_notifications %}
+<section class="global-notification-wrap">
+    <div class="notification-stack">
+        {% for item in global_notifications %}
+            <a href="{{ item.page_url }}" class="notification-card {{ item.color_class }}">
+                <div class="notification-icon-wrap">
+                    {% if item.type == "today" %}
+                        <span class="notification-icon">●</span>
+                    {% else %}
+                        <span class="notification-icon">◐</span>
+                    {% endif %}
+                </div>
+
+                <div class="notification-content">
+                    <div class="notification-label">
+                        {% if item.type == "today" %}
+                            Live Event Alert
+                        {% else %}
+                            Upcoming Event Alert
+                        {% endif %}
+                    </div>
+
+                    <div class="notification-title">{{ item.message }}</div>
+                    <div class="notification-subtitle">{{ item.submessage }}</div>
+                </div>
+
+                <div class="notification-action">
+                    View
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}

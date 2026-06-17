@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block title %}Amavasya Calendar{% endblock %}
+
+{% block content %}
+<section class="page-shell">
+    <div class="hero-banner">
+        <div class="hero-banner-content">
+            <span class="hero-tag">Tithi Calendar</span>
+            <h1>Amavasya Dates</h1>
+            <p>Search Amavasya tithi records year-wise and view complete start and end times for all available dates from 2024 to 2032.</p>
+        </div>
+
+        <div class="hero-banner-actions">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            <a href="{% url 'reversal_dates' %}" class="btn btn-secondary">Reversal Date</a>
+        </div>
+    </div>
+
+    <div class="panel-card reversal-panel">
+        <div class="panel-head">
+            <span class="panel-kicker">Amavasya Search</span>
+            <h3>Find Amavasya by Year</h3>
+        </div>
+
+        <div class="panel-body">
+            <div class="amavasya-toolbar">
+                <div class="field-wrap year-search-wrap">
+                    <label for="yearInput">Enter Year</label>
+                    <input
+                        type="number"
+                        id="yearInput"
+                        class="toolbar-input"
+                        placeholder="Enter year between 2024 to 2032"
+                        value="{{ year }}"
+                        min="{{ min_year }}"
+                        max="{{ max_year }}"
+                    >
+                </div>
+
+                <button type="button" class="btn btn-primary" id="searchAmavasyaBtn">Get Amavasya Dates</button>
+            </div>
+
+            <div class="summary-grid amavasya-summary-grid">
+                <div class="summary-card">
+                    <span>Selected Year</span>
+                    <strong id="selectedYear">{{ year }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Available Range</span>
+                    <strong>{{ min_year }} - {{ max_year }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Total Records</span>
+                    <strong id="totalRecords">{{ total_records }}</strong>
+                </div>
+            </div>
+
+            <div class="panel-card inline-status panel-success" id="statusMessage">
+                Default year data loaded successfully.
+            </div>
+
+            <div class="table-shell">
+                <div class="table-shell-head">
+                    <span class="panel-kicker">Amavasya Records</span>
+                    <h3>Yearly Tithi Start & End Time</h3>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="reversal-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Festival / Type</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="amavasyaResultsBody">
+                            {% for item in rows %}
+                            <tr>
+                                <td>{{ item.month }}</td>
+                                <td>{% if item.title %}{{ item.title }}{% else %}-{% endif %}</td>
+                                <td>{{ item.start }}</td>
+                                <td>{{ item.end }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="empty-cell">No Amavasya data found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchBtn = document.getElementById("searchAmavasyaBtn");
+    const yearInput = document.getElementById("yearInput");
+    const resultsBody = document.getElementById("amavasyaResultsBody");
+    const statusMessage = document.getElementById("statusMessage");
+    const selectedYear = document.getElementById("selectedYear");
+    const totalRecords = document.getElementById("totalRecords");
+
+    function renderRows(rows) {
+        if (!rows || !rows.length) {
+            resultsBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="empty-cell">No Amavasya data found.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        resultsBody.innerHTML = rows.map(item => `
+            <tr>
+                <td>${item.month}</td>
+                <td>${item.title ? item.title : '-'}</td>
+                <td>${item.start}</td>
+                <td>${item.end}</td>
+            </tr>
+        `).join('');
+    }
+
+    async function fetchAmavasyaData() {
+        const year = yearInput.value.trim();
+
+        if (!year) {
+            statusMessage.textContent = "Please enter a year.";
+            statusMessage.className = "panel-card inline-status panel-danger";
+            return;
+        }
+
+        statusMessage.textContent = "Loading Amavasya dates...";
+        statusMessage.className = "panel-card inline-status panel-success";
+        searchBtn.disabled = true;
+        searchBtn.textContent = "Loading...";
+
+        try {
+            const response = await fetch(`/api/amavasya/?year=${encodeURIComponent(year)}`);
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                statusMessage.textContent = result.message || "Something went wrong.";
+                statusMessage.className = "panel-card inline-status panel-danger";
+                return;
+            }
+
+            renderRows(result.data.rows);
+            selectedYear.textContent = result.data.year;
+            totalRecords.textContent = result.data.total_records;
+            statusMessage.textContent = `Amavasya data loaded for ${result.data.year}.`;
+            statusMessage.className = "panel-card inline-status panel-success";
+        } catch (error) {
+            statusMessage.textContent = "Server error. Please try again.";
+            statusMessage.className = "panel-card inline-status panel-danger";
+        } finally {
+            searchBtn.disabled = false;
+            searchBtn.textContent = "Get Amavasya Dates";
+        }
+    }
+
+    if (searchBtn) {
+        searchBtn.addEventListener("click", fetchAmavasyaData);
+    }
+
+    if (yearInput) {
+        yearInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                fetchAmavasyaData();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
