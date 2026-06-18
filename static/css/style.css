@@ -1672,3 +1672,224 @@ ul.errorlist {
         font-size: 0.66rem;
     }
 }
+
+.broadcast-form {
+    display: grid;
+    gap: 20px;
+}
+
+.form-textarea,
+.form-input-file {
+    width: 100%;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.form-textarea:focus,
+.form-input-file:focus {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15);
+}
+
+.field-error {
+    margin-top: 8px;
+    color: #fca5a5;
+    font-size: 0.92rem;
+}
+
+.field-help {
+    display: block;
+    margin-top: 8px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.broadcast-actions {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+}
+
+.broadcast-alert {
+    padding: 14px 16px;
+    border-radius: 14px;
+    font-weight: 600;
+}
+
+.broadcast-alert.danger {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #fecaca;
+}
+
+.broadcast-note {
+    color: #cbd5e1;
+    font-size: 0.98rem;
+}
+
+.broadcast-results-table-wrap {
+    overflow-x: auto;
+    border-radius: 18px;
+}
+
+.broadcast-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.broadcast-results-table th,
+.broadcast-results-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    text-align: left;
+    vertical-align: top;
+}
+
+.broadcast-results-table th {
+    color: #f8fafc;
+    background: rgba(15, 23, 42, 0.75);
+}
+
+.result-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.result-badge.success {
+    background: rgba(34, 197, 94, 0.16);
+    color: #86efac;
+}
+
+.result-badge.failed {
+    background: rgba(239, 68, 68, 0.16);
+    color: #fca5a5;
+}
+
+.response-cell {
+    max-width: 420px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.broadcast-form {
+    display: grid;
+    gap: 20px;
+}
+
+.form-textarea,
+.form-input-file {
+    width: 100%;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.form-textarea:focus,
+.form-input-file:focus {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15);
+}
+
+.field-error {
+    margin-top: 8px;
+    color: #fca5a5;
+    font-size: 0.92rem;
+}
+
+.field-help {
+    display: block;
+    margin-top: 8px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.broadcast-actions {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+}
+
+.broadcast-alert {
+    padding: 14px 16px;
+    border-radius: 14px;
+    font-weight: 600;
+}
+
+.broadcast-alert.danger {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #fecaca;
+}
+
+.broadcast-note {
+    color: #cbd5e1;
+    font-size: 0.98rem;
+}
+
+.broadcast-results-table-wrap {
+    overflow-x: auto;
+    border-radius: 18px;
+}
+
+.broadcast-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.broadcast-results-table th,
+.broadcast-results-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    text-align: left;
+    vertical-align: top;
+}
+
+.broadcast-results-table th {
+    color: #f8fafc;
+    background: rgba(15, 23, 42, 0.75);
+}
+
+.result-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.result-badge.success {
+    background: rgba(34, 197, 94, 0.16);
+    color: #86efac;
+}
+
+.result-badge.failed {
+    background: rgba(239, 68, 68, 0.16);
+    color: #fca5a5;
+}
+
+.response-cell {
+    max-width: 420px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}

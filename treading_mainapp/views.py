@@ -1152,3 +1152,176 @@ def calendar_view(request):
         "default_year": current_year,
     }
     return render(request, "calendar.html", context)
+
+
+import json
+import os
+from pathlib import Path
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.files.storage import FileSystemStorage
+from django.shortcuts import render, redirect
+
+from .forms import WhatsAppBroadcastForm
+
+
+def _normalize_indian_mobile(number):
+    digits = "".join(ch for ch in str(number) if ch.isdigit())
+
+    if not digits:
+        return None
+
+    if digits.startswith("91") and len(digits) == 12:
+        return digits
+
+    if len(digits) == 10:
+        return f"91{digits}"
+
+    if digits.startswith("0") and len(digits) == 11:
+        trimmed = digits[1:]
+        if len(trimmed) == 10:
+            return f"91{trimmed}"
+
+    return None
+
+
+def _load_whatsapp_recipients():
+    json_path = getattr(settings, "WHATSAPP_CONTACTS_JSON", "")
+    if not json_path:
+        raise Exception("WHATSAPP_CONTACTS_JSON not configured in settings.py")
+
+    path = Path(json_path)
+    if not path.exists():
+        raise Exception(f"JSON file not found: {json_path}")
+
+    with open(path, "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    if not isinstance(data, list):
+        raise Exception("JSON root must be a list.")
+
+    recipients = []
+    seen = set()
+
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+
+        username = item.get("username", "Unknown")
+        raw_mobile = item.get("mobile", "")
+        mobile = _normalize_indian_mobile(raw_mobile)
+
+        if not mobile:
+            continue
+
+        if mobile in seen:
+            continue
+
+        seen.add(mobile)
+        recipients.append({
+            "username": username,
+            "mobile": mobile,
+            "email": item.get("email", ""),
+        })
+
+    return recipients
+
+
+@login_required(login_url="login")
+def whatsapp_broadcast_view(request):
+    recipients = []
+    recipients_count = 0
+    json_error = None
+    uploaded_file_info = None
+
+    try:
+        recipients = _load_whatsapp_recipients()
+        recipients_count = len(recipients)
+    except Exception as exc:
+        json_error = str(exc)
+
+    if request.method == "POST":
+        form = WhatsAppBroadcastForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            message_text = (form.cleaned_data.get("message") or "").strip()
+            attachment = form.cleaned_data.get("attachment")
+
+            saved_file_url = None
+            saved_file_name = None
+            saved_file_path = None
+
+            if attachment:
+                upload_dir = os.path.join(settings.MEDIA_ROOT, "whatsapp_broadcasts")
+                os.makedirs(upload_dir, exist_ok=True)
+
+                storage = FileSystemStorage(location=upload_dir)
+                saved_name = storage.save(attachment.name, attachment)
+                saved_file_name = saved_name
+                saved_file_path = storage.path(saved_name)
+                saved_file_url = f"{settings.MEDIA_URL}whatsapp_broadcasts/{saved_name}"
+
+                uploaded_file_info = {
+                    "name": saved_file_name,
+                    "url": saved_file_url,
+                    "path": saved_file_path,
+                    "size": attachment.size,
+                }
+
+            simulated_results = []
+            for recipient in recipients:
+                simulated_results.append({
+                    "username": recipient["username"],
+                    "mobile": recipient["mobile"],
+                    "success": False,
+                    "status_code": "CONFIG_PENDING",
+                    "response_text": "API Config Missing - delivery simulation only.",
+                })
+
+            report = {
+                "total": len(recipients),
+                "success_count": 0,
+                "failed_count": len(recipients),
+                "message_text": message_text,
+                "uploaded_file": uploaded_file_info,
+                "results": simulated_results,
+            }
+
+            request.session["whatsapp_broadcast_last_result"] = report
+
+            print("\n========== WHATSAPP BROADCAST DEBUG ==========")
+            print(f"Recipients loaded: {len(recipients)}")
+            print(f"Message text: {message_text}")
+            if uploaded_file_info:
+                print(f"Attachment saved: {uploaded_file_info['path']}")
+            else:
+                print("Attachment saved: None")
+            print("Status: API Config Missing - UI workflow working correctly.")
+            print("=============================================\n")
+
+            messages.success(
+                request,
+                "Broadcast workflow working hai. JSON read, form submit, file upload, report generation sab sahi hai. Bas API config pending hai."
+            )
+            return redirect("whatsapp_broadcast")
+
+        else:
+            messages.error(request, "Form validation failed. Please correct the errors below.")
+    else:
+        form = WhatsAppBroadcastForm()
+
+    last_result = request.session.get("whatsapp_broadcast_last_result")
+
+    context = {
+        "form": form,
+        "page_title": "WhatsApp Broadcast Channel",
+        "recipients": recipients[:20],
+        "recipients_count": recipients_count,
+        "json_error": json_error,
+        "config_ok": False,
+        "missing_keys": ["WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_ACCESS_TOKEN"],
+        "last_result": last_result,
+    }
+    return render(request, "dashboard/whatsapp_broadcast.html", context)

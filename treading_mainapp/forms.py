@@ -196,3 +196,37 @@ class ForgotPasswordForm(forms.Form):
         user.set_password(new_password)
         user.save()
         return user
+    
+
+
+
+
+from django import forms
+
+
+class WhatsAppBroadcastForm(forms.Form):
+    message = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            "class": "form-textarea",
+            "rows": 6,
+            "placeholder": "Type your broadcast message here..."
+        })
+    )
+    attachment = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={
+            "class": "form-input-file",
+            "accept": ".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.mp4"
+        })
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        message = (cleaned_data.get("message") or "").strip()
+        attachment = cleaned_data.get("attachment")
+
+        if not message and not attachment:
+            raise forms.ValidationError("Message ya attachment me se kam se kam ek dena zaroori hai.")
+
+        return cleaned_data

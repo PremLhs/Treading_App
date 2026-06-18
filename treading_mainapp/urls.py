@@ -31,4 +31,6 @@ urlpatterns = [
     path("api/notifications/", views.notifications_list_view, name="notifications_list"),
     path("api/notifications/mark-popup-shown/", views.mark_notifications_popup_shown_view, name="mark_notifications_popup_shown"),
     path("api/notifications/mark-read/", views.mark_notification_read_view, name="mark_notification_read"),
+
+    path("whatsapp-broadcast/", views.whatsapp_broadcast_view, name="whatsapp_broadcast"),
 ]

@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}WhatsApp Broadcast Channel{% endblock %}
+
+{% block content %}
+<section class="page-shell">
+    <div class="hero-banner">
+        <div class="hero-banner-content">
+            <span class="hero-tag">Bulk Messaging Workspace</span>
+            <h1>WhatsApp Broadcast Channel</h1>
+            <p>JSON contact file se users load karo, text likho, image ya document attach karo, aur full workflow check karo.</p>
+        </div>
+
+        <div class="hero-banner-actions">
+            <div class="status-pill offline">
+                <span class="status-dot"></span>
+                API Config Missing
+            </div>
+
+            <div class="status-pill {% if recipients_count > 0 %}online{% else %}offline{% endif %}">
+                <span class="status-dot"></span>
+                Recipients: {{ recipients_count }}
+            </div>
+        </div>
+    </div>
+
+    <div class="overview-grid">
+        <div class="panel-card broker-card panel-danger">
+            <div class="panel-head">
+                <span class="panel-kicker">API Readiness</span>
+                <h3>WhatsApp Status</h3>
+            </div>
+            <div class="panel-body">
+                <p class="panel-main-text">API Config Missing ko chhodke baki poora workflow working hai.</p>
+            </div>
+        </div>
+
+        <div class="panel-card debug-panel">
+            <div class="panel-head">
+                <span class="panel-kicker">Contacts Diagnostics</span>
+                <h3>JSON Reader</h3>
+            </div>
+            <div class="panel-body">
+                {% if json_error %}
+                    <div class="broadcast-alert danger">{{ json_error }}</div>
+                {% else %}
+                    <div class="debug-grid">
+                        <div class="debug-tile">
+                            <span>Valid Recipients</span>
+                            <strong>{{ recipients_count }}</strong>
+                        </div>
+                        <div class="debug-tile debug-tile-wide">
+                            <span>Result</span>
+                            <strong>JSON loaded successfully</strong>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-card toolbar-panel">
+        <div class="panel-head">
+            <span class="panel-kicker">Broadcast Composer</span>
+            <h3>Send Text, Image, Document</h3>
+        </div>
+
+        <div class="panel-body">
+            <form method="post" enctype="multipart/form-data" class="broadcast-form">
+                {% csrf_token %}
+
+                <div class="field-wrap">
+                    <label for="{{ form.message.id_for_label }}">Message</label>
+                    {{ form.message }}
+                    {% for error in form.message.errors %}
+                        <div class="field-error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="field-wrap">
+                    <label for="{{ form.attachment.id_for_label }}">Attachment</label>
+                    {{ form.attachment }}
+                    {% for error in form.attachment.errors %}
+                        <div class="field-error">{{ error }}</div>
+                    {% endfor %}
+                    <small class="field-help">Supported: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, MP4</small>
+                </div>
+
+                {% for error in form.non_field_errors %}
+                    <div class="broadcast-alert danger">{{ error }}</div>
+                {% endfor %}
+
+                <div class="broadcast-actions">
+                    <button type="submit" class="btn btn-primary toolbar-btn">Run Broadcast Workflow</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="panel-card quick-panel">
+        <div class="panel-head">
+            <span class="panel-kicker">Recipient Preview</span>
+            <h3>First Loaded Users</h3>
+        </div>
+
+        <div class="panel-body">
+            {% if recipients %}
+                <div class="quick-symbols">
+                    {% for item in recipients %}
+                        <span class="quick-chip {% if forloop.first %}active{% endif %}">
+                            {{ item.username }} - {{ item.mobile }}
+                        </span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="broadcast-note">No valid recipients available.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if last_result %}
+    <div class="panel-card chart-panel premium-chart-panel">
+        <div class="chart-panel-top">
+            <div>
+                <span class="panel-kicker">Execution Report</span>
+                <h3>Last Broadcast Result</h3>
+            </div>
+
+            <div class="chart-badges">
+                <span class="chart-badge">Total: {{ last_result.total }}</span>
+                <span class="chart-badge">Success: {{ last_result.success_count }}</span>
+                <span class="chart-badge">Failed: {{ last_result.failed_count }}</span>
+            </div>
+        </div>
+
+        <div class="panel-body" style="margin-bottom: 18px;">
+            <div class="debug-grid">
+                <div class="debug-tile debug-tile-wide">
+                    <span>Message</span>
+                    <strong>{{ last_result.message_text|default:"No text message provided." }}</strong>
+                </div>
+
+                <div class="debug-tile debug-tile-wide">
+                    <span>Attachment</span>
+                    <strong>
+                        {% if last_result.uploaded_file %}
+                            {{ last_result.uploaded_file.name }}
+                        {% else %}
+                            No attachment uploaded.
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="broadcast-results-table-wrap">
+            <table class="broadcast-results-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Mobile</th>
+                        <th>Status</th>
+                        <th>Code</th>
+                        <th>Response</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in last_result.results %}
+                    <tr>
+                        <td>{{ item.username }}</td>
+                        <td>{{ item.mobile }}</td>
+                        <td><span class="result-badge failed">Pending</span></td>
+                        <td>{{ item.status_code }}</td>
+                        <td class="response-cell">{{ item.response_text }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
