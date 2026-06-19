@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}Gap Up Dashboard{% endblock %}
+
+{% block content %}
+<section class="page-shell">
+    <div class="hero-banner">
+        <div class="hero-banner-content">
+            <span class="hero-tag">Gap Up Strategy</span>
+            <h1>Nifty 50 Gap Tracker</h1>
+            <p>Daily previous-day vs current 9:15–9:30 candle comparison with automatic gap-up, gap-down, and no-gap classification.</p>
+        </div>
+
+        <div class="hero-banner-actions">
+            <form method="post" action="{% url 'gapup_refresh' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Refresh Gap Data</button>
+            </form>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="overview-grid">
+        <div class="panel-card">
+            <div class="panel-head">
+                <span class="panel-kicker">Trade Date</span>
+                <h3>{{ trade_date }}</h3>
+            </div>
+        </div>
+
+        <div class="panel-card panel-success">
+            <div class="panel-head">
+                <span class="panel-kicker">Gap Up</span>
+                <h3>{{ gap_up_count }}</h3>
+            </div>
+        </div>
+
+        <div class="panel-card panel-danger">
+            <div class="panel-head">
+                <span class="panel-kicker">Gap Down</span>
+                <h3>{{ gap_down_count }}</h3>
+            </div>
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-head">
+                <span class="panel-kicker">No Gap</span>
+                <h3>{{ no_gap_count }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-card chart-panel">
+        <div class="chart-panel-top">
+            <div>
+                <span class="panel-kicker">Daily Status</span>
+                <h3>All Nifty 50 Stocks</h3>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Prev Open</th>
+                        <th>Prev High</th>
+                        <th>Prev Low</th>
+                        <th>Prev Close</th>
+                        <th>Today Open</th>
+                        <th>Today High</th>
+                        <th>Today Low</th>
+                        <th>Today Close</th>
+                        <th>Open Diff</th>
+                        <th>High Diff</th>
+                        <th>Low Diff</th>
+                        <th>Close Diff</th>
+                        <th>Gap Type</th>
+                        <th>Gap Up</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in rows %}
+                    <tr>
+                        <td>{{ item.symbol }}</td>
+                        <td>{{ item.prev_open }}</td>
+                        <td>{{ item.prev_high }}</td>
+                        <td>{{ item.prev_low }}</td>
+                        <td>{{ item.prev_close }}</td>
+                        <td>{{ item.today_open }}</td>
+                        <td>{{ item.today_high }}</td>
+                        <td>{{ item.today_low }}</td>
+                        <td>{{ item.today_close }}</td>
+                        <td>{{ item.open_diff }}</td>
+                        <td>{{ item.high_diff }}</td>
+                        <td>{{ item.low_diff }}</td>
+                        <td>{{ item.close_diff }}</td>
+                        <td>
+                            <span class="status-badge
+                                {% if item.gap_type == 'GAP UP' %}status-success
+                                {% elif item.gap_type == 'GAP DOWN' %}status-danger
+                                {% else %}status-muted{% endif %}">
+                                {{ item.gap_type }}
+                            </span>
+                        </td>
+                        <td>{% if item.gap_up %}Yes{% else %}No{% endif %}</td>
+                        <td>{{ item.notes }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="16">No data available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

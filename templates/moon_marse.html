@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block title %}Moon Mars Dates{% endblock %}
+
+{% block content %}
+<section class="page-shell">
+    <div class="hero-banner">
+        <div class="hero-banner-content">
+            <span class="hero-tag">Astro Event Workspace</span>
+            <h1>Moon Mars Dates</h1>
+            <p>Choose a year and view all Chandra Mangal Yoga records in a structured, readable table layout.</p>
+        </div>
+
+        <div class="hero-banner-actions">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Dashboard</a>
+            <a href="{% url 'calendar' %}" class="btn btn-secondary">Calendar</a>
+            <a href="{% url 'reversal_dates' %}" class="btn btn-secondary">Reversal Date</a>
+            <a href="{% url 'amavasya' %}" class="btn btn-secondary">Amavasya</a>
+        </div>
+    </div>
+
+    <div class="overview-grid">
+        <div class="panel-card toolbar-panel">
+            <div class="panel-head">
+                <span class="panel-kicker">Year Filter</span>
+                <h3>Load Moon Mars Data</h3>
+            </div>
+
+            <div class="panel-body">
+                <form method="get" class="symbol-form">
+                    <div class="field-wrap">
+                        <label for="year">Select Year</label>
+                        <select name="year" id="year" class="toolbar-select">
+                            {% for year in available_years %}
+                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                                    {{ year }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary toolbar-btn">Load Dates</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="panel-card debug-panel">
+            <div class="panel-head">
+                <span class="panel-kicker">Event Summary</span>
+                <h3>Selected Year Overview</h3>
+            </div>
+
+            <div class="panel-body">
+                <div class="debug-grid">
+                    <div class="debug-tile">
+                        <span>Selected Year</span>
+                        <strong>{{ selected_year|default:"N/A" }}</strong>
+                    </div>
+                    <div class="debug-tile">
+                        <span>Total Events</span>
+                        <strong>{{ moon_mars_total }}</strong>
+                    </div>
+                    <div class="debug-tile">
+                        <span>Category</span>
+                        <strong>Moon Mars</strong>
+                    </div>
+                    <div class="debug-tile">
+                        <span>Title</span>
+                        <strong>Chandra Mangal Yoga</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-card moon-mars-table-panel">
+        <div class="chart-panel-top">
+            <div>
+                <span class="panel-kicker">Structured Data View</span>
+                <h3>Moon Mars Event Table</h3>
+            </div>
+
+            <div class="chart-badges">
+                <span class="chart-badge">Year: {{ selected_year }}</span>
+                <span class="chart-badge">Events: {{ moon_mars_total }}</span>
+            </div>
+        </div>
+
+        <div class="panel-body">
+            {% if moon_mars_events %}
+                <div class="custom-table-wrap">
+                    <table class="custom-data-table moon-mars-table">
+                        <thead>
+                            <tr>
+                                <th>S.No.</th>
+                                <th>Year</th>
+                                <th>Month</th>
+                                <th>Title</th>
+                                <th>Start Date & Time</th>
+                                <th>End Date & Time</th>
+                                <th>Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in moon_mars_events %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ item.year }}</td>
+                                    <td>{{ item.month }}</td>
+                                    <td>{{ item.title }}</td>
+                                    <td>{{ item.start_display }}</td>
+                                    <td>{{ item.end_display }}</td>
+                                    <td>
+                                        {% if item.duration_hours %}
+                                            {{ item.duration_hours }} hrs
+                                        {% else %}
+                                            TBA
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="table-empty-state">
+                    <div class="table-empty-icon">📅</div>
+                    <h4>No data found</h4>
+                    <p>No Moon Mars records are available for the selected year.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

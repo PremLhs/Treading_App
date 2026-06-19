@@ -9,6 +9,19 @@ from django.shortcuts import redirect, render
 from .forms import LoginForm, RegisterForm, ForgotPasswordForm
 from .services.angel_api import AngelBroker
 
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from .models import GapUpStatus
+from treading_mainapp.gapup import update_all_gapup_data
+
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.http import require_GET
+
+from .moon_mars import get_moon_mars_events_by_year 
 
 INDEX_SYMBOLS = [
     "NSE:NIFTY",
@@ -1325,3 +1338,75 @@ def whatsapp_broadcast_view(request):
         "last_result": last_result,
     }
     return render(request, "dashboard/whatsapp_broadcast.html", context)
+
+
+@login_required
+def gapup_view(request):
+    trade_date = timezone.localdate()
+    rows = GapUpStatus.objects.filter(trade_date=trade_date).order_by("symbol")
+
+    if not rows.exists():
+        update_all_gapup_data(trade_date=trade_date)
+        rows = GapUpStatus.objects.filter(trade_date=trade_date).order_by("symbol")
+
+    gap_up_count = rows.filter(gap_up=True).count()
+    gap_down_count = rows.filter(gap_down=True).count()
+    no_gap_count = rows.count() - gap_up_count - gap_down_count
+
+    context = {
+        "rows": rows,
+        "trade_date": trade_date,
+        "gap_up_count": gap_up_count,
+        "gap_down_count": gap_down_count,
+        "no_gap_count": no_gap_count,
+    }
+    return render(request, "dashboard/gapup.html", context)
+
+
+@login_required
+def gapup_refresh_view(request):
+    if request.method == "POST":
+        trade_date = timezone.localdate()
+        update_all_gapup_data(trade_date=trade_date)
+        messages.success(request, "Gap-up data refreshed successfully.")
+    return redirect("gapup")
+
+@login_required
+@require_GET
+def moon_marse_view(request):
+    year_param = request.GET.get("year", "").strip()
+
+    selected_year = None
+    if year_param.isdigit():
+        selected_year = int(year_param)
+
+    data = get_moon_mars_events_by_year(selected_year=selected_year)
+
+    context = {
+        "selected_year": data["selected_year"],
+        "available_years": data["available_years"],
+        "moon_mars_events": data["events"],
+        "moon_mars_total": data["total_events"],
+    }
+    return render(request, "moon_marse.html", context)
+
+
+@login_required
+@require_GET
+def moon_marse_api_view(request):
+    year_param = request.GET.get("year", "").strip()
+
+    selected_year = None
+    if year_param.isdigit():
+        selected_year = int(year_param)
+
+    data = get_moon_mars_events_by_year(selected_year=selected_year)
+
+    return JsonResponse(
+        {
+            "selected_year": data["selected_year"],
+            "available_years": data["available_years"],
+            "total_events": data["total_events"],
+            "events": data["events"],
+        }
+    )

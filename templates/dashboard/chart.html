@@ -17,7 +17,8 @@
             <a href="{% url 'trayodashi' %}" class="btn btn-secondary">Trayodashi</a>
             <a href="{% url 'pushya' %}" class="btn btn-secondary">Pushya</a>
             <a href="{% url 'calendar' %}" class="btn btn-secondary">Calendar</a>
-            
+            <a href="{% url 'gapup' %}" class="btn btn-primary">Gap Up</a>
+            <a href="{% url 'moon_marse' %}" class="btn btn-secondary">Moon Mars</a>
 
             <div class="status-pill {% if broker_connected %}online{% else %}offline{% endif %}">
                 <span class="status-dot"></span>
@@ -153,8 +154,8 @@
             </div>
         </div>
 
-        <div class="tradingview-widget-container chart-box">
-            <div id="tradingview_chart_container"></div>
+        <div class="tradingview-widget-container chart-box" style="height: 720px;">
+            <div id="tradingview_chart_container" style="width: 100%; height: 100%;"></div>
         </div>
     </div>
 </section>
@@ -165,13 +166,13 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const chartContainer = document.getElementById("tradingview_chart_container");
-
     if (!chartContainer) return;
 
     if (typeof TradingView !== "undefined") {
+        chartContainer.innerHTML = "";
+
         new TradingView.widget({
-            width: "100%",
-            height: "100%",
+            autosize: true,
             symbol: "{{ tv_symbol|escapejs }}",
             interval: "{{ tv_interval|escapejs }}",
             timezone: "Asia/Kolkata",

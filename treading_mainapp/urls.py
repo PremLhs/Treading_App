@@ -26,6 +26,9 @@ urlpatterns = [
     path("pushya/", views.pushya_view, name="pushya"),
     path("api/pushya/", views.pushya_api_view, name="pushya_api"),
 
+    path("moon-marse/", views.moon_marse_view, name="moon_marse"),
+    path("api/moon-marse/", views.moon_marse_api_view, name="moon_marse_api"),
+    
     path("calendar/", views.calendar_view, name="calendar"),
 
     path("api/notifications/", views.notifications_list_view, name="notifications_list"),
@@ -33,4 +36,8 @@ urlpatterns = [
     path("api/notifications/mark-read/", views.mark_notification_read_view, name="mark_notification_read"),
 
     path("whatsapp-broadcast/", views.whatsapp_broadcast_view, name="whatsapp_broadcast"),
+    path("gapup/", views.gapup_view, name="gapup"),
+    path("gapup/refresh/", views.gapup_refresh_view, name="gapup_refresh"),
+
+    
 ]
