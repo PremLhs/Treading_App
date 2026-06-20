@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Trading Dashboard{% endblock %}
 
 {% block content %}
@@ -62,8 +63,8 @@
                         <strong>{{ env_status.totp_secret_present }}</strong>
                     </div>
                     <div class="debug-tile">
-                        <span>SmartAPI Module Present</span>
-                        <strong>{{ env_status.smartapi_module_present }}</strong>
+                        <span>SmartAPI Mode</span>
+                        <strong>Requests</strong>
                     </div>
                     <div class="debug-tile debug-tile-wide">
                         <span>Import Error</span>
@@ -81,7 +82,7 @@
         </div>
 
         <div class="panel-body">
-            <form method="get" class="symbol-form">
+            <form method="get" class="symbol-form" id="chartForm">
                 <div class="field-wrap">
                     <label for="symbol">Symbol</label>
                     <select name="symbol" id="symbol" class="toolbar-select">
@@ -141,62 +142,59 @@
         </div>
     </div>
 
-    <div class="panel-card chart-panel premium-chart-panel">
-        <div class="chart-panel-top">
+    <div class="panel-card chart-workspace">
+        <div class="chart-workspace-head">
             <div>
                 <span class="panel-kicker">Advanced Chart</span>
                 <h3>Live Market View</h3>
             </div>
 
             <div class="chart-badges">
-                <span class="chart-badge">Symbol: {{ tv_symbol }}</span>
-                <span class="chart-badge">Interval: {{ tv_interval }}</span>
+                <span class="chart-badge">Symbol: <span id="activeSymbolLabel">{{ tv_symbol }}</span></span>
+                <span class="chart-badge">Interval: <span id="activeIntervalLabel">{{ tv_interval }}</span></span>
+                <span class="chart-badge">Broker: <span id="brokerHealthLabel">{% if broker_connected %}Connected{% else %}Not Connected{% endif %}</span></span>
+                <span class="chart-badge">Records: <span id="recordsLabel">0</span></span>
             </div>
         </div>
 
-        <div class="tradingview-widget-container chart-box" style="height: 720px;">
-            <div id="tradingview_chart_container" style="width: 100%; height: 100%;"></div>
+        <div class="chart-toolbar" id="chartToolbar">
+            <button type="button" class="chart-tool-btn" id="btnRefresh">Refresh</button>
+            <button type="button" class="chart-tool-btn" id="btnFit">Fit</button>
+            <button type="button" class="chart-tool-btn" id="btnResetZoom">Reset Zoom</button>
+            <button type="button" class="chart-tool-btn" id="btnScreenshot">Screenshot</button>
+            <button type="button" class="chart-tool-btn" id="btnFullscreen">Fullscreen</button>
+            <button type="button" class="chart-tool-btn active" id="toggleEMA20">EMA 20</button>
+            <button type="button" class="chart-tool-btn active" id="toggleEMA50">EMA 50</button>
+            <button type="button" class="chart-tool-btn active" id="toggleRSI">RSI</button>
+            <button type="button" class="chart-tool-btn active" id="toggleMACD">MACD</button>
+        </div>
+
+        <div class="chart-status-row">
+            <div class="chart-status-item">Status: <span id="chartStatusText">Ready</span></div>
+            <div class="chart-status-item">Last Candle: <span id="lastCandleTime">-</span></div>
+            <div class="chart-status-item">Backend Msg: <span id="backendMessage">-</span></div>
+        </div>
+
+        <div class="chart-stage">
+            <div class="chart-box-pro" id="chartShell">
+                <div id="tvchart" class="main-chart-canvas"></div>
+            </div>
+            <div id="indicatorChartsWrap" class="indicator-wrap"></div>
         </div>
     </div>
 </section>
+
+<script>
+window.APP_CONFIG = {
+    symbol: "{{ tv_symbol|escapejs }}",
+    interval: "{{ tv_interval|escapejs }}",
+    candlesApiUrl: "{% url 'candles_api' %}",
+    brokerHealthUrl: "{% url 'broker_health' %}"
+};
+</script>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://s3.tradingview.com/tv.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const chartContainer = document.getElementById("tradingview_chart_container");
-    if (!chartContainer) return;
-
-    if (typeof TradingView !== "undefined") {
-        chartContainer.innerHTML = "";
-
-        new TradingView.widget({
-            autosize: true,
-            symbol: "{{ tv_symbol|escapejs }}",
-            interval: "{{ tv_interval|escapejs }}",
-            timezone: "Asia/Kolkata",
-            theme: "dark",
-            style: "1",
-            locale: "en",
-            toolbar_bg: "#0f172a",
-            enable_publishing: false,
-            allow_symbol_change: true,
-            container_id: "tradingview_chart_container",
-            withdateranges: true,
-            hide_side_toolbar: false,
-            details: true,
-            hotlist: true,
-            calendar: false,
-            studies: [
-                "RSI@tv-basicstudies",
-                "MACD@tv-basicstudies",
-                "Volume@tv-basicstudies"
-            ]
-        });
-    } else {
-        chartContainer.innerHTML = "<div class='chart-fallback'>TradingView chart failed to load.</div>";
-    }
-});
-</script>
+<script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+<script src="{% static 'js/chart.js' %}"></script>
 {% endblock %}

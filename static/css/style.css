@@ -1998,3 +1998,132 @@ ul.errorlist {
         font-size: 13px;
     }
 }
+.chart-workspace {
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #1e293b;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #0b1220 0%, #08101b 100%);
+    box-shadow: 0 20px 60px rgba(2, 6, 23, 0.35);
+}
+
+.chart-workspace-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px 12px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.chart-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(15, 23, 42, 0.72);
+}
+
+.chart-tool-btn {
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chart-tool-btn:hover {
+    background: #162033;
+    border-color: #475569;
+}
+
+.chart-tool-btn.active {
+    background: #1d4ed8;
+    border-color: #2563eb;
+    color: #fff;
+}
+
+.chart-status-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 10px 24px 0;
+    color: #cbd5e1;
+    font-size: 13px;
+}
+
+.chart-status-item {
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 999px;
+    padding: 6px 12px;
+}
+
+.chart-stage {
+    padding: 18px 24px 24px;
+}
+
+.chart-box-pro {
+    width: 100%;
+    min-height: 560px;
+    background: #07111f;
+    border: 1px solid #1e293b;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+}
+
+.main-chart-canvas {
+    width: 100%;
+    height: 560px;
+}
+
+.indicator-wrap {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.indicator-box {
+    width: 100%;
+    height: 180px;
+    background: #07111f;
+    border: 1px solid #1e293b;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.indicator-box-macd {
+    height: 220px;
+}
+
+@media (max-width: 768px) {
+    .chart-workspace-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .chart-stage {
+        padding: 14px;
+    }
+
+    .chart-toolbar,
+    .chart-status-row {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .main-chart-canvas {
+        height: 420px;
+    }
+
+    .chart-box-pro {
+        min-height: 420px;
+    }
+}

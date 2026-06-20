@@ -21,39 +21,69 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
-from .moon_mars import get_moon_mars_events_by_year 
+from .moon_mars import get_moon_mars_events_by_year
+
 
 INDEX_SYMBOLS = [
     "NSE:NIFTY",
     "NSE:BANKNIFTY",
-    "NASDAQ:AAPL",
-    "NASDAQ:MSFT",
-    "NASDAQ:NVDA",
 ]
 
 STOCK_SYMBOLS = [
     "NSE:RELIANCE",
-    "NSE:SBIN",
+    "NSE:TCS",
     "NSE:HDFCBANK",
     "NSE:ICICIBANK",
-    "NSE:TCS",
     "NSE:INFY",
-    "NSE:LT",
-    "NSE:AXISBANK",
     "NSE:BHARTIARTL",
     "NSE:ITC",
-    "NSE:MARUTI",
-    "NSE:TITAN",
-    "NSE:WIPRO",
-    "NSE:ADANIENT",
-    "NSE:ADANIPORTS",
+    "NSE:SBIN",
+    "NSE:LT",
+    "NSE:HINDUNILVR",
+    "NSE:AXISBANK",
     "NSE:KOTAKBANK",
     "NSE:BAJFINANCE",
+    "NSE:M&M",
+    "NSE:MARUTI",
+    "NSE:SUNPHARMA",
+    "NSE:NTPC",
+    "NSE:POWERGRID",
+    "NSE:ULTRACEMCO",
+    "NSE:TITAN",
     "NSE:ASIANPAINT",
+    "NSE:ADANIPORTS",
+    "NSE:BAJAJFINSV",
+    "NSE:NESTLEIND",
+    "NSE:WIPRO",
+    "NSE:TECHM",
+    "NSE:HCLTECH",
+    "NSE:INDUSINDBK",
+    "NSE:TATAMOTORS",
+    "NSE:ETERNAL",
+    "NSE:TRENT",
+    "NSE:SHRIRAMFIN",
+    "NSE:BEL",
+    "NSE:COALINDIA",
+    "NSE:JSWSTEEL",
+    "NSE:TATASTEEL",
+    "NSE:GRASIM",
+    "NSE:DRREDDY",
+    "NSE:CIPLA",
+    "NSE:APOLLOHOSP",
+    "NSE:SBILIFE",
+    "NSE:HDFCLIFE",
+    "NSE:BRITANNIA",
+    "NSE:HEROMOTOCO",
+    "NSE:EICHERMOT",
+    "NSE:BPCL",
+    "NSE:ONGC",
+    "NSE:HINDALCO",
+    "NSE:ADANIENT",
 ]
 
 DEFAULT_SYMBOL = "NSE:RELIANCE"
 ALLOWED_INTERVALS = ["1", "3", "5", "15", "30", "60", "D", "W"]
+
 
 REVERSAL_LEVELS = [
     11.25, 22.50, 33.75, 45.00, 56.25, 60.00, 67.50, 78.75,
@@ -177,13 +207,15 @@ def candles_api_view(request):
         interval = "5"
 
     broker = AngelBroker()
-    data = broker.get_mock_candles(symbol=symbol, interval=interval)
+    result = broker.fetch_historical_candles(symbol=symbol, interval=interval)
 
     return JsonResponse({
-        "status": True,
+        "status": result.get("status", False),
+        "message": result.get("message", ""),
         "symbol": symbol,
         "interval": interval,
-        "candles": data,
+        "candles": result.get("candles", []),
+        "meta": result.get("meta", {}),
     })
 
 
