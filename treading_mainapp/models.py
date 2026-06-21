@@ -25,8 +25,17 @@ from django.db import models
 
 
 class GapUpStatus(models.Model):
-    symbol = models.CharField(max_length=50)
+    GAP_CHOICES = (
+        ("GAP UP", "GAP UP"),
+        ("GAP DOWN", "GAP DOWN"),
+        ("NO GAP", "NO GAP"),
+    )
+
+    symbol = models.CharField(max_length=32, db_index=True)
+    company_name = models.CharField(max_length=128, blank=True, default="")
     trade_date = models.DateField(db_index=True)
+
+    prev_trade_date = models.DateField(null=True, blank=True)
 
     prev_open = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     prev_high = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
@@ -45,18 +54,19 @@ class GapUpStatus(models.Model):
 
     gap_up = models.BooleanField(default=False)
     gap_down = models.BooleanField(default=False)
-    gap_type = models.CharField(max_length=30, default="NO GAP")
-    notes = models.CharField(max_length=255, blank=True, default="")
+    gap_type = models.CharField(max_length=20, choices=GAP_CHOICES, default="NO GAP")
+    notes = models.TextField(blank=True, default="")
 
     candle_start = models.TimeField(null=True, blank=True)
     candle_end = models.TimeField(null=True, blank=True)
 
+    data_source = models.CharField(max_length=50, blank=True, default="")
+    refreshed_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["symbol"]
         unique_together = ("symbol", "trade_date")
+        ordering = ["symbol"]
 
     def __str__(self):
         return f"{self.symbol} - {self.trade_date} - {self.gap_type}"

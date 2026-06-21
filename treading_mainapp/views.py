@@ -14,7 +14,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from .models import GapUpStatus
-from treading_mainapp.gapup import update_all_gapup_data
+import treading_mainapp.gapup
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -1378,7 +1378,7 @@ def gapup_view(request):
     rows = GapUpStatus.objects.filter(trade_date=trade_date).order_by("symbol")
 
     if not rows.exists():
-        update_all_gapup_data(trade_date=trade_date)
+        treading_mainapp.gapup.update_all_gapup_data(trade_date=trade_date)
         rows = GapUpStatus.objects.filter(trade_date=trade_date).order_by("symbol")
 
     gap_up_count = rows.filter(gap_up=True).count()
@@ -1399,7 +1399,7 @@ def gapup_view(request):
 def gapup_refresh_view(request):
     if request.method == "POST":
         trade_date = timezone.localdate()
-        update_all_gapup_data(trade_date=trade_date)
+        treading_mainapp.gapup.update_all_gapup_data(trade_date=trade_date)
         messages.success(request, "Gap-up data refreshed successfully.")
     return redirect("gapup")
 

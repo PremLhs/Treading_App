@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from treading_mainapp.gapup import update_all_gapup_data
+from treading_site.treading_mainapp.gapup import update_all_gapup_data
 
 
 class Command(BaseCommand):
