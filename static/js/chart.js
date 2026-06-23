@@ -20,6 +20,7 @@ const toggleEMA20Btn = document.getElementById("toggleEMA20");
 const toggleEMA50Btn = document.getElementById("toggleEMA50");
 const toggleRSIBtn = document.getElementById("toggleRSI");
 const toggleMACDBtn = document.getElementById("toggleMACD");
+const ohlcInfo = document.getElementById("ohlcInfo");
 
 let chart = null;
 let candleSeries = null;
@@ -192,6 +193,24 @@ function createMainChart() {
         priceLineVisible: false,
         lastValueVisible: false,
         visible: indicatorsState.ema50,
+    });
+
+    // Crosshair event for OHLC display
+    chart.subscribeCrosshairMove(param => {
+        if (!param || !param.time) {
+            if (ohlcInfo) ohlcInfo.innerHTML = "O: - | H: - | L: - | C: -";
+            return;
+        }
+
+        const candle = param.seriesData.get(candleSeries);
+        if (!candle) {
+            if (ohlcInfo) ohlcInfo.innerHTML = "O: - | H: - | L: - | C: -";
+            return;
+        }
+
+        if (ohlcInfo) {
+            ohlcInfo.innerHTML = `O: ${candle.open.toFixed(2)} | H: ${candle.high.toFixed(2)} | L: ${candle.low.toFixed(2)} | C: ${candle.close.toFixed(2)}`;
+        }
     });
 }
 
@@ -407,20 +426,24 @@ function calculateMACD(data, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9)
 
 function formatDateTime(timestamp) {
     if (!timestamp) return "-";
-    const dt = new Date(timestamp * 1000);
-    return dt.toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    return new Date(timestamp * 1000)
+        .toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false
+        });
 }
 
 function normalizeCandles(candles) {
     if (!Array.isArray(candles)) return [];
 
     const map = new Map();
+    const IST_OFFSET = 19800; // 5 hours 30 minutes in seconds
 
     candles.forEach(item => {
         if (
@@ -431,8 +454,9 @@ function normalizeCandles(candles) {
             typeof item.low !== "undefined" &&
             typeof item.close !== "undefined"
         ) {
-            map.set(Number(item.time), {
-                time: Number(item.time),
+            const adjustedTime = Number(item.time) + IST_OFFSET;
+            map.set(adjustedTime, {
+                time: adjustedTime,
                 open: Number(item.open),
                 high: Number(item.high),
                 low: Number(item.low),
