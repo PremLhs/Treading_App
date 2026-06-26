@@ -23,10 +23,6 @@ from django.views.decorators.http import require_GET
 
 from .moon_mars import get_moon_mars_events_by_year
 
-from django.views.decorators.http import require_GET
-from .amavsya import generate_amavasya_levels, STRATEGY_INTERVAL
-
-
 INDEX_SYMBOLS = [
     "NSE:NIFTY",
     "NSE:BANKNIFTY",
@@ -1537,6 +1533,17 @@ def moon_marse_api_view(request):
         }
     )
 
+import logging
+
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_GET
+
+from .amavsya import generate_amavasya_levels, STRATEGY_INTERVAL
+from .services.angel_api import AngelBroker
+
+logger = logging.getLogger(__name__)
+
 
 @login_required
 @require_GET
@@ -1547,10 +1554,11 @@ def amavasya_strategy_api_view(request):
     if symbol not in all_symbols:
         symbol = DEFAULT_SYMBOL
 
-    strategy_interval = "15"
+    strategy_interval = STRATEGY_INTERVAL
 
     try:
         broker = AngelBroker()
+
         candle_result = broker.fetch_historical_candles(
             symbol=symbol,
             interval=strategy_interval,
@@ -1559,15 +1567,22 @@ def amavasya_strategy_api_view(request):
         if not candle_result.get("status"):
             return JsonResponse({
                 "status": False,
-                "message": candle_result.get("message", "Unable to fetch candles for Amavasya strategy."),
+                "message": candle_result.get("message", "Unable to fetch broker candles."),
                 "symbol": symbol,
                 "interval": strategy_interval,
                 "levels": [],
-                "meta": candle_result.get("meta", {}),
+                "meta": {
+                    "broker_status": False,
+                    "broker_message": candle_result.get("message", ""),
+                    "raw_candles_count": 0,
+                    "levels_count": 0,
+                },
             }, status=200)
 
+        raw_candles = candle_result.get("candles", []) or []
+
         strategy_result = generate_amavasya_levels(
-            raw_candles=candle_result.get("candles", []),
+            raw_candles=raw_candles,
             interval=strategy_interval,
         )
 
@@ -1577,10 +1592,17 @@ def amavasya_strategy_api_view(request):
             "symbol": symbol,
             "interval": strategy_interval,
             "levels": strategy_result.get("levels", []),
-            "meta": strategy_result.get("meta", {}),
+            "meta": {
+                **strategy_result.get("meta", {}),
+                "broker_status": candle_result.get("status"),
+                "broker_message": candle_result.get("message", ""),
+                "raw_candles_count": len(raw_candles),
+                "levels_count": len(strategy_result.get("levels", [])),
+            },
         }, status=200)
 
     except Exception as exc:
+        logger.exception("Amavasya strategy exception")
         return JsonResponse({
             "status": False,
             "message": f"Amavasya strategy exception: {str(exc)}",

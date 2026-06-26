@@ -20,6 +20,7 @@ const toggleEMA20Btn = document.getElementById("toggleEMA20");
 const toggleEMA50Btn = document.getElementById("toggleEMA50");
 const toggleRSIBtn = document.getElementById("toggleRSI");
 const toggleMACDBtn = document.getElementById("toggleMACD");
+const toggleAmavasyaBtn = document.getElementById("toggleAmavasya");
 const ohlcInfo = document.getElementById("ohlcInfo");
 
 let chart = null;
@@ -37,13 +38,18 @@ let macdHistogramSeries = null;
 
 let refreshTimer = null;
 let isLoadingCandles = false;
+let isLoadingAmavasya = false;
 let hasFittedInitially = false;
+
+let amavasyaPriceLines = [];
+let amavasyaLevelsCacheKey = null;
 
 let indicatorsState = {
     ema20: true,
     ema50: true,
     rsi: true,
     macd: true,
+    amavasya: false,
 };
 
 let lastGoodState = {
@@ -90,7 +96,27 @@ function getSelectedInterval() {
     return intervalSelect ? intervalSelect.value : window.APP_CONFIG.interval;
 }
 
+function clearAmavasyaLines() {
+    if (!candleSeries || !Array.isArray(amavasyaPriceLines) || !amavasyaPriceLines.length) {
+        amavasyaPriceLines = [];
+        return;
+    }
+
+    amavasyaPriceLines.forEach(line => {
+        try {
+            candleSeries.removePriceLine(line);
+        } catch (error) {
+            logWarn("Failed to remove Amavasya price line", error);
+        }
+    });
+
+    amavasyaPriceLines = [];
+}
+
 function clearExistingCharts() {
+    clearAmavasyaLines();
+    amavasyaLevelsCacheKey = null;
+
     try {
         if (chart) {
             chart.remove();
@@ -166,6 +192,18 @@ function createMainChart() {
         },
         localization: {
             locale: "en-IN",
+            timeFormatter: (timestamp) => {
+                return new Date(timestamp * 1000).toLocaleString("en-IN", {
+                    timeZone: "Asia/Kolkata",
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false,
+                });
+            },
         },
     });
 
@@ -195,7 +233,6 @@ function createMainChart() {
         visible: indicatorsState.ema50,
     });
 
-    // Crosshair event for OHLC display
     chart.subscribeCrosshairMove(param => {
         if (!param || !param.time) {
             if (ohlcInfo) ohlcInfo.innerHTML = "O: - | H: - | L: - | C: -";
@@ -426,37 +463,38 @@ function calculateMACD(data, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9)
 
 function formatDateTime(timestamp) {
     if (!timestamp) return "-";
-    return new Date(timestamp * 1000)
-        .toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false
-        });
+
+    return new Date(timestamp * 1000).toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+    });
 }
 
 function normalizeCandles(candles) {
     if (!Array.isArray(candles)) return [];
 
     const map = new Map();
-    const IST_OFFSET = 19800; // 5 hours 30 minutes in seconds
 
     candles.forEach(item => {
         if (
             item &&
-            item.time &&
+            typeof item.time !== "undefined" &&
             typeof item.open !== "undefined" &&
             typeof item.high !== "undefined" &&
             typeof item.low !== "undefined" &&
             typeof item.close !== "undefined"
         ) {
-            const adjustedTime = Number(item.time) + IST_OFFSET;
-            map.set(adjustedTime, {
-                time: adjustedTime,
+            const t = Number(item.time);
+            if (!Number.isFinite(t)) return;
+
+            map.set(t, {
+                time: t,
                 open: Number(item.open),
                 high: Number(item.high),
                 low: Number(item.low),
@@ -466,6 +504,138 @@ function normalizeCandles(candles) {
     });
 
     return Array.from(map.values()).sort((a, b) => a.time - b.time);
+}
+
+function buildAmavasyaLineTitle(level) {
+    if (!level) return "Amavasya";
+
+    const side = level.signal_type === "high_break" ? "AMV HIGH" : "AMV LOW";
+    const refDate = level.reference_date || level.amavasya_calendar_date || "-";
+    const triggerDate = level.trigger_date || "-";
+
+    return `${side} | ${refDate} -> ${triggerDate}`;
+}
+
+function drawAmavasyaLines(levels) {
+    clearAmavasyaLines();
+
+    if (!candleSeries || !Array.isArray(levels) || !levels.length) {
+        return;
+    }
+
+    levels.forEach(level => {
+        const linePrice = Number(level.line_price);
+
+        if (!Number.isFinite(linePrice)) {
+            return;
+        }
+
+        try {
+            const priceLine = candleSeries.createPriceLine({
+                price: linePrice,
+                color: level.line_color || (level.signal_type === "high_break" ? "#22c55e" : "#ef4444"),
+                lineWidth: Number(level.line_width || 2),
+                lineStyle: Number(level.line_style || 0),
+                axisLabelVisible: true,
+                title: buildAmavasyaLineTitle(level),
+            });
+
+            amavasyaPriceLines.push(priceLine);
+        } catch (error) {
+            logWarn("Failed to draw Amavasya line", { error, level });
+        }
+    });
+}
+
+async function loadAmavasyaStrategy(symbol, interval, options = {}) {
+    const { silent = false } = options;
+
+    if (!window.APP_CONFIG || !window.APP_CONFIG.amavasyaStrategyApiUrl) {
+        logWarn("APP_CONFIG.amavasyaStrategyApiUrl missing.");
+        return;
+    }
+
+    if (!indicatorsState.amavasya) {
+        clearAmavasyaLines();
+        amavasyaLevelsCacheKey = null;
+        return;
+    }
+
+    if (isLoadingAmavasya) {
+        return;
+    }
+
+    isLoadingAmavasya = true;
+
+    try {
+        if (!silent) {
+            setStatus("Loading Amavasya...");
+        }
+
+        const strategyInterval = "15";
+        const requestKey = `${symbol}__${strategyInterval}`;
+        const url = `${window.APP_CONFIG.amavasyaStrategyApiUrl}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(strategyInterval)}`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "Cache-Control": "no-cache",
+            },
+            cache: "no-store",
+        });
+
+        if (!response.ok) {
+            throw new Error(`Amavasya API HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        logInfo("amavasya strategy response", data);
+
+        if (!indicatorsState.amavasya) {
+            clearAmavasyaLines();
+            amavasyaLevelsCacheKey = null;
+            return;
+        }
+
+        if (getSelectedSymbol() !== symbol) {
+            logWarn("Skipping stale Amavasya response due to symbol change.");
+            return;
+        }
+
+        if (data.status && Array.isArray(data.levels)) {
+            drawAmavasyaLines(data.levels);
+            amavasyaLevelsCacheKey = requestKey;
+            if (backendMessage && !silent) {
+                backendMessage.textContent = data.message || "Amavasya strategy loaded.";
+            }
+        } else {
+            clearAmavasyaLines();
+            amavasyaLevelsCacheKey = null;
+            logWarn("Amavasya API returned empty or invalid data.", data);
+            if (backendMessage && !silent) {
+                backendMessage.textContent = data.message || "Amavasya levels not available.";
+            }
+        }
+
+        if (!silent) {
+            setStatus("Loaded");
+        }
+    } catch (error) {
+        clearAmavasyaLines();
+        amavasyaLevelsCacheKey = null;
+        logError("loadAmavasyaStrategy failed", error);
+
+        if (backendMessage && !silent) {
+            backendMessage.textContent = `Amavasya load failed: ${error.message}`;
+        }
+
+        if (!silent) {
+            setStatus("Loaded");
+        }
+    } finally {
+        isLoadingAmavasya = false;
+    }
 }
 
 function applyIndicatorVisibility() {
@@ -482,6 +652,12 @@ function applyIndicatorVisibility() {
     if (toggleEMA50Btn) toggleEMA50Btn.classList.toggle("active", indicatorsState.ema50);
     if (toggleRSIBtn) toggleRSIBtn.classList.toggle("active", indicatorsState.rsi);
     if (toggleMACDBtn) toggleMACDBtn.classList.toggle("active", indicatorsState.macd);
+    if (toggleAmavasyaBtn) toggleAmavasyaBtn.classList.toggle("active", indicatorsState.amavasya);
+
+    if (!indicatorsState.amavasya) {
+        clearAmavasyaLines();
+        amavasyaLevelsCacheKey = null;
+    }
 
     resizeCharts();
 }
@@ -580,6 +756,13 @@ async function loadCandles(symbol, interval, options = {}) {
                 data.message || "",
                 data.meta || {}
             );
+
+            if (indicatorsState.amavasya) {
+                await loadAmavasyaStrategy(data.symbol, data.interval, { silent: true });
+            } else {
+                clearAmavasyaLines();
+                amavasyaLevelsCacheKey = null;
+            }
 
             if (forceFit || symbolChanged || intervalChanged) {
                 chart.timeScale().fitContent();
@@ -743,10 +926,20 @@ function bindToolbarEvents() {
     }
 
     if (btnResetZoom) {
-        btnResetZoom.addEventListener("click", () => {
+        btnResetZoom.addEventListener("click", async () => {
             hasFittedInitially = false;
             if (lastGoodState.candles.length) {
-                applySeriesData(lastGoodState.candles, lastGoodState.symbol, lastGoodState.interval, backendMessage ? backendMessage.textContent : "");
+                applySeriesData(
+                    lastGoodState.candles,
+                    lastGoodState.symbol,
+                    lastGoodState.interval,
+                    backendMessage ? backendMessage.textContent : ""
+                );
+
+                if (indicatorsState.amavasya) {
+                    await loadAmavasyaStrategy(lastGoodState.symbol, lastGoodState.interval, { silent: true });
+                }
+
                 if (chart) chart.timeScale().fitContent();
                 if (rsiChart && indicatorsState.rsi) rsiChart.timeScale().fitContent();
                 if (macdChart && indicatorsState.macd) macdChart.timeScale().fitContent();
@@ -787,6 +980,21 @@ function bindToolbarEvents() {
         toggleMACDBtn.addEventListener("click", () => {
             indicatorsState.macd = !indicatorsState.macd;
             applyIndicatorVisibility();
+        });
+    }
+
+    if (toggleAmavasyaBtn) {
+        toggleAmavasyaBtn.addEventListener("click", async () => {
+            indicatorsState.amavasya = !indicatorsState.amavasya;
+            applyIndicatorVisibility();
+
+            if (indicatorsState.amavasya) {
+                await loadAmavasyaStrategy(getSelectedSymbol(), getSelectedInterval(), { silent: false });
+            } else {
+                clearAmavasyaLines();
+                amavasyaLevelsCacheKey = null;
+                setStatus("Loaded");
+            }
         });
     }
 }
@@ -833,6 +1041,10 @@ function validateAppConfig() {
 
     if (!window.APP_CONFIG.brokerHealthUrl) {
         throw new Error("APP_CONFIG.brokerHealthUrl is missing.");
+    }
+
+    if (!window.APP_CONFIG.amavasyaStrategyApiUrl) {
+        throw new Error("APP_CONFIG.amavasyaStrategyApiUrl is missing.");
     }
 }
 
