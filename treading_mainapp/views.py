@@ -23,6 +23,9 @@ from django.views.decorators.http import require_GET
 
 from .moon_mars import get_moon_mars_events_by_year
 
+from django.views.decorators.http import require_GET
+from .amavsya import generate_amavasya_levels, STRATEGY_INTERVAL
+
 
 INDEX_SYMBOLS = [
     "NSE:NIFTY",
@@ -1372,36 +1375,127 @@ def whatsapp_broadcast_view(request):
     return render(request, "dashboard/whatsapp_broadcast.html", context)
 
 
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.http import require_GET, require_POST
+from django.utils import timezone
+
+from .models import GapUpStatus
+from . import gapup as gapup_service
+
+
 @login_required
-def gapup_view(request):
+def gapupview(request):
     trade_date = timezone.localdate()
     rows = GapUpStatus.objects.filter(trade_date=trade_date).order_by("symbol")
 
-    if not rows.exists():
-        treading_mainapp.gapup.update_all_gapup_data(trade_date=trade_date)
-        rows = GapUpStatus.objects.filter(trade_date=trade_date).order_by("symbol")
-
-    gap_up_count = rows.filter(gap_up=True).count()
-    gap_down_count = rows.filter(gap_down=True).count()
-    no_gap_count = rows.count() - gap_up_count - gap_down_count
+    gap_up_rows = rows.filter(gap_up=True)
+    gap_down_rows = rows.filter(gap_down=True)
+    failed_rows = rows.filter(gap_type="SCAN FAILED")
+    no_gap_rows = rows.filter(gap_type="NO GAP")
 
     context = {
-        "rows": rows,
         "trade_date": trade_date,
-        "gap_up_count": gap_up_count,
-        "gap_down_count": gap_down_count,
-        "no_gap_count": no_gap_count,
+        "rows": rows,
+        "gap_up_rows": gap_up_rows,
+        "gap_down_rows": gap_down_rows,
+        "gapupcount": gap_up_rows.count(),
+        "gapdowncount": gap_down_rows.count(),
+        "failedcount": failed_rows.count(),
+        "nogapcount": no_gap_rows.count(),
+        "hasdata": rows.exists(),
     }
     return render(request, "dashboard/gapup.html", context)
 
 
 @login_required
-def gapup_refresh_view(request):
-    if request.method == "POST":
-        trade_date = timezone.localdate()
-        treading_mainapp.gapup.update_all_gapup_data(trade_date=trade_date)
-        messages.success(request, "Gap-up data refreshed successfully.")
-    return redirect("gapup")
+@require_POST
+def gapuprefreshview(request):
+    trade_date = timezone.localdate()
+    limit_raw = (request.POST.get("limit") or "").strip()
+    limit_symbols = int(limit_raw) if limit_raw.isdigit() else None
+
+    result = gapup_service.update_all_gapup_data(
+        trade_date=trade_date,
+        limit_symbols=limit_symbols,
+    )
+
+    status_code = 200 if result["error_count"] == 0 else 207
+
+    return JsonResponse({
+        "status": result["error_count"] == 0,
+        "message": f"Gap scan completed for {trade_date}. Success={result['success_count']} Failed={result['error_count']}",
+        "trade_date": str(trade_date),
+        "success_count": result["success_count"],
+        "error_count": result["error_count"],
+        "errors": result["errors"][:10],
+    }, status=status_code)
+
+
+@login_required
+@require_GET
+def gapupstatusapiview(request):
+    trade_date = timezone.localdate()
+    rows = GapUpStatus.objects.filter(trade_date=trade_date).order_by("symbol")
+
+    gap_up = [
+        {
+            "symbol": row.symbol,
+            "company_name": row.company_name,
+            "gap_type": row.gap_type,
+            "notes": row.notes,
+        }
+        for row in rows.filter(gap_up=True)
+    ]
+
+    gap_down = [
+        {
+            "symbol": row.symbol,
+            "company_name": row.company_name,
+            "gap_type": row.gap_type,
+            "notes": row.notes,
+        }
+        for row in rows.filter(gap_down=True)
+    ]
+
+    all_rows = [
+        {
+            "symbol": row.symbol,
+            "company_name": row.company_name,
+            "prev_trade_date": str(row.prev_trade_date) if row.prev_trade_date else "",
+            "prev_open": str(row.prev_open or ""),
+            "prev_high": str(row.prev_high or ""),
+            "prev_low": str(row.prev_low or ""),
+            "prev_close": str(row.prev_close or ""),
+            "today_open": str(row.today_open or ""),
+            "today_high": str(row.today_high or ""),
+            "today_low": str(row.today_low or ""),
+            "today_close": str(row.today_close or ""),
+            "open_diff": str(row.open_diff or ""),
+            "high_diff": str(row.high_diff or ""),
+            "low_diff": str(row.low_diff or ""),
+            "close_diff": str(row.close_diff or ""),
+            "gap_up": row.gap_up,
+            "gap_down": row.gap_down,
+            "gap_type": row.gap_type,
+            "notes": row.notes,
+            "refreshed_at": timezone.localtime(row.refreshed_at).strftime("%d-%m-%Y %I:%M:%S %p") if row.refreshed_at else "",
+        }
+        for row in rows
+    ]
+
+    return JsonResponse({
+        "status": True,
+        "trade_date": str(trade_date),
+        "gap_up_count": len(gap_up),
+        "gap_down_count": len(gap_down),
+        "failed_count": rows.filter(gap_type="SCAN FAILED").count(),
+        "total_count": len(all_rows),
+        "gap_up": gap_up,
+        "gap_down": gap_down,
+        "rows": all_rows,
+    })
 
 @login_required
 @require_GET
@@ -1442,3 +1536,56 @@ def moon_marse_api_view(request):
             "events": data["events"],
         }
     )
+
+
+@login_required
+@require_GET
+def amavasya_strategy_api_view(request):
+    symbol = request.GET.get("symbol", DEFAULT_SYMBOL).strip()
+    all_symbols = INDEX_SYMBOLS + STOCK_SYMBOLS
+
+    if symbol not in all_symbols:
+        symbol = DEFAULT_SYMBOL
+
+    strategy_interval = "15"
+
+    try:
+        broker = AngelBroker()
+        candle_result = broker.fetch_historical_candles(
+            symbol=symbol,
+            interval=strategy_interval,
+        )
+
+        if not candle_result.get("status"):
+            return JsonResponse({
+                "status": False,
+                "message": candle_result.get("message", "Unable to fetch candles for Amavasya strategy."),
+                "symbol": symbol,
+                "interval": strategy_interval,
+                "levels": [],
+                "meta": candle_result.get("meta", {}),
+            }, status=200)
+
+        strategy_result = generate_amavasya_levels(
+            raw_candles=candle_result.get("candles", []),
+            interval=strategy_interval,
+        )
+
+        return JsonResponse({
+            "status": bool(strategy_result.get("status")),
+            "message": strategy_result.get("message", ""),
+            "symbol": symbol,
+            "interval": strategy_interval,
+            "levels": strategy_result.get("levels", []),
+            "meta": strategy_result.get("meta", {}),
+        }, status=200)
+
+    except Exception as exc:
+        return JsonResponse({
+            "status": False,
+            "message": f"Amavasya strategy exception: {str(exc)}",
+            "symbol": symbol,
+            "interval": strategy_interval,
+            "levels": [],
+            "meta": {},
+        }, status=200)

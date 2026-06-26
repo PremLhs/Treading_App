@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
 class UserProfile(models.Model):
     user = models.OneToOneField(
         User,
@@ -18,17 +19,12 @@ class UserProfile(models.Model):
         return f"{self.user.username} - {self.mobile}"
 
 
-
-
-#############################################################################
-from django.db import models
-
-
 class GapUpStatus(models.Model):
     GAP_CHOICES = (
         ("GAP UP", "GAP UP"),
         ("GAP DOWN", "GAP DOWN"),
         ("NO GAP", "NO GAP"),
+        ("SCAN FAILED", "SCAN FAILED"),
     )
 
     symbol = models.CharField(max_length=32, db_index=True)

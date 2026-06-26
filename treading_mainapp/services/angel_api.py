@@ -1,14 +1,26 @@
+import logging
 import os
 import socket
+import time
+from datetime import datetime, timedelta, time as dt_time
+from typing import Any, Dict, List, Optional
+
 import pyotp
 import requests
-
-from datetime import datetime, timedelta, time as dt_time
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 
 class AngelBroker:
     BASE_URL = "https://apiconnect.angelone.in"
+    LOGIN_URL = f"{BASE_URL}/rest/auth/angelbroking/user/v1/loginByPassword"
+    HISTORICAL_URL = f"{BASE_URL}/rest/secure/angelbroking/historical/v1/getCandleData"
+
+    REQUEST_TIMEOUT = 30
+    MAX_RETRIES = 3
+    RETRY_SLEEP_SECONDS = 2.5
+    RATE_LIMIT_SLEEP_SECONDS = 1.5
 
     SYMBOL_TOKEN_MAP = {
         "NSE:RELIANCE": {"exchange": "NSE", "tradingsymbol": "RELIANCE-EQ", "symboltoken": "2885"},
@@ -75,266 +87,350 @@ class AngelBroker:
         "W": "ONE_WEEK",
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.api_key = os.getenv("ANGEL_API_KEY", "").strip()
         self.client_id = os.getenv("ANGEL_CLIENT_ID", "").strip()
         self.pin = os.getenv("ANGEL_PIN", "").strip()
         self.totp_secret = os.getenv("ANGEL_TOTP_SECRET", "").strip()
+        self.jwt_token: Optional[str] = None
+        self.refresh_token: Optional[str] = None
+        self.feed_token: Optional[str] = None
+        self._public_ip_cache: Optional[str] = None
+        self._local_ip_cache: Optional[str] = None
+        self.session = requests.Session()
 
-        self.jwt_token = None
-        self.refresh_token = None
-        self.feed_token = None
-
-    def _env_status(self):
+    def _env_status(self) -> Dict[str, Any]:
         return {
             "api_key_present": bool(self.api_key),
             "client_code_present": bool(self.client_id),
             "password_present": bool(self.pin),
             "totp_secret_present": bool(self.totp_secret),
-            "smartapi_module_present": False,
-            "smartapi_import_error": "SDK not used. Requests-based integration active.",
         }
 
-    def _get_local_ip(self):
+    def _get_public_ip(self) -> str:
+        if self._public_ip_cache:
+            return self._public_ip_cache
         try:
-            return socket.gethostbyname(socket.gethostname()) or "127.0.0.1"
+            self._public_ip_cache = self.session.get("https://api.ipify.org", timeout=5).text.strip()
         except Exception:
-            return "127.0.0.1"
+            self._public_ip_cache = "127.0.0.1"
+        return self._public_ip_cache
 
-    def _get_public_ip(self):
+    def _get_local_ip(self) -> str:
+        if self._local_ip_cache:
+            return self._local_ip_cache
         try:
-            response = requests.get("https://api.ipify.org", timeout=5)
-            response.raise_for_status()
-            return response.text.strip()
+            self._local_ip_cache = socket.gethostbyname(socket.gethostname())
         except Exception:
-            return "127.0.0.1"
+            self._local_ip_cache = "127.0.0.1"
+        return self._local_ip_cache
 
-    def _headers(self, auth_required=False):
-        headers = {
+    def _base_headers(self) -> Dict[str, str]:
+        return {
             "Content-Type": "application/json",
             "Accept": "application/json",
             "X-UserType": "USER",
             "X-SourceID": "WEB",
             "X-ClientLocalIP": self._get_local_ip(),
             "X-ClientPublicIP": self._get_public_ip(),
-            "X-MACAddress": "02:00:00:00:00:00",
+            "X-MACAddress": "00:00:00:00:00:00",
             "X-PrivateKey": self.api_key,
+            "User-Agent": "Mozilla/5.0",
         }
-        if auth_required and self.jwt_token:
+
+    def _authorized_headers(self) -> Dict[str, str]:
+        headers = self._base_headers().copy()
+        if self.jwt_token:
             headers["Authorization"] = f"Bearer {self.jwt_token}"
         return headers
 
-    def _generate_totp(self):
-        return pyotp.TOTP(self.totp_secret).now()
+    def get_symbol_config(self, symbol: str) -> Optional[Dict[str, str]]:
+        return self.SYMBOL_TOKEN_MAP.get(symbol)
 
-    def login(self):
+    def connect(self) -> Dict[str, Any]:
+        env_status = self._env_status()
+
         if not all([self.api_key, self.client_id, self.pin, self.totp_secret]):
+            logger.error("Angel credentials missing | env_status=%s", env_status)
             return {
                 "status": False,
-                "message": "Angel credentials missing in .env file.",
-                "env_status": self._env_status(),
+                "message": "Missing Angel credentials in environment.",
+                "env_status": env_status,
             }
 
-        if self.api_key.startswith("http://") or self.api_key.startswith("https://"):
+        if self.jwt_token:
             return {
-                "status": False,
-                "message": "ANGEL_API_KEY is invalid. Put actual SmartAPI API key, not URL.",
-                "env_status": self._env_status(),
+                "status": True,
+                "message": "Angel One session already active.",
+                "env_status": env_status,
             }
-
-        login_url = f"{self.BASE_URL}/rest/auth/angelbroking/user/v1/loginByPassword"
-        payload = {
-            "clientcode": self.client_id,
-            "password": self.pin,
-            "totp": self._generate_totp(),
-        }
 
         try:
-            response = requests.post(
-                login_url,
+            totp = pyotp.TOTP(self.totp_secret).now()
+            payload = {
+                "clientcode": self.client_id,
+                "password": self.pin,
+                "totp": totp,
+            }
+
+            logger.info("Connecting to Angel One for client_id=%s", self.client_id)
+
+            response = self.session.post(
+                self.LOGIN_URL,
                 json=payload,
-                headers=self._headers(auth_required=False),
-                timeout=20,
+                headers=self._base_headers(),
+                timeout=self.REQUEST_TIMEOUT,
             )
             response.raise_for_status()
             data = response.json()
+
+            if not data.get("status"):
+                logger.error("Angel login rejected | response=%s", data)
+                return {
+                    "status": False,
+                    "message": data.get("message", "Angel login failed."),
+                    "env_status": env_status,
+                }
+
+            jwt_data = data.get("data", {}) or {}
+            self.jwt_token = jwt_data.get("jwtToken")
+            self.refresh_token = jwt_data.get("refreshToken")
+            self.feed_token = jwt_data.get("feedToken")
+
+            logger.info("Angel login successful for client_id=%s", self.client_id)
+
+            return {
+                "status": True,
+                "message": "Angel One login successful.",
+                "env_status": env_status,
+            }
         except Exception as exc:
+            logger.exception("Angel login failed with exception")
             return {
                 "status": False,
-                "message": f"Angel login request failed: {str(exc)}",
-                "env_status": self._env_status(),
+                "message": f"Angel login exception: {exc}",
+                "env_status": env_status,
             }
 
-        if not data.get("status"):
-            return {
-                "status": False,
-                "message": data.get("message", "Angel login failed."),
-                "env_status": self._env_status(),
-            }
+    def _ensure_connected(self) -> Dict[str, Any]:
+        if self.jwt_token:
+            return {"status": True}
+        return self.connect()
 
-        token_data = data.get("data", {})
-        self.jwt_token = token_data.get("jwtToken")
-        self.refresh_token = token_data.get("refreshToken")
-        self.feed_token = token_data.get("feedToken")
+    def _build_historical_payload(self, symbol: str, interval: str) -> Optional[Dict[str, str]]:
+        symbol_data = self.get_symbol_config(symbol)
+        if not symbol_data:
+            return None
+
+        interval_key = self.INTERVAL_MAP.get(interval.upper())
+        if not interval_key:
+            return None
+
+        now_local = timezone.localtime()
+        if interval.upper() == "D":
+            from_dt = now_local - timedelta(days=730)
+        elif interval.upper() == "W":
+            from_dt = now_local - timedelta(days=730)
+        else:
+            from_dt = now_local - timedelta(days=730)
 
         return {
-            "status": bool(self.jwt_token),
-            "message": "Angel One login successful." if self.jwt_token else "JWT token missing in login response.",
-            "env_status": self._env_status(),
+            "exchange": symbol_data["exchange"],
+            "symboltoken": symbol_data["symboltoken"],
+            "interval": interval_key,
+            "fromdate": from_dt.strftime("%Y-%m-%d %H:%M"),
+            "todate": now_local.strftime("%Y-%m-%d %H:%M"),
         }
 
-    def connect(self):
-        return self.login()
+    def _normalize_candle_row(self, row: List[Any]) -> Optional[Dict[str, Any]]:
+        if not isinstance(row, list) or len(row) < 5:
+            return None
+        try:
+            candle_dt = datetime.fromisoformat(str(row[0]).replace("Z", "+00:00"))
+            candle_dt = timezone.localtime(candle_dt)
+            return {
+                "dt": candle_dt,
+                "date": candle_dt.date(),
+                "time": int(candle_dt.timestamp()),
+                "open": float(row[1]),
+                "high": float(row[2]),
+                "low": float(row[3]),
+                "close": float(row[4]),
+                "volume": float(row[5]) if len(row) > 5 and row[5] is not None else 0,
+            }
+        except Exception:
+            logger.exception("Failed to normalize candle row: %s", row)
+            return None
 
-    def get_symbol_config(self, symbol):
-        return self.SYMBOL_TOKEN_MAP.get(symbol)
+    def _is_rate_limited(self, response: Optional[requests.Response], body_text: str) -> bool:
+        if response is not None and response.status_code in (403, 429):
+            lowered = body_text.lower()
+            if "exceeding access rate" in lowered or "access rate" in lowered or "rate" in lowered:
+                return True
+        return False
 
-    def _market_close_datetime(self, current_dt):
-        return current_dt.replace(hour=15, minute=30, second=0, microsecond=0)
+    def _historical_request_with_retry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        last_error: Dict[str, Any] = {}
 
-    def get_from_to(self, interval):
-        now = timezone.localtime()
-        market_close_today = self._market_close_datetime(now)
+        for attempt in range(1, self.MAX_RETRIES + 1):
+            try:
+                response = self.session.post(
+                    self.HISTORICAL_URL,
+                    json=payload,
+                    headers=self._authorized_headers(),
+                    timeout=self.REQUEST_TIMEOUT,
+                )
+                response.raise_for_status()
+                return {
+                    "status": True,
+                    "data": response.json(),
+                    "meta": {"attempt": attempt},
+                }
+            except requests.HTTPError as exc:
+                status_code = exc.response.status_code if exc.response is not None else None
+                body_text = exc.response.text[:500] if exc.response is not None else str(exc)
 
-        if interval == "1":
-            from_dt = now - timedelta(days=2)
-            to_dt = now
-        elif interval in ["3", "5", "15"]:
-            from_dt = now - timedelta(days=10)
-            to_dt = now
-        elif interval in ["30", "60"]:
-            from_dt = now - timedelta(days=30)
-            to_dt = now
-        elif interval == "D":
-            from_dt = (now - timedelta(days=365)).replace(hour=9, minute=15, second=0, microsecond=0)
-            to_dt = market_close_today
-        elif interval == "W":
-            from_dt = (now - timedelta(days=365 * 3)).replace(hour=9, minute=15, second=0, microsecond=0)
-            to_dt = market_close_today
-        else:
-            from_dt = now - timedelta(days=10)
-            to_dt = now
+                logger.error(
+                    "Historical fetch failed | interval=%s status=%s attempt=%s body=%s",
+                    payload.get("interval"),
+                    status_code,
+                    attempt,
+                    body_text,
+                )
 
-        return from_dt, to_dt
+                last_error = {
+                    "status": False,
+                    "status_code": status_code,
+                    "body_text": body_text,
+                    "attempt": attempt,
+                }
 
-    def _parse_candle_time(self, candle_time):
-        if "T" in candle_time:
-            dt = datetime.fromisoformat(candle_time.replace("Z", "+00:00"))
-            if timezone.is_naive(dt):
-                dt = timezone.make_aware(dt, timezone.get_current_timezone())
-            else:
-                dt = timezone.localtime(dt)
-            return dt
+                if self._is_rate_limited(exc.response, body_text) and attempt < self.MAX_RETRIES:
+                    time.sleep(self.RETRY_SLEEP_SECONDS * attempt)
+                    continue
+                break
+            except Exception as exc:
+                logger.exception("Unexpected historical request failure")
+                last_error = {
+                    "status": False,
+                    "status_code": None,
+                    "body_text": str(exc),
+                    "attempt": attempt,
+                }
+                break
 
-        naive_dt = datetime.strptime(candle_time, "%Y-%m-%d %H:%M")
-        return timezone.make_aware(naive_dt, timezone.get_current_timezone())
+        return last_error
 
-    def fetch_historical_candles(self, symbol, interval):
-        broker_status = self.login()
-        if not broker_status.get("status"):
+    def fetch_historical_candles(self, symbol: str, interval: str) -> Dict[str, Any]:
+        connection = self._ensure_connected()
+        if not connection.get("status"):
             return {
                 "status": False,
-                "message": broker_status.get("message", "Broker connection failed."),
+                "message": connection.get("message", "Broker connection failed."),
                 "candles": [],
-                "meta": {},
+                "meta": {"symbol": symbol, "interval": interval, "source": "angel_historical"},
             }
 
-        symbol_config = self.get_symbol_config(symbol)
-        if not symbol_config:
+        symbol_data = self.get_symbol_config(symbol)
+        if not symbol_data:
             return {
                 "status": False,
                 "message": f"Symbol mapping not found for {symbol}.",
                 "candles": [],
-                "meta": {},
+                "meta": {"symbol": symbol, "interval": interval, "source": "angel_historical"},
             }
 
-        angel_interval = self.INTERVAL_MAP.get(interval)
-        if not angel_interval:
+        payload = self._build_historical_payload(symbol, interval)
+        if not payload:
             return {
                 "status": False,
-                "message": f"Interval mapping not found for {interval}.",
+                "message": f"Unsupported interval {interval}.",
                 "candles": [],
-                "meta": {},
+                "meta": {"symbol": symbol, "interval": interval, "source": "angel_historical"},
             }
 
-        from_dt, to_dt = self.get_from_to(interval)
+        logger.info("Fetching candles | symbol=%s interval=%s payload=%s", symbol, interval, payload)
+        time.sleep(self.RATE_LIMIT_SLEEP_SECONDS)
 
-        payload = {
-            "exchange": symbol_config["exchange"],
-            "symboltoken": symbol_config["symboltoken"],
-            "interval": angel_interval,
-            "fromdate": from_dt.strftime("%Y-%m-%d %H:%M"),
-            "todate": to_dt.strftime("%Y-%m-%d %H:%M"),
-        }
-
-        url = f"{self.BASE_URL}/rest/secure/angelbroking/historical/v1/getCandleData"
-
-        try:
-            response = requests.post(
-                url,
-                json=payload,
-                headers=self._headers(auth_required=True),
-                timeout=30,
-            )
-            response.raise_for_status()
-            data = response.json()
-        except Exception as exc:
+        result = self._historical_request_with_retry(payload)
+        if not result.get("status"):
+            status_code = result.get("status_code")
+            body_text = result.get("body_text", "")
+            attempt = result.get("attempt")
             return {
                 "status": False,
-                "message": f"Candle API failed: {str(exc)}",
+                "message": f"Historical candle API failed for interval {interval}: HTTP {status_code}",
                 "candles": [],
                 "meta": {
-                    "payload": payload,
+                    "symbol": symbol,
+                    "interval": interval,
+                    "payload_interval": payload["interval"],
+                    "status_code": status_code,
+                    "response_body": body_text,
+                    "attempt": attempt,
+                    "source": "angel_historical",
                 },
             }
 
-        if not data.get("status"):
-            return {
-                "status": False,
-                "message": data.get("message", "Historical candle API failed."),
-                "candles": [],
-                "meta": {
-                    "payload": payload,
-                    "raw_response": data,
-                },
-            }
+        data = result.get("data", {})
+        rows = data.get("data", []) or []
+        candles = [item for item in (self._normalize_candle_row(r) for r in rows) if item]
 
-        raw_candles = data.get("data", []) or []
-        parsed = []
-
-        for row in raw_candles:
-            try:
-                dt = self._parse_candle_time(row[0])
-                parsed.append({
-                    "time": int(dt.timestamp()),
-                    "open": float(row[1]),
-                    "high": float(row[2]),
-                    "low": float(row[3]),
-                    "close": float(row[4]),
-                })
-            except Exception:
-                continue
-
-        parsed.sort(key=lambda x: x["time"])
-
-        deduped = []
-        seen = set()
-        for item in parsed:
-            if item["time"] in seen:
-                continue
-            seen.add(item["time"])
-            deduped.append(item)
+        logger.info(
+            "Fetched candles success | symbol=%s interval=%s count=%s",
+            symbol,
+            interval,
+            len(candles),
+        )
 
         return {
             "status": True,
             "message": "Historical candles fetched successfully.",
-            "candles": deduped,
+            "candles": candles,
             "meta": {
-                "payload": payload,
-                "records": len(deduped),
-                "symboltoken": symbol_config["symboltoken"],
-                "tradingsymbol": symbol_config["tradingsymbol"],
+                "symbol": symbol,
+                "interval": interval,
+                "payload_interval": payload["interval"],
+                "count": len(candles),
+                "attempt": result.get("meta", {}).get("attempt", 1),
+                "source": "angel_historical",
             },
+        }
+
+    def fetch_first_15m_candle(self, symbol: str, trade_date=None) -> Dict[str, Any]:
+        if trade_date is None:
+            trade_date = timezone.localdate()
+
+        result = self.fetch_historical_candles(symbol=symbol, interval="15")
+        if not result.get("status"):
+            return {
+                "status": False,
+                "message": result.get("message", "Unable to fetch 15m candles."),
+                "candle": None,
+                "meta": result.get("meta", {}),
+            }
+
+        candles = result.get("candles", [])
+        todays = [c for c in candles if c.get("date") == trade_date]
+        todays.sort(key=lambda x: x.get("time", 0))
+
+        for candle in todays:
+            dt_obj = candle.get("dt")
+            if dt_obj and dt_obj.time() >= dt_time(9, 15):
+                logger.info("First 15m candle found | symbol=%s trade_date=%s candle=%s", symbol, trade_date, candle)
+                return {
+                    "status": True,
+                    "message": "09:15 candle fetched successfully.",
+                    "candle": candle,
+                    "meta": result.get("meta", {}),
+                }
+
+        logger.warning("09:15 candle not found | symbol=%s trade_date=%s", symbol, trade_date)
+        return {
+            "status": False,
+            "message": f"09:15 candle not found for {symbol} on {trade_date}.",
+            "candle": None,
+            "meta": result.get("meta", {}),
         }
 
     def get_mock_candles(self, symbol=None, interval=None):

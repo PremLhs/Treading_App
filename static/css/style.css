@@ -2127,3 +2127,13 @@ ul.errorlist {
         min-height: 420px;
     }
 }
+.indicator-btn.active {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+.indicator-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
