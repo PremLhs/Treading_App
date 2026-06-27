@@ -1,182 +1,868 @@
 {% extends 'base.html' %}
-{% block title %}WhatsApp Broadcast Channel{% endblock %}
+{% block title %}WhatsApp Broadcast{% endblock %}
 
 {% block content %}
-<section class="page-shell">
-    <div class="hero-banner">
-        <div class="hero-banner-content">
-            <span class="hero-tag">Bulk Messaging Workspace</span>
-            <h1>WhatsApp Broadcast Channel</h1>
-            <p>JSON contact file se users load karo, text likho, image ya document attach karo, aur full workflow check karo.</p>
+<style>
+    :root {
+        --wa-bg: #f4f7fb;
+        --wa-surface: #ffffff;
+        --wa-surface-soft: #f8fafc;
+        --wa-border: #e6ebf2;
+        --wa-text: #172033;
+        --wa-text-muted: #667085;
+        --wa-primary: #117a72;
+        --wa-primary-hover: #0d625c;
+        --wa-success: #15803d;
+        --wa-warning: #b45309;
+        --wa-danger: #b42318;
+        --wa-info: #1d4ed8;
+        --wa-shadow: 0 12px 32px rgba(16, 24, 40, 0.08);
+        --wa-radius: 20px;
+        --wa-radius-sm: 14px;
+    }
+
+    .wa-page {
+        background: var(--wa-bg);
+        color: var(--wa-text);
+        border-radius: 28px;
+        padding: 20px;
+        width: 100%;
+    }
+
+    .wa-shell {
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    .wa-topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .wa-title {
+        margin: 0;
+        font-size: clamp(1.9rem, 1.4rem + 1vw, 2.7rem);
+        line-height: 1.08;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    .wa-subtitle {
+        margin: 8px 0 0;
+        color: var(--wa-text-muted);
+        max-width: 72ch;
+        font-size: 0.98rem;
+    }
+
+    .wa-btn {
+        appearance: none;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        padding: 0.9rem 1.2rem;
+        min-height: 46px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: all 0.18s ease;
+        cursor: pointer;
+    }
+
+    .wa-btn-secondary {
+        background: var(--wa-surface);
+        color: var(--wa-text);
+        border-color: var(--wa-border);
+    }
+
+    .wa-btn-secondary:hover {
+        color: var(--wa-primary);
+        border-color: var(--wa-primary);
+    }
+
+    .wa-btn-primary {
+        background: var(--wa-primary);
+        color: #fff;
+    }
+
+    .wa-btn-primary:hover {
+        background: var(--wa-primary-hover);
+        color: #fff;
+    }
+
+    .wa-alert {
+        border-radius: 14px;
+        border: 1px solid var(--wa-border);
+        padding: 14px 16px;
+        margin-bottom: 14px;
+        font-size: 0.95rem;
+    }
+
+    .wa-alert-success { background: rgba(21,128,61,.08); color: var(--wa-success); border-color: rgba(21,128,61,.16); }
+    .wa-alert-error, .wa-alert-danger { background: rgba(180,35,24,.08); color: var(--wa-danger); border-color: rgba(180,35,24,.16); }
+    .wa-alert-warning { background: rgba(180,83,9,.08); color: var(--wa-warning); border-color: rgba(180,83,9,.16); }
+    .wa-alert-info { background: rgba(29,78,216,.08); color: var(--wa-info); border-color: rgba(29,78,216,.16); }
+
+    .wa-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .wa-stat-card {
+        background: var(--wa-surface);
+        border: 1px solid var(--wa-border);
+        box-shadow: var(--wa-shadow);
+        border-radius: var(--wa-radius);
+        padding: 18px;
+        min-height: 124px;
+    }
+
+    .wa-stat-label {
+        display: block;
+        color: var(--wa-text-muted);
+        font-size: 0.82rem;
+        margin-bottom: 10px;
+    }
+
+    .wa-stat-value {
+        margin: 0 0 6px;
+        font-size: 1.9rem;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    .wa-stat-note {
+        color: var(--wa-text-muted);
+        font-size: 0.88rem;
+    }
+
+    .wa-status-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .wa-status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        display: inline-block;
+    }
+
+    .wa-status-dot.ready { background: var(--wa-success); box-shadow: 0 0 0 5px rgba(21,128,61,.12); }
+    .wa-status-dot.missing { background: var(--wa-danger); box-shadow: 0 0 0 5px rgba(180,35,24,.12); }
+
+    .wa-layout {
+        display: grid;
+        grid-template-columns: 340px minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+    }
+
+    .wa-card {
+        background: var(--wa-surface);
+        border: 1px solid var(--wa-border);
+        box-shadow: var(--wa-shadow);
+        border-radius: var(--wa-radius);
+        overflow: hidden;
+    }
+
+    .wa-card + .wa-card {
+        margin-top: 18px;
+    }
+
+    .wa-card-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--wa-border);
+    }
+
+    .wa-card-title {
+        margin: 0;
+        font-size: 1.02rem;
+        font-weight: 800;
+    }
+
+    .wa-card-subtitle {
+        margin-top: 5px;
+        color: var(--wa-text-muted);
+        font-size: 0.9rem;
+    }
+
+    .wa-card-body {
+        padding: 18px;
+    }
+
+    .wa-form-group {
+        margin-bottom: 16px;
+    }
+
+    .wa-label {
+        display: block;
+        margin-bottom: 7px;
+        font-weight: 700;
+        font-size: 0.92rem;
+    }
+
+    .wa-help {
+        display: block;
+        margin-top: 6px;
+        color: var(--wa-text-muted);
+        font-size: 0.84rem;
+    }
+
+    .wa-page input[type="text"],
+    .wa-page input[type="email"],
+    .wa-page input[type="file"],
+    .wa-page textarea,
+    .wa-page .form-control {
+        width: 100%;
+        background: var(--wa-surface-soft);
+        border: 1px solid var(--wa-border);
+        color: var(--wa-text);
+        border-radius: 14px;
+        padding: 14px 15px;
+        min-height: 50px;
+        box-shadow: none;
+    }
+
+    .wa-page textarea {
+        min-height: 180px;
+        resize: vertical;
+    }
+
+    .wa-page input:focus,
+    .wa-page textarea:focus,
+    .wa-page .form-control:focus {
+        outline: none;
+        border-color: var(--wa-primary);
+        box-shadow: 0 0 0 4px rgba(17,122,114,.12);
+        background: #fff;
+    }
+
+    .wa-error {
+        color: var(--wa-danger);
+        font-size: 0.84rem;
+        margin-top: 6px;
+    }
+
+    .wa-sample {
+        background: var(--wa-surface-soft);
+        border: 1px dashed var(--wa-border);
+        border-radius: 14px;
+        padding: 14px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.86rem;
+        color: var(--wa-text-muted);
+        margin-top: 16px;
+    }
+
+    .wa-contact-list {
+        max-height: 420px;
+        overflow: auto;
+    }
+
+    .wa-contact-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--wa-border);
+    }
+
+    .wa-contact-row:last-child {
+        border-bottom: 0;
+    }
+
+    .wa-contact-name {
+        font-weight: 700;
+        margin-bottom: 3px;
+    }
+
+    .wa-contact-meta,
+    .wa-phone {
+        color: var(--wa-text-muted);
+        font-size: 0.85rem;
+    }
+
+    .wa-sticky-submit {
+        position: sticky;
+        bottom: 0;
+        padding-top: 14px;
+        background: linear-gradient(180deg, rgba(255,255,255,0), var(--wa-surface) 28%);
+        margin-top: 8px;
+    }
+
+    .wa-progress {
+        height: 14px;
+        background: var(--wa-surface-soft);
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid var(--wa-border);
+    }
+
+    .wa-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--wa-primary), #21a695);
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+    }
+
+    .wa-progress-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 14px;
+    }
+
+    .wa-mini-card {
+        background: var(--wa-surface-soft);
+        border: 1px solid var(--wa-border);
+        border-radius: 14px;
+        padding: 14px;
+    }
+
+    .wa-mini-card strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--wa-text-muted);
+        font-size: 0.8rem;
+    }
+
+    .wa-mini-card span {
+        font-size: 1.05rem;
+        font-weight: 800;
+    }
+
+    .wa-collapse {
+        margin-top: 18px;
+    }
+
+    .wa-details {
+        background: var(--wa-surface);
+        border: 1px solid var(--wa-border);
+        border-radius: var(--wa-radius);
+        box-shadow: var(--wa-shadow);
+        overflow: hidden;
+    }
+
+    .wa-details + .wa-details {
+        margin-top: 16px;
+    }
+
+    .wa-details summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-weight: 800;
+        user-select: none;
+    }
+
+    .wa-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .wa-details summary span {
+        color: var(--wa-text-muted);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .wa-details summary::after {
+        content: "+";
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--wa-surface-soft);
+        border: 1px solid var(--wa-border);
+        color: var(--wa-text-muted);
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .wa-details[open] summary::after {
+        content: "−";
+    }
+
+    .wa-details-body {
+        border-top: 1px solid var(--wa-border);
+    }
+
+    .wa-table-wrap {
+        overflow-x: auto;
+        width: 100%;
+    }
+
+    .wa-table {
+        width: 100%;
+        min-width: 980px;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .wa-table thead th {
+        background: var(--wa-surface-soft);
+        color: var(--wa-text-muted);
+        font-size: 0.8rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--wa-border);
+        white-space: nowrap;
+    }
+
+    .wa-table tbody td {
+        padding: 15px 16px;
+        border-bottom: 1px solid var(--wa-border);
+        vertical-align: top;
+        font-size: 0.93rem;
+    }
+
+    .wa-table tbody tr:hover {
+        background: rgba(17,122,114,.03);
+    }
+
+    .wa-empty {
+        padding: 22px 18px;
+        text-align: center;
+        color: var(--wa-text-muted);
+    }
+
+    .wa-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.77rem;
+        font-weight: 800;
+        text-transform: capitalize;
+    }
+
+    .wa-badge-success { background: rgba(21,128,61,.1); color: var(--wa-success); }
+    .wa-badge-danger { background: rgba(180,35,24,.1); color: var(--wa-danger); }
+    .wa-badge-warning { background: rgba(180,83,9,.1); color: var(--wa-warning); }
+    .wa-badge-secondary { background: rgba(102,112,133,.12); color: var(--wa-text-muted); }
+
+    .wa-json {
+        max-width: 420px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.8rem;
+        color: var(--wa-text-muted);
+        line-height: 1.55;
+    }
+
+    .wa-inline-note {
+        margin-top: 8px;
+        font-size: 0.88rem;
+        color: var(--wa-text-muted);
+    }
+
+    .wa-window-card {
+        background: var(--wa-surface);
+        border: 1px solid var(--wa-border);
+        box-shadow: var(--wa-shadow);
+        border-radius: var(--wa-radius);
+        overflow: hidden;
+    }
+
+    .wa-window-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--wa-border);
+    }
+
+    .wa-window-title {
+        margin: 0;
+        font-size: 1.02rem;
+        font-weight: 800;
+    }
+
+    @media (max-width: 1200px) {
+        .wa-stat-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .wa-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .wa-page {
+            padding: 12px;
+            border-radius: 20px;
+        }
+
+        .wa-stat-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .wa-progress-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .wa-btn {
+            width: 100%;
+        }
+
+        .wa-topbar {
+            margin-bottom: 16px;
+        }
+    }
+</style>
+
+<div class="wa-page">
+    <div class="wa-shell">
+        <div class="wa-topbar">
+            <div>
+                <h1 class="wa-title">WhatsApp Broadcast Dashboard</h1>
+                <p class="wa-subtitle">
+                    Database me jitne bhi active contacts hain un sabko direct message bhejne ke liye simple broadcast workspace.
+                    Extra campaign name field hata diya gaya hai, ab direct send workflow use hoga.
+                </p>
+            </div>
+            <a href="{% url 'dashboard' %}" class="wa-btn wa-btn-secondary">Back to Dashboard</a>
         </div>
 
-        <div class="hero-banner-actions">
-            <div class="status-pill offline">
-                <span class="status-dot"></span>
-                API Config Missing
+        {% if messages %}
+            {% for message in messages %}
+                <div class="wa-alert wa-alert-{{ message.tags|default:'info' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="wa-stat-grid">
+            <div class="wa-stat-card">
+                <span class="wa-stat-label">Total Active Contacts</span>
+                <h3 class="wa-stat-value">{{ contacts_count }}</h3>
+                <div class="wa-stat-note">Database me jitne active recipients available hain.</div>
             </div>
 
-            <div class="status-pill {% if recipients_count > 0 %}online{% else %}offline{% endif %}">
-                <span class="status-dot"></span>
-                Recipients: {{ recipients_count }}
+            <div class="wa-stat-card">
+                <span class="wa-stat-label">API Status</span>
+                <div class="wa-stat-value" style="font-size:1.15rem;">
+                    {% if config_ok %}
+                        <span class="wa-status-inline"><span class="wa-status-dot ready"></span>Ready</span>
+                    {% else %}
+                        <span class="wa-status-inline"><span class="wa-status-dot missing"></span>Missing Config</span>
+                    {% endif %}
+                </div>
+                <div class="wa-stat-note">
+                    {% if config_ok %}
+                        WhatsApp API configuration loaded successfully.
+                    {% else %}
+                        Missing: {{ missing_config|join:", " }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="wa-stat-card">
+                <span class="wa-stat-label">Latest Result</span>
+                <h3 class="wa-stat-value" style="font-size:1.15rem;">
+                    {% if latest_campaign %}
+                        {{ latest_campaign.sent_count }} sent / {{ latest_campaign.failed_count }} failed
+                    {% else %}
+                        No Run Yet
+                    {% endif %}
+                </h3>
+                <div class="wa-stat-note">
+                    {% if latest_campaign %}
+                        Last run on {{ latest_campaign.created_at|date:"d M Y H:i" }}
+                    {% else %}
+                        Abhi tak koi campaign run nahi hua.
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="overview-grid">
-        <div class="panel-card broker-card panel-danger">
-            <div class="panel-head">
-                <span class="panel-kicker">API Readiness</span>
-                <h3>WhatsApp Status</h3>
-            </div>
-            <div class="panel-body">
-                <p class="panel-main-text">API Config Missing ko chhodke baki poora workflow working hai.</p>
-            </div>
-        </div>
+        <div class="wa-layout">
+            <div>
+                <div class="wa-card">
+                    <div class="wa-card-header">
+                        <h2 class="wa-card-title">Upload Contacts CSV</h2>
+                        <div class="wa-card-subtitle">CSV import karke contacts ko direct database me add karo.</div>
+                    </div>
+                    <div class="wa-card-body">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="upload_csv">
 
-        <div class="panel-card debug-panel">
-            <div class="panel-head">
-                <span class="panel-kicker">Contacts Diagnostics</span>
-                <h3>JSON Reader</h3>
+                            <div class="wa-form-group">
+                                <label class="wa-label">CSV File</label>
+                                {{ csv_form.csv_file }}
+                                {% for error in csv_form.csv_file.errors %}
+                                    <div class="wa-error">{{ error }}</div>
+                                {% endfor %}
+                                <span class="wa-help">Only .csv files are allowed.</span>
+                            </div>
+
+                            <button type="submit" class="wa-btn wa-btn-primary" style="width:100%;">Import Contacts</button>
+                        </form>
+
+                        <div class="wa-sample">name,phone,email
+Prem,9043338984,prem@example.com
+Rahul,918888888888,rahul@example.com</div>
+                    </div>
+                </div>
+
+                <div class="wa-card">
+                    <div class="wa-card-header">
+                        <h2 class="wa-card-title">Recent Contacts</h2>
+                        <div class="wa-card-subtitle">Latest imported recipients from database.</div>
+                    </div>
+                    <div class="wa-contact-list">
+                        {% if contacts %}
+                            {% for item in contacts %}
+                                <div class="wa-contact-row">
+                                    <div>
+                                        <div class="wa-contact-name">{{ item.name|default:"Unknown" }}</div>
+                                        <div class="wa-contact-meta">{{ item.email|default:"No email" }}</div>
+                                    </div>
+                                    <div class="wa-phone">{{ item.phone }}</div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="wa-empty">No contacts imported yet.</div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <div class="panel-body">
-                {% if json_error %}
-                    <div class="broadcast-alert danger">{{ json_error }}</div>
-                {% else %}
-                    <div class="debug-grid">
-                        <div class="debug-tile">
-                            <span>Valid Recipients</span>
-                            <strong>{{ recipients_count }}</strong>
-                        </div>
-                        <div class="debug-tile debug-tile-wide">
-                            <span>Result</span>
-                            <strong>JSON loaded successfully</strong>
+
+            <div>
+                <div class="wa-window-card">
+                    <div class="wa-window-head">
+                        <div>
+                            <h2 class="wa-window-title">Direct Broadcast</h2>
+                            <div class="wa-card-subtitle">Ab direct database ke sab active contacts ko message jayega. Campaign name field removed.</div>
                         </div>
                     </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
 
-    <div class="panel-card toolbar-panel">
-        <div class="panel-head">
-            <span class="panel-kicker">Broadcast Composer</span>
-            <h3>Send Text, Image, Document</h3>
-        </div>
-
-        <div class="panel-body">
-            <form method="post" enctype="multipart/form-data" class="broadcast-form">
-                {% csrf_token %}
-
-                <div class="field-wrap">
-                    <label for="{{ form.message.id_for_label }}">Message</label>
-                    {{ form.message }}
-                    {% for error in form.message.errors %}
-                        <div class="field-error">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="field-wrap">
-                    <label for="{{ form.attachment.id_for_label }}">Attachment</label>
-                    {{ form.attachment }}
-                    {% for error in form.attachment.errors %}
-                        <div class="field-error">{{ error }}</div>
-                    {% endfor %}
-                    <small class="field-help">Supported: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, MP4</small>
-                </div>
-
-                {% for error in form.non_field_errors %}
-                    <div class="broadcast-alert danger">{{ error }}</div>
-                {% endfor %}
-
-                <div class="broadcast-actions">
-                    <button type="submit" class="btn btn-primary toolbar-btn">Run Broadcast Workflow</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="panel-card quick-panel">
-        <div class="panel-head">
-            <span class="panel-kicker">Recipient Preview</span>
-            <h3>First Loaded Users</h3>
-        </div>
-
-        <div class="panel-body">
-            {% if recipients %}
-                <div class="quick-symbols">
-                    {% for item in recipients %}
-                        <span class="quick-chip {% if forloop.first %}active{% endif %}">
-                            {{ item.username }} - {{ item.mobile }}
-                        </span>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="broadcast-note">No valid recipients available.</div>
-            {% endif %}
-        </div>
-    </div>
-
-    {% if last_result %}
-    <div class="panel-card chart-panel premium-chart-panel">
-        <div class="chart-panel-top">
-            <div>
-                <span class="panel-kicker">Execution Report</span>
-                <h3>Last Broadcast Result</h3>
-            </div>
-
-            <div class="chart-badges">
-                <span class="chart-badge">Total: {{ last_result.total }}</span>
-                <span class="chart-badge">Success: {{ last_result.success_count }}</span>
-                <span class="chart-badge">Failed: {{ last_result.failed_count }}</span>
-            </div>
-        </div>
-
-        <div class="panel-body" style="margin-bottom: 18px;">
-            <div class="debug-grid">
-                <div class="debug-tile debug-tile-wide">
-                    <span>Message</span>
-                    <strong>{{ last_result.message_text|default:"No text message provided." }}</strong>
-                </div>
-
-                <div class="debug-tile debug-tile-wide">
-                    <span>Attachment</span>
-                    <strong>
-                        {% if last_result.uploaded_file %}
-                            {{ last_result.uploaded_file.name }}
-                        {% else %}
-                            No attachment uploaded.
+                    <div class="wa-card-body">
+                        {% if not config_ok %}
+                            <div class="wa-alert wa-alert-warning">
+                                Missing config: {{ missing_config|join:", " }}
+                            </div>
                         {% endif %}
-                    </strong>
+
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="send_campaign">
+
+                            <div class="wa-form-group">
+                                <label class="wa-label">Message</label>
+                                {{ form.message }}
+                                {% for error in form.message.errors %}
+                                    <div class="wa-error">{{ error }}</div>
+                                {% endfor %}
+                                <span class="wa-help">Personalization supported: <code>{{name}}</code></span>
+                            </div>
+
+                            <div class="wa-form-group">
+                                <label class="wa-label">Attachment</label>
+                                {{ form.attachment }}
+                                {% for error in form.attachment.errors %}
+                                    <div class="wa-error">{{ error }}</div>
+                                {% endfor %}
+                                <span class="wa-help">Supported: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX, TXT, CSV, MP4</span>
+                            </div>
+
+                            {% for error in form.non_field_errors %}
+                                <div class="wa-alert wa-alert-danger">{{ error }}</div>
+                            {% endfor %}
+
+                            <div class="wa-inline-note">
+                                Send button dabate hi sabhi active contacts ko one-by-one message jayega.
+                            </div>
+
+                            <div class="wa-sticky-submit">
+                                <button type="submit" class="wa-btn wa-btn-primary" style="width:100%;" {% if not config_ok %}disabled{% endif %}>
+                                    Send to All Active Contacts
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {% if latest_campaign %}
+                <div class="wa-card" style="margin-top:18px;">
+                    <div class="wa-card-header">
+                        <h2 class="wa-card-title">Latest Run Snapshot</h2>
+                        <div class="wa-card-subtitle">Last processed broadcast result summary.</div>
+                    </div>
+                    <div class="wa-card-body">
+                        {% if latest_campaign.total_contacts > 0 %}
+                            {% widthratio latest_campaign.sent_count latest_campaign.total_contacts 100 as progress_value %}
+                        {% else %}
+                            {% widthratio 0 1 100 as progress_value %}
+                        {% endif %}
+
+                        <div class="wa-progress">
+                            <div class="wa-progress-bar" style="width: {{ progress_value }}%;">{{ progress_value }}%</div>
+                        </div>
+
+                        <div class="wa-progress-stats">
+                            <div class="wa-mini-card">
+                                <strong>Total</strong>
+                                <span>{{ latest_campaign.total_contacts }}</span>
+                            </div>
+                            <div class="wa-mini-card">
+                                <strong>Sent</strong>
+                                <span>{{ latest_campaign.sent_count }}</span>
+                            </div>
+                            <div class="wa-mini-card">
+                                <strong>Failed</strong>
+                                <span>{{ latest_campaign.failed_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="wa-collapse">
+                    <details class="wa-details">
+                        <summary>
+                            <div>
+                                Detailed History
+                                <span>Open karke previous campaign summary dekho.</span>
+                            </div>
+                        </summary>
+                        <div class="wa-details-body">
+                            <div class="wa-table-wrap">
+                                <table class="wa-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Created</th>
+                                            <th>Status</th>
+                                            <th>Total</th>
+                                            <th>Sent</th>
+                                            <th>Failed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for campaign in campaigns %}
+                                            <tr>
+                                                <td>{{ campaign.created_at|date:"d M Y H:i" }}</td>
+                                                <td>
+                                                    {% if campaign.status == "completed" %}
+                                                        <span class="wa-badge wa-badge-success">completed</span>
+                                                    {% elif campaign.status == "failed" %}
+                                                        <span class="wa-badge wa-badge-danger">failed</span>
+                                                    {% elif campaign.status == "processing" %}
+                                                        <span class="wa-badge wa-badge-warning">processing</span>
+                                                    {% else %}
+                                                        <span class="wa-badge wa-badge-secondary">{{ campaign.status }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ campaign.total_contacts }}</td>
+                                                <td>{{ campaign.sent_count }}</td>
+                                                <td>{{ campaign.failed_count }}</td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="wa-empty">No campaign history found.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="wa-details">
+                        <summary>
+                            <div>
+                                Message Log Details
+                                <span>Need ho tabhi exact API error/response open karke dekho.</span>
+                            </div>
+                        </summary>
+                        <div class="wa-details-body">
+                            <div class="wa-table-wrap">
+                                <table class="wa-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Phone</th>
+                                            <th>Status</th>
+                                            <th>Code</th>
+                                            <th>Error / Response</th>
+                                            <th>Sent At</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in recent_logs %}
+                                            <tr>
+                                                <td>{{ log.contact.name|default:"Unknown" }}</td>
+                                                <td>{{ log.phone }}</td>
+                                                <td>
+                                                    {% if log.status == "sent" %}
+                                                        <span class="wa-badge wa-badge-success">sent</span>
+                                                    {% elif log.status == "failed" %}
+                                                        <span class="wa-badge wa-badge-danger">failed</span>
+                                                    {% else %}
+                                                        <span class="wa-badge wa-badge-secondary">pending</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ log.response_code }}</td>
+                                                <td class="wa-json">
+                                                    {% if log.error_message %}
+                                                        {{ log.error_message }}
+                                                    {% elif log.response_body %}
+                                                        {{ log.response_body }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if log.sent_at %}
+                                                        {{ log.sent_at|date:"d M Y H:i" }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="6" class="wa-empty">No logs available.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>
-
-        <div class="broadcast-results-table-wrap">
-            <table class="broadcast-results-table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Mobile</th>
-                        <th>Status</th>
-                        <th>Code</th>
-                        <th>Response</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in last_result.results %}
-                    <tr>
-                        <td>{{ item.username }}</td>
-                        <td>{{ item.mobile }}</td>
-                        <td><span class="result-badge failed">Pending</span></td>
-                        <td>{{ item.status_code }}</td>
-                        <td class="response-cell">{{ item.response_text }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
     </div>
-    {% endif %}
-</section>
+</div>
 {% endblock %}

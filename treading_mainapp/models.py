@@ -66,3 +66,83 @@ class GapUpStatus(models.Model):
 
     def __str__(self):
         return f"{self.symbol} - {self.trade_date} - {self.gap_type}"
+    
+
+
+###############################################################################
+
+from django.db import models
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class WhatsAppContact(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="wa_contacts")
+    name = models.CharField(max_length=150, blank=True)
+    phone = models.CharField(max_length=20, db_index=True)
+    email = models.EmailField(blank=True)
+    is_active = models.BooleanField(default=True)
+    source_file = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("owner", "phone")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.name or 'Unknown'} - {self.phone}"
+
+
+class WhatsAppCampaign(models.Model):
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("queued", "Queued"),
+        ("processing", "Processing"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
+    ]
+
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="wa_campaigns")
+    campaign_name = models.CharField(max_length=200)
+    message = models.TextField(blank=True)
+    media_file = models.FileField(upload_to="whatsapp_broadcasts/", blank=True, null=True)
+    media_type = models.CharField(max_length=20, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    total_contacts = models.PositiveIntegerField(default=0)
+    sent_count = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.campaign_name
+
+
+class WhatsAppMessageLog(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("sent", "Sent"),
+        ("failed", "Failed"),
+    ]
+
+    campaign = models.ForeignKey(WhatsAppCampaign, on_delete=models.CASCADE, related_name="logs")
+    contact = models.ForeignKey(WhatsAppContact, on_delete=models.CASCADE, related_name="message_logs")
+    phone = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    whatsapp_message_id = models.CharField(max_length=255, blank=True)
+    response_code = models.PositiveIntegerField(default=0)
+    response_body = models.TextField(blank=True)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.campaign.campaign_name} - {self.phone} - {self.status}"

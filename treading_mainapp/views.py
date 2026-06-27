@@ -1198,177 +1198,241 @@ def calendar_view(request):
     return render(request, "calendar.html", context)
 
 
-import json
-import os
-from pathlib import Path
+#######################################################################
 
-from django.conf import settings
+import csv
+import io
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect
+from django.utils import timezone
 
-from .forms import WhatsAppBroadcastForm
+from .forms import WhatsAppCSVUploadForm, WhatsAppBroadcastForm
+from .models import WhatsAppContact, WhatsAppCampaign, WhatsAppMessageLog
+from .whatsapp_broadcast import (
+    normalize_indian_mobile,
+    validate_whatsapp_config,
+    detect_media_type,
+    upload_media_to_whatsapp,
+    send_text_message,
+    send_media_message,
+    WhatsAppBroadcastError,
+)
 
-
-def _normalize_indian_mobile(number):
-    digits = "".join(ch for ch in str(number) if ch.isdigit())
-
-    if not digits:
-        return None
-
-    if digits.startswith("91") and len(digits) == 12:
-        return digits
-
-    if len(digits) == 10:
-        return f"91{digits}"
-
-    if digits.startswith("0") and len(digits) == 11:
-        trimmed = digits[1:]
-        if len(trimmed) == 10:
-            return f"91{trimmed}"
-
-    return None
+logger = logging.getLogger(__name__)
 
 
-def _load_whatsapp_recipients():
-    json_path = getattr(settings, "WHATSAPP_CONTACTS_JSON", "")
-    if not json_path:
-        raise Exception("WHATSAPP_CONTACTS_JSON not configured in settings.py")
+def import_contacts_from_csv(user, file_obj):
+    decoded = file_obj.read().decode("utf-8", errors="ignore")
+    reader = csv.DictReader(io.StringIO(decoded))
 
-    path = Path(json_path)
-    if not path.exists():
-        raise Exception(f"JSON file not found: {json_path}")
+    created_count = 0
+    updated_count = 0
+    skipped_count = 0
 
-    with open(path, "r", encoding="utf-8") as file:
-        data = json.load(file)
+    for row in reader:
+        raw_phone = row.get("phone") or row.get("mobile") or row.get("number") or ""
+        phone = normalize_indian_mobile(raw_phone)
 
-    if not isinstance(data, list):
-        raise Exception("JSON root must be a list.")
-
-    recipients = []
-    seen = set()
-
-    for item in data:
-        if not isinstance(item, dict):
+        if not phone:
+            skipped_count += 1
             continue
 
-        username = item.get("username", "Unknown")
-        raw_mobile = item.get("mobile", "")
-        mobile = _normalize_indian_mobile(raw_mobile)
+        name = (row.get("name") or row.get("username") or "").strip()
+        email = (row.get("email") or "").strip()
 
-        if not mobile:
-            continue
+        _, created = WhatsAppContact.objects.update_or_create(
+            owner=user,
+            phone=phone,
+            defaults={
+                "name": name,
+                "email": email,
+                "source_file": getattr(file_obj, "name", ""),
+                "is_active": True,
+            }
+        )
 
-        if mobile in seen:
-            continue
+        if created:
+            created_count += 1
+        else:
+            updated_count += 1
 
-        seen.add(mobile)
-        recipients.append({
-            "username": username,
-            "mobile": mobile,
-            "email": item.get("email", ""),
-        })
-
-    return recipients
+    return {
+        "created": created_count,
+        "updated": updated_count,
+        "skipped": skipped_count,
+    }
 
 
-@login_required(login_url="login")
+@login_required
 def whatsapp_broadcast_view(request):
-    recipients = []
-    recipients_count = 0
-    json_error = None
-    uploaded_file_info = None
+    csv_form = WhatsAppCSVUploadForm()
+    form = WhatsAppBroadcastForm()
 
-    try:
-        recipients = _load_whatsapp_recipients()
-        recipients_count = len(recipients)
-    except Exception as exc:
-        json_error = str(exc)
+    config_ok, missing_config = validate_whatsapp_config()
 
     if request.method == "POST":
-        form = WhatsAppBroadcastForm(request.POST, request.FILES)
+        action = request.POST.get("action")
 
-        if form.is_valid():
-            message_text = (form.cleaned_data.get("message") or "").strip()
-            attachment = form.cleaned_data.get("attachment")
+        if action == "upload_csv":
+            csv_form = WhatsAppCSVUploadForm(request.POST, request.FILES)
+            form = WhatsAppBroadcastForm()
 
-            saved_file_url = None
-            saved_file_name = None
-            saved_file_path = None
+            if csv_form.is_valid():
+                result = import_contacts_from_csv(request.user, csv_form.cleaned_data["csv_file"])
+                messages.success(
+                    request,
+                    f"CSV imported successfully. Created: {result['created']}, Updated: {result['updated']}, Skipped: {result['skipped']}"
+                )
+                return redirect("whatsapp_broadcast")
 
-            if attachment:
-                upload_dir = os.path.join(settings.MEDIA_ROOT, "whatsapp_broadcasts")
-                os.makedirs(upload_dir, exist_ok=True)
+        elif action == "send_campaign":
+            csv_form = WhatsAppCSVUploadForm()
+            form = WhatsAppBroadcastForm(request.POST, request.FILES)
 
-                storage = FileSystemStorage(location=upload_dir)
-                saved_name = storage.save(attachment.name, attachment)
-                saved_file_name = saved_name
-                saved_file_path = storage.path(saved_name)
-                saved_file_url = f"{settings.MEDIA_URL}whatsapp_broadcasts/{saved_name}"
+            if form.is_valid():
+                contacts = WhatsAppContact.objects.filter(owner=request.user, is_active=True).order_by("id")
 
-                uploaded_file_info = {
-                    "name": saved_file_name,
-                    "url": saved_file_url,
-                    "path": saved_file_path,
-                    "size": attachment.size,
-                }
+                if not contacts.exists():
+                    messages.error(request, "Please upload CSV contacts first.")
+                    return redirect("whatsapp_broadcast")
 
-            simulated_results = []
-            for recipient in recipients:
-                simulated_results.append({
-                    "username": recipient["username"],
-                    "mobile": recipient["mobile"],
-                    "success": False,
-                    "status_code": "CONFIG_PENDING",
-                    "response_text": "API Config Missing - delivery simulation only.",
-                })
+                if not config_ok:
+                    messages.error(request, f"Missing WhatsApp config: {', '.join(missing_config)}")
+                    return redirect("whatsapp_broadcast")
 
-            report = {
-                "total": len(recipients),
-                "success_count": 0,
-                "failed_count": len(recipients),
-                "message_text": message_text,
-                "uploaded_file": uploaded_file_info,
-                "results": simulated_results,
-            }
+                attachment = form.cleaned_data.get("attachment")
 
-            request.session["whatsapp_broadcast_last_result"] = report
+                campaign = WhatsAppCampaign.objects.create(
+                    owner=request.user,
+                    campaign_name=f"Broadcast {timezone.now().strftime('%d %b %Y %H:%M:%S')}",
+                    message=form.cleaned_data["message"],
+                    media_file=attachment,
+                    media_type=detect_media_type(attachment.name) if attachment else "",
+                    status="processing",
+                    started_at=timezone.now(),
+                    total_contacts=contacts.count(),
+                )
 
-            print("\n========== WHATSAPP BROADCAST DEBUG ==========")
-            print(f"Recipients loaded: {len(recipients)}")
-            print(f"Message text: {message_text}")
-            if uploaded_file_info:
-                print(f"Attachment saved: {uploaded_file_info['path']}")
-            else:
-                print("Attachment saved: None")
-            print("Status: API Config Missing - UI workflow working correctly.")
-            print("=============================================\n")
+                sent_count = 0
+                failed_count = 0
+                media_id = None
+                media_type = ""
 
-            messages.success(
-                request,
-                "Broadcast workflow working hai. JSON read, form submit, file upload, report generation sab sahi hai. Bas API config pending hai."
-            )
-            return redirect("whatsapp_broadcast")
+                try:
+                    if campaign.media_file:
+                        media_type = detect_media_type(campaign.media_file.path)
+                        media_id = upload_media_to_whatsapp(campaign.media_file.path)
+                except Exception as exc:
+                    campaign.status = "failed"
+                    campaign.failed_count = contacts.count()
+                    campaign.completed_at = timezone.now()
+                    campaign.save()
+                    messages.error(request, f"Media upload failed: {str(exc)}")
+                    return redirect("whatsapp_broadcast")
 
-        else:
-            messages.error(request, "Form validation failed. Please correct the errors below.")
-    else:
-        form = WhatsAppBroadcastForm()
+                for contact in contacts:
+                    personalized_message = (campaign.message or "").replace("{{name}}", contact.name or "User")
 
-    last_result = request.session.get("whatsapp_broadcast_last_result")
+                    log = WhatsAppMessageLog.objects.create(
+                        campaign=campaign,
+                        contact=contact,
+                        phone=contact.phone,
+                        status="pending",
+                    )
+
+                    try:
+                        if media_id:
+                            response = send_media_message(
+                                to_number=contact.phone,
+                                media_id=media_id,
+                                media_type=media_type,
+                                caption=personalized_message,
+                            )
+                        else:
+                            response = send_text_message(
+                                to_number=contact.phone,
+                                message_text=personalized_message,
+                            )
+
+                        if response.status_code in (200, 201):
+                            sent_count += 1
+                            response_json = response.json()
+                            message_id = ""
+
+                            if response_json.get("messages"):
+                                message_id = response_json["messages"][0].get("id", "")
+
+                            log.status = "sent"
+                            log.whatsapp_message_id = message_id
+                            log.response_code = response.status_code
+                            log.response_body = response.text
+                            log.sent_at = timezone.now()
+                            log.save()
+                        else:
+                            failed_count += 1
+                            log.status = "failed"
+                            log.response_code = response.status_code
+                            log.response_body = response.text
+                            log.error_message = response.text
+                            log.save()
+
+                    except Exception as exc:
+                        failed_count += 1
+                        log.status = "failed"
+                        log.response_code = 500
+                        log.error_message = str(exc)
+                        log.save()
+                        logger.exception("WhatsApp send failed for phone=%s", contact.phone)
+
+                campaign.sent_count = sent_count
+                campaign.failed_count = failed_count
+                campaign.status = "completed" if failed_count == 0 else "failed"
+                campaign.completed_at = timezone.now()
+                campaign.save()
+
+                if sent_count > 0 and failed_count == 0:
+                    messages.success(
+                        request,
+                        f"Campaign completed successfully. Sent: {sent_count}, Failed: {failed_count}"
+                    )
+                elif sent_count > 0 and failed_count > 0:
+                    messages.warning(
+                        request,
+                        f"Campaign partially completed. Sent: {sent_count}, Failed: {failed_count}"
+                    )
+                else:
+                    messages.error(
+                        request,
+                        f"Campaign failed. Sent: {sent_count}, Failed: {failed_count}"
+                    )
+
+                return redirect("whatsapp_broadcast")
+
+    contacts_qs = WhatsAppContact.objects.filter(owner=request.user, is_active=True).order_by("-created_at")
+    campaigns = WhatsAppCampaign.objects.filter(owner=request.user).order_by("-created_at")[:10]
+    latest_campaign = campaigns.first()
+    recent_logs = WhatsAppMessageLog.objects.filter(
+        campaign__owner=request.user
+    ).select_related("campaign", "contact").order_by("-created_at")[:20]
 
     context = {
+        "csv_form": csv_form,
         "form": form,
-        "page_title": "WhatsApp Broadcast Channel",
-        "recipients": recipients[:20],
-        "recipients_count": recipients_count,
-        "json_error": json_error,
-        "config_ok": False,
-        "missing_keys": ["WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_ACCESS_TOKEN"],
-        "last_result": last_result,
+        "contacts_count": contacts_qs.count(),
+        "contacts": contacts_qs[:10],
+        "campaigns": campaigns,
+        "latest_campaign": latest_campaign,
+        "recent_logs": recent_logs,
+        "config_ok": config_ok,
+        "missing_config": missing_config,
     }
     return render(request, "dashboard/whatsapp_broadcast.html", context)
+
+
+###########################################################################
 
 
 from django.contrib.auth.decorators import login_required

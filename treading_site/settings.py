@@ -87,16 +87,14 @@ LOGOUT_REDIRECT_URL = "/login/"
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-WHATSAPP_CONTACTS_JSON = os.getenv(
-    "WHATSAPP_CONTACTS_JSON",
-    str(BASE_DIR / "treading_mainapp" / "data" / "users.json")
-)
-
+WHATSAPP_API_VERSION = os.getenv("WHATSAPP_API_VERSION", "v23.0")
 WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
 WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "")
+WHATSAPP_BUSINESS_ACCOUNT_ID = os.getenv("WHATSAPP_BUSINESS_ACCOUNT_ID", "")
