@@ -3,6 +3,223 @@
 {% block title %}Trading Dashboard{% endblock %}
 
 {% block content %}
+<style>
+    .connectivity-toggle-wrap,
+    .symbols-toggle-wrap {
+        margin-bottom: 1.5rem;
+    }
+
+    .toggle-panel-btn {
+        appearance: none;
+        border: 1px solid rgba(56, 189, 248, 0.22);
+        background: linear-gradient(135deg, rgba(8, 20, 40, 0.94), rgba(11, 27, 58, 0.96));
+        color: #e5eefc;
+        padding: 0.95rem 1.15rem;
+        width: 100%;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        box-shadow: 0 12px 30px rgba(2, 8, 23, 0.34);
+        transition: all 0.25s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .toggle-panel-btn::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 48%);
+        pointer-events: none;
+    }
+
+    .toggle-panel-btn:hover {
+        border-color: rgba(56, 189, 248, 0.38);
+        transform: translateY(-1px);
+        box-shadow: 0 16px 34px rgba(2, 8, 23, 0.42);
+    }
+
+    .toggle-panel-btn:focus-visible {
+        outline: 2px solid rgba(56, 189, 248, 0.78);
+        outline-offset: 3px;
+    }
+
+    .toggle-panel-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        min-width: 0;
+    }
+
+    .toggle-panel-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(56, 189, 248, 0.12);
+        border: 1px solid rgba(56, 189, 248, 0.18);
+        color: #38bdf8;
+        flex-shrink: 0;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .toggle-panel-text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        min-width: 0;
+    }
+
+    .toggle-panel-label {
+        font-size: 0.76rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #38bdf8;
+        font-weight: 700;
+        margin-bottom: 0.18rem;
+    }
+
+    .toggle-panel-title {
+        font-size: 1.02rem;
+        font-weight: 700;
+        color: #f8fafc;
+        line-height: 1.25;
+    }
+
+    .toggle-panel-subtitle {
+        margin-top: 0.2rem;
+        font-size: 0.9rem;
+        color: #94a3b8;
+        line-height: 1.45;
+    }
+
+    .toggle-panel-right {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.85rem;
+        flex-shrink: 0;
+    }
+
+    .toggle-panel-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.48rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.78);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        color: #cbd5e1;
+        font-size: 0.84rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .toggle-panel-state-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: #64748b;
+        box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.12);
+    }
+
+    .toggle-panel-state.online .toggle-panel-state-dot {
+        background: #22c55e;
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
+    }
+
+    .toggle-panel-chevron {
+        width: 18px;
+        height: 18px;
+        color: #cbd5e1;
+        transition: transform 0.25s ease;
+    }
+
+    .toggle-panel-btn[aria-expanded="true"] .toggle-panel-chevron {
+        transform: rotate(180deg);
+    }
+
+    .toggle-panel-content {
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: max-height 0.35s ease, opacity 0.25s ease, transform 0.25s ease, margin-top 0.25s ease;
+        pointer-events: none;
+    }
+
+    .toggle-panel-content.is-open {
+        max-height: 2000px;
+        opacity: 1;
+        transform: translateY(0);
+        margin-top: 1rem;
+        pointer-events: auto;
+    }
+
+    .symbols-panel-shell {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .symbols-panel-shell .panel-head,
+    .symbols-panel-shell .panel-body {
+        position: relative;
+        z-index: 1;
+    }
+
+    .symbols-panel-shell::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), transparent 36%);
+        pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+        .toggle-panel-btn {
+            padding: 0.95rem 1rem;
+            align-items: flex-start;
+        }
+
+        .toggle-panel-right {
+            align-self: center;
+        }
+
+        .toggle-panel-title {
+            font-size: 0.97rem;
+        }
+
+        .toggle-panel-subtitle {
+            font-size: 0.84rem;
+        }
+
+        .toggle-panel-state {
+            display: none;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .toggle-panel-btn {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .toggle-panel-right {
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .toggle-panel-state {
+            display: inline-flex;
+        }
+    }
+</style>
+
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
@@ -28,47 +245,83 @@
         </div>
     </div>
 
-    <div class="overview-grid">
-        <div class="panel-card broker-card {% if broker_connected %}panel-success{% else %}panel-danger{% endif %}">
-            <div class="panel-head">
-                <span class="panel-kicker">Broker Message</span>
-                <h3>Connection Status</h3>
-            </div>
-            <div class="panel-body">
-                <p class="panel-main-text">{{ broker_message }}</p>
-            </div>
-        </div>
+    <div class="connectivity-toggle-wrap">
+        <button
+            type="button"
+            class="toggle-panel-btn"
+            id="connectivityToggleBtn"
+            aria-expanded="false"
+            aria-controls="connectivityPanel">
+            <span class="toggle-panel-meta">
+                <span class="toggle-panel-icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 18h.01M8.2 14.8a5.4 5.4 0 0 1 7.6 0M5.4 12a9.4 9.4 0 0 1 13.2 0M2.7 9.3a13.2 13.2 0 0 1 18.6 0" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
 
-        <div class="panel-card debug-panel">
-            <div class="panel-head">
-                <span class="panel-kicker">Environment Diagnostics</span>
-                <h3>System Readiness</h3>
+                <span class="toggle-panel-text">
+                    <span class="toggle-panel-label">System Controls</span>
+                    <span class="toggle-panel-title">Connectivity & Diagnostics</span>
+                    <span class="toggle-panel-subtitle">Open broker message and environment diagnostics only when needed.</span>
+                </span>
+            </span>
+
+            <span class="toggle-panel-right">
+                <span class="toggle-panel-state {% if broker_connected %}online{% endif %}">
+                    <span class="toggle-panel-state-dot"></span>
+                    {% if broker_connected %}Connected{% else %}Offline{% endif %}
+                </span>
+
+                <svg class="toggle-panel-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+        </button>
+    </div>
+
+    <div class="toggle-panel-content" id="connectivityPanel">
+        <div class="overview-grid">
+            <div class="panel-card broker-card {% if broker_connected %}panel-success{% else %}panel-danger{% endif %}">
+                <div class="panel-head">
+                    <span class="panel-kicker">Broker Message</span>
+                    <h3>Connection Status</h3>
+                </div>
+                <div class="panel-body">
+                    <p class="panel-main-text">{{ broker_message }}</p>
+                </div>
             </div>
-            <div class="panel-body">
-                <div class="debug-grid">
-                    <div class="debug-tile">
-                        <span>API Key Present</span>
-                        <strong>{{ env_status.api_key_present }}</strong>
-                    </div>
-                    <div class="debug-tile">
-                        <span>Client Code Present</span>
-                        <strong>{{ env_status.client_code_present }}</strong>
-                    </div>
-                    <div class="debug-tile">
-                        <span>Password Present</span>
-                        <strong>{{ env_status.password_present }}</strong>
-                    </div>
-                    <div class="debug-tile">
-                        <span>TOTP Secret Present</span>
-                        <strong>{{ env_status.totp_secret_present }}</strong>
-                    </div>
-                    <div class="debug-tile">
-                        <span>SmartAPI Mode</span>
-                        <strong>Requests</strong>
-                    </div>
-                    <div class="debug-tile debug-tile-wide">
-                        <span>Import Error</span>
-                        <strong>{{ env_status.smartapi_import_error|default:"None" }}</strong>
+
+            <div class="panel-card debug-panel">
+                <div class="panel-head">
+                    <span class="panel-kicker">Environment Diagnostics</span>
+                    <h3>System Readiness</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="debug-grid">
+                        <div class="debug-tile">
+                            <span>API Key Present</span>
+                            <strong>{{ env_status.api_key_present }}</strong>
+                        </div>
+                        <div class="debug-tile">
+                            <span>Client Code Present</span>
+                            <strong>{{ env_status.client_code_present }}</strong>
+                        </div>
+                        <div class="debug-tile">
+                            <span>Password Present</span>
+                            <strong>{{ env_status.password_present }}</strong>
+                        </div>
+                        <div class="debug-tile">
+                            <span>TOTP Secret Present</span>
+                            <strong>{{ env_status.totp_secret_present }}</strong>
+                        </div>
+                        <div class="debug-tile">
+                            <span>SmartAPI Mode</span>
+                            <strong>Requests</strong>
+                        </div>
+                        <div class="debug-tile debug-tile-wide">
+                            <span>Import Error</span>
+                            <strong>{{ env_status.smartapi_import_error|default:"None" }}</strong>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -118,26 +371,62 @@
         </div>
     </div>
 
-    <div class="panel-card quick-panel">
-        <div class="panel-head">
-            <span class="panel-kicker">Quick Access</span>
-            <h3>Popular Symbols</h3>
-        </div>
+    <div class="symbols-toggle-wrap">
+        <button
+            type="button"
+            class="toggle-panel-btn"
+            id="popularSymbolsToggleBtn"
+            aria-expanded="false"
+            aria-controls="popularSymbolsPanel">
+            <span class="toggle-panel-meta">
+                <span class="toggle-panel-icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 7h16M4 12h10M4 17h13" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
 
-        <div class="panel-body">
-            <div class="quick-symbols">
-                {% for item in index_symbols %}
-                    <a href="{% url 'dashboard' %}?symbol={{ item|urlencode }}&interval={{ tv_interval }}"
-                       class="quick-chip index-chip {% if item == tv_symbol %}active{% endif %}">
-                        {{ item }}
-                    </a>
-                {% endfor %}
-                {% for item in stock_symbols %}
-                    <a href="{% url 'dashboard' %}?symbol={{ item|urlencode }}&interval={{ tv_interval }}"
-                       class="quick-chip {% if item == tv_symbol %}active{% endif %}">
-                        {{ item|cut:"NSE:" }}
-                    </a>
-                {% endfor %}
+                <span class="toggle-panel-text">
+                    <span class="toggle-panel-label">Quick Access</span>
+                    <span class="toggle-panel-title">Popular Symbols</span>
+                    <span class="toggle-panel-subtitle">Show or hide the quick symbol shortcuts when you want a cleaner workspace.</span>
+                </span>
+            </span>
+
+            <span class="toggle-panel-right">
+                <span class="toggle-panel-state">
+                    <span class="toggle-panel-state-dot"></span>
+                    Shortcuts
+                </span>
+
+                <svg class="toggle-panel-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+        </button>
+    </div>
+
+    <div class="toggle-panel-content" id="popularSymbolsPanel">
+        <div class="panel-card quick-panel symbols-panel-shell">
+            <div class="panel-head">
+                <span class="panel-kicker">Quick Access</span>
+                <h3>Popular Symbols</h3>
+            </div>
+
+            <div class="panel-body">
+                <div class="quick-symbols">
+                    {% for item in index_symbols %}
+                        <a href="{% url 'dashboard' %}?symbol={{ item|urlencode }}&interval={{ tv_interval }}"
+                           class="quick-chip index-chip {% if item == tv_symbol %}active{% endif %}">
+                            {{ item }}
+                        </a>
+                    {% endfor %}
+                    {% for item in stock_symbols %}
+                        <a href="{% url 'dashboard' %}?symbol={{ item|urlencode }}&interval={{ tv_interval }}"
+                           class="quick-chip {% if item == tv_symbol %}active{% endif %}">
+                            {{ item|cut:"NSE:" }}
+                        </a>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
@@ -194,6 +483,26 @@ window.APP_CONFIG = {
     brokerHealthUrl: "{% url 'broker_health' %}",
     amavasyaStrategyApiUrl: "{% url 'amavasya_strategy_api' %}"
 };
+
+document.addEventListener('DOMContentLoaded', function () {
+    const setupTogglePanel = function (buttonId, panelId) {
+        const toggleBtn = document.getElementById(buttonId);
+        const panel = document.getElementById(panelId);
+
+        if (!toggleBtn || !panel) return;
+
+        panel.classList.remove('is-open');
+        toggleBtn.setAttribute('aria-expanded', 'false');
+
+        toggleBtn.addEventListener('click', function () {
+            const isOpen = panel.classList.toggle('is-open');
+            toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+    };
+
+    setupTogglePanel('connectivityToggleBtn', 'connectivityPanel');
+    setupTogglePanel('popularSymbolsToggleBtn', 'popularSymbolsPanel');
+});
 </script>
 {% endblock %}
 

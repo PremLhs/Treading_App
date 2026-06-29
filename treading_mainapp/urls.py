@@ -3,10 +3,9 @@ from . import views
 
 urlpatterns = [
     path("", views.home_redirect, name="home"),
-    path("register/", views.register_view, name="register"),
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
-    path("forgot-password/", views.forgot_password_view, name="forgot_password"),
+    
     path("dashboard/", views.dashboard_view, name="dashboard"),
     path("api/broker-health/", views.broker_health_view, name="broker_health"),
     path("api/candles/", views.candles_api_view, name="candles_api"),

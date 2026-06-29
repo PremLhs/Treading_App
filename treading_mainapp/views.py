@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
-from .forms import LoginForm, RegisterForm, ForgotPasswordForm
+from .forms import LoginForm
 from .services.angel_api import AngelBroker
 
 from django.contrib.auth.decorators import login_required
@@ -93,40 +93,22 @@ REVERSAL_LEVELS = [
 ]
 
 
+
 def home_redirect(request):
     if request.user.is_authenticated:
         return redirect("dashboard")
     return redirect("login")
 
 
-def register_view(request):
-    if request.user.is_authenticated:
-        return redirect("dashboard")
-
-    if request.method == "POST":
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Account created successfully. Please login.")
-            return redirect("login")
-    else:
-        form = RegisterForm()
-
-    return render(request, "auth/register.html", {"form": form})
-
-
 def login_view(request):
     if request.user.is_authenticated:
         return redirect("dashboard")
 
-    if request.method == "POST":
-        form = LoginForm(request, request.POST)
-        if form.is_valid():
-            login(request, form.get_user())
-            messages.success(request, "Login successful.")
-            return redirect("dashboard")
-    else:
-        form = LoginForm()
+    form = LoginForm(request=request, data=request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        login(request, form.get_user())
+        return redirect("dashboard")
 
     return render(request, "auth/login.html", {"form": form})
 
@@ -134,23 +116,6 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect("login")
-
-
-def forgot_password_view(request):
-    if request.user.is_authenticated:
-        return redirect("dashboard")
-
-    if request.method == "POST":
-        form = ForgotPasswordForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Password reset successful. Please login with new password.")
-            return redirect("login")
-    else:
-        form = ForgotPasswordForm()
-
-    return render(request, "auth/forgot_password.html", {"form": form})
-
 
 @login_required
 def dashboard_view(request):

@@ -1,12 +1,33 @@
+
+
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from .models import UserProfile
+
+
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    extra = 0
+
+
+class CustomUserAdmin(BaseUserAdmin):
+    inlines = [UserProfileInline]
+
+
+try:
+    admin.site.unregister(User)
+except admin.sites.NotRegistered:
+    pass
+
+admin.site.register(User, CustomUserAdmin)
+
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "mobile", "created_at")
-    search_fields = ("user__username", "mobile")
-    list_filter = ("created_at",)
-
+    list_display = ("user", "mobile")
+    search_fields = ("user__username", "user__email", "mobile")
 #############################################################
 from django.contrib import admin
 from .models import WhatsAppContact, WhatsAppCampaign, WhatsAppMessageLog
@@ -31,3 +52,4 @@ class WhatsAppMessageLogAdmin(admin.ModelAdmin):
     list_display = ("id", "campaign", "phone", "status", "response_code", "sent_at", "created_at")
     search_fields = ("phone", "whatsapp_message_id")
     list_filter = ("status", "created_at", "sent_at")
+

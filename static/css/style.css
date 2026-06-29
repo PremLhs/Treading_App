@@ -203,7 +203,7 @@ svg {
 
 .page-shell {
     display: grid;
-    gap: 22px;
+    gap: 5px;
 }
 
 .hero-banner {
@@ -382,7 +382,7 @@ svg {
 }
 
 .panel-body {
-    padding: 20px 22px 22px;
+    padding: 9px 22px 22px;
 }
 
 .panel-main-text {
