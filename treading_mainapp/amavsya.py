@@ -1,9 +1,12 @@
 import csv
 import logging
+import re
+from bisect import bisect_right
 from dataclasses import dataclass
 from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
+
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -19,7 +22,7 @@ SUPPORTED_INTRADAY_INTERVALS = {"1", "3", "5", "15", "30", "60"}
 
 @dataclass(frozen=True)
 class Candle:
-    dt: datetime
+    dt: datetime  # naive IST datetime
     open: float
     high: float
     low: float
@@ -34,18 +37,44 @@ class Candle:
         return "green" if self.close >= self.open else "red"
 
 
-def _safe_float(value) -> Optional[float]:
+def _safe_float(value: Any) -> Optional[float]:
     try:
         return float(value)
     except (TypeError, ValueError):
         return None
 
 
-def _parse_epoch_to_datetime(value: Any) -> Optional[datetime]:
+def _normalize_header(name: Any) -> str:
+    return str(name or "").strip().lower()
+
+
+def _clean_text(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    text = text.strip("\"'").strip()
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
+def _normalize_meridiem_text(text: str) -> str:
+    normalized = _clean_text(text)
+    if not normalized:
+        return ""
+
+    normalized = re.sub(r"\b(a\.?\s*m\.?)\b", "AM", normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"\b(p\.?\s*m\.?)\b", "PM", normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"\bam\b", "AM", normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"\bpm\b", "PM", normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+def _parse_epoch_to_datetime_ist(value: Any) -> Optional[datetime]:
     try:
         ts = int(float(value))
-        return datetime.fromtimestamp(ts)
-    except (TypeError, ValueError, OSError):
+        return datetime.fromtimestamp(ts, tz=IST).replace(tzinfo=None)
+    except (TypeError, ValueError, OSError, OverflowError):
         return None
 
 
@@ -54,17 +83,19 @@ def _parse_candle_datetime(value: Any) -> Optional[datetime]:
         return None
 
     if isinstance(value, datetime):
-        return value.replace(tzinfo=None) if value.tzinfo else value
+        if value.tzinfo is not None:
+            return value.astimezone(IST).replace(tzinfo=None)
+        return value
 
     if isinstance(value, (int, float)):
-        return _parse_epoch_to_datetime(value)
+        return _parse_epoch_to_datetime_ist(value)
 
-    text = str(value).strip()
+    text = _clean_text(value)
     if not text:
         return None
 
     if text.isdigit():
-        parsed = _parse_epoch_to_datetime(text)
+        parsed = _parse_epoch_to_datetime_ist(text)
         if parsed:
             return parsed
 
@@ -73,6 +104,7 @@ def _parse_candle_datetime(value: Any) -> Optional[datetime]:
         "%Y-%m-%d %H:%M",
         "%Y-%m-%dT%H:%M:%S",
         "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%d %H:%M:%S%z",
         "%d-%m-%Y %H:%M:%S",
         "%d-%m-%Y %H:%M",
     ]
@@ -81,7 +113,7 @@ def _parse_candle_datetime(value: Any) -> Optional[datetime]:
         try:
             parsed = datetime.strptime(text, fmt)
             if parsed.tzinfo is not None:
-                parsed = parsed.replace(tzinfo=None)
+                return parsed.astimezone(IST).replace(tzinfo=None)
             return parsed
         except ValueError:
             continue
@@ -89,32 +121,40 @@ def _parse_candle_datetime(value: Any) -> Optional[datetime]:
     try:
         parsed = datetime.fromisoformat(text)
         if parsed.tzinfo is not None:
-            parsed = parsed.replace(tzinfo=None)
+            return parsed.astimezone(IST).replace(tzinfo=None)
         return parsed
     except ValueError:
+        logger.warning("Unable to parse candle datetime: %s", text)
         return None
 
 
-def _parse_event_datetime(date_text: str, year: int) -> Optional[datetime]:
-    if date_text is None:
-        return None
-
-    text = str(date_text).strip()
+def _parse_event_datetime(date_text: Any, year: Optional[int] = None) -> Optional[datetime]:
+    text = _normalize_meridiem_text(date_text)
     if not text:
         return None
 
-    candidates = [f"{text} {year}", text]
+    candidates: List[str] = []
+
+    if year and str(year) not in text:
+        candidates.append(f"{text} {year}")
+
+    candidates.append(text)
+
     formats = [
+        "%Y-%m-%d",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d %H:%M:%S",
+        "%d-%m-%Y",
+        "%d-%m-%Y %H:%M",
+        "%d-%m-%Y %H:%M:%S",
         "%b %d, %I:%M %p %Y",
         "%B %d, %I:%M %p %Y",
         "%b %d, %I:%M:%S %p %Y",
         "%B %d, %I:%M:%S %p %Y",
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d",
-        "%d-%m-%Y %H:%M",
-        "%d-%m-%Y %H:%M:%S",
-        "%d-%m-%Y",
+        "%b %d %Y",
+        "%B %d %Y",
+        "%b %d, %Y",
+        "%B %d, %Y",
     ]
 
     for candidate in candidates:
@@ -135,8 +175,8 @@ def _parse_event_datetime(date_text: str, year: int) -> Optional[datetime]:
         return None
 
 
-def load_amavasya_reference_dates() -> List[Dict]:
-    rows: List[Dict] = []
+def load_amavasya_reference_dates() -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
 
     if not AMAVASYA_CSV_PATH.exists():
         logger.warning("amavasya.csv not found at %s", AMAVASYA_CSV_PATH)
@@ -144,69 +184,88 @@ def load_amavasya_reference_dates() -> List[Dict]:
 
     with open(AMAVASYA_CSV_PATH, mode="r", encoding="utf-8-sig", newline="") as file:
         reader = csv.DictReader(file)
-
         if not reader.fieldnames:
             logger.warning("amavasya.csv has no headers")
             return rows
 
-        fieldnames = {name.strip() for name in reader.fieldnames if name}
-
-        simple_date_mode = "date" in fieldnames
-        detailed_mode = {"year", "month", "title", "start", "end"}.issubset(fieldnames)
+        normalized_headers = [_normalize_header(name) for name in reader.fieldnames if name]
+        simple_date_mode = "date" in normalized_headers
+        detailed_mode = {"year", "month", "title", "start", "end"}.issubset(set(normalized_headers))
 
         if not simple_date_mode and not detailed_mode:
             logger.warning("amavasya.csv invalid headers: %s", reader.fieldnames)
             return rows
 
-        for row in reader:
+        for raw_row in reader:
+            row = {
+                _normalize_header(k): (_clean_text(v) if v is not None else "")
+                for k, v in raw_row.items()
+            }
+
             if simple_date_mode:
-                raw_date = str(row.get("date", "")).strip()
-                try:
-                    event_dt = datetime.strptime(raw_date, "%Y-%m-%d")
-                except ValueError:
+                event_dt = _parse_event_datetime(row.get("date"))
+                if not event_dt:
+                    logger.warning("Skipping invalid Amavasya simple date row: %s", raw_row)
                     continue
 
+                event_date = event_dt.astimezone(IST).date()
                 rows.append({
                     "year": event_dt.year,
                     "month": event_dt.strftime("%B"),
                     "title": "Amavasya",
-                    "start": raw_date,
-                    "end": raw_date,
+                    "start": event_dt.strftime("%Y-%m-%d"),
+                    "end": event_dt.strftime("%Y-%m-%d"),
                     "start_dt": event_dt,
                     "end_dt": event_dt,
-                    "event_date": event_dt.date(),
+                    "event_date": event_date,
                 })
                 continue
 
-            year_raw = str(row.get("year", "")).strip()
+            year_raw = row.get("year", "")
             if not year_raw.isdigit():
+                logger.warning("Skipping row with invalid year: %s", raw_row)
                 continue
 
             year = int(year_raw)
-            month = str(row.get("month", "")).strip()
-            title = str(row.get("title", "")).strip() or "Amavasya"
-            start_text = str(row.get("start", "")).strip()
-            end_text = str(row.get("end", "")).strip()
+            month = row.get("month", "")
+            title = row.get("title", "") or "Amavasya"
+            start_text = row.get("start", "")
+            end_text = row.get("end", "") or start_text
 
-            end_dt = _parse_event_datetime(end_text, year)
             start_dt = _parse_event_datetime(start_text, year)
+            end_dt = _parse_event_datetime(end_text, year)
 
-            if end_dt is None:
+            if end_dt is not None:
+                chosen_dt = end_dt
+            elif start_dt is not None:
+                chosen_dt = start_dt
+            else:
+                logger.warning("Skipping row with invalid start/end: %s", raw_row)
                 continue
+
+            event_date = chosen_dt.astimezone(IST).date()
 
             rows.append({
                 "year": year,
-                "month": month,
+                "month": month or chosen_dt.strftime("%B"),
                 "title": title,
                 "start": start_text,
                 "end": end_text,
                 "start_dt": start_dt,
                 "end_dt": end_dt,
-                "event_date": end_dt.astimezone(IST).date(),
+                "event_date": event_date,
             })
 
-    rows.sort(key=lambda item: item["event_date"])
-    return rows
+    unique_rows: List[Dict[str, Any]] = []
+    seen = set()
+    for item in sorted(rows, key=lambda x: (x["event_date"], x.get("title", ""), x.get("month", ""))):
+        key = (item["event_date"], item.get("title", ""), item.get("month", ""))
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_rows.append(item)
+
+    return unique_rows
 
 
 def normalize_candles(raw_candles: List[Any]) -> List[Candle]:
@@ -214,14 +273,12 @@ def normalize_candles(raw_candles: List[Any]) -> List[Candle]:
     seen: set[Tuple[datetime, float, float, float, float]] = set()
 
     for item in raw_candles or []:
-        dt = None
-        open_price = None
-        high_price = None
-        low_price = None
-        close_price = None
+        dt = open_price = high_price = low_price = close_price = None
 
         if isinstance(item, dict):
-            dt = _parse_candle_datetime(item.get("dt") or item.get("time"))
+            dt = _parse_candle_datetime(
+                item.get("dt") or item.get("time") or item.get("datetime") or item.get("timestamp")
+            )
             open_price = _safe_float(item.get("open"))
             high_price = _safe_float(item.get("high"))
             low_price = _safe_float(item.get("low"))
@@ -288,76 +345,85 @@ def build_daily_ohlc_from_intraday(grouped_intraday: Dict[date, List[Candle]]) -
 
 
 def find_previous_or_same_trading_date(event_date: date, ordered_trading_dates: List[date]) -> Optional[date]:
-    eligible = [d for d in ordered_trading_dates if d <= event_date]
-    return eligible[-1] if eligible else None
-
-
-def find_next_same_color_trading_day(
-    reference_date: date,
-    reference_color: str,
-    ordered_trading_dates: List[date],
-    daily_map: Dict[date, Candle],
-) -> Optional[date]:
-    try:
-        reference_index = ordered_trading_dates.index(reference_date)
-    except ValueError:
+    idx = bisect_right(ordered_trading_dates, event_date) - 1
+    if idx < 0:
         return None
-
-    for next_date in ordered_trading_dates[reference_index + 1:]:
-        day_candle = daily_map.get(next_date)
-        if day_candle and day_candle.color == reference_color:
-            return next_date
-
-    return None
+    return ordered_trading_dates[idx]
 
 
-def find_breakout_breakdown_signals(
-    intraday_candles: List[Candle],
+def get_future_trading_dates(reference_date: date, ordered_trading_dates: List[date]) -> List[date]:
+    idx = bisect_right(ordered_trading_dates, reference_date)
+    if idx >= len(ordered_trading_dates):
+        return []
+    return ordered_trading_dates[idx:]
+
+
+def find_first_breaks_across_future_days(
+    grouped_intraday: Dict[date, List[Candle]],
+    future_trading_dates: List[date],
     reference_high: float,
     reference_low: float,
-) -> List[Dict]:
-    signals: List[Dict] = []
-    high_break_added = False
-    low_break_added = False
+) -> List[Tuple[date, Dict[str, Any]]]:
+    high_signal: Optional[Tuple[date, Dict[str, Any]]] = None
+    low_signal: Optional[Tuple[date, Dict[str, Any]]] = None
 
-    for candle in intraday_candles:
-        if (not high_break_added) and candle.high > reference_high:
-            signals.append({
-                "type": "high_break",
-                "line_price": candle.high,
-                "candle_time": candle.dt,
-                "break_candle_open": candle.open,
-                "break_candle_high": candle.high,
-                "break_candle_low": candle.low,
-                "break_candle_close": candle.close,
-            })
-            high_break_added = True
+    for trading_day in future_trading_dates:
+        intraday_candles = grouped_intraday.get(trading_day, [])
+        if not intraday_candles:
+            continue
 
-        if (not low_break_added) and candle.low < reference_low:
-            signals.append({
-                "type": "low_break",
-                "line_price": candle.low,
-                "candle_time": candle.dt,
-                "break_candle_open": candle.open,
-                "break_candle_high": candle.high,
-                "break_candle_low": candle.low,
-                "break_candle_close": candle.close,
-            })
-            low_break_added = True
+        for candle in intraday_candles:
+            if high_signal is None and candle.high > reference_high:
+                high_signal = (
+                    trading_day,
+                    {
+                        "type": "high_break",
+                        "line_price": candle.high,
+                        "candle_time": candle.dt,
+                        "break_candle_open": candle.open,
+                        "break_candle_high": candle.high,
+                        "break_candle_low": candle.low,
+                        "break_candle_close": candle.close,
+                    },
+                )
 
-        if high_break_added and low_break_added:
+            if low_signal is None and candle.low < reference_low:
+                low_signal = (
+                    trading_day,
+                    {
+                        "type": "low_break",
+                        "line_price": candle.low,
+                        "candle_time": candle.dt,
+                        "break_candle_open": candle.open,
+                        "break_candle_high": candle.high,
+                        "break_candle_low": candle.low,
+                        "break_candle_close": candle.close,
+                    },
+                )
+
+            if high_signal is not None and low_signal is not None:
+                break
+
+        if high_signal is not None and low_signal is not None:
             break
 
-    return signals
+    results: List[Tuple[date, Dict[str, Any]]] = []
+    if high_signal is not None:
+        results.append(high_signal)
+    if low_signal is not None:
+        results.append(low_signal)
+
+    results.sort(key=lambda item: (item[1]["candle_time"], item[1]["line_price"]))
+    return results
 
 
 def _build_level_payload(
-    event: Dict,
+    event: Dict[str, Any],
     reference_trading_date: date,
     reference_day: Candle,
     trigger_date: date,
-    signal: Dict,
-) -> Dict:
+    signal: Dict[str, Any],
+) -> Dict[str, Any]:
     signal_type = signal["type"]
     line_price = round(float(signal["line_price"]), 2)
     trigger_time = signal["candle_time"]
@@ -391,8 +457,8 @@ def _build_level_payload(
     }
 
 
-def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = None, **kwargs) -> Dict:
-    requested_interval = str(interval or STRATEGY_INTERVAL).strip().upper()
+def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    requested_interval = str(interval or STRATEGY_INTERVAL).strip()
 
     if requested_interval not in SUPPORTED_INTRADAY_INTERVALS:
         return {
@@ -406,11 +472,11 @@ def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = N
                 "trading_days": 0,
                 "amavasya_events_loaded": 0,
                 "levels_generated": 0,
+                "skipped_events": [],
             },
         }
 
     candles = normalize_candles(raw_candles)
-
     if not candles:
         return {
             "status": False,
@@ -423,6 +489,7 @@ def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = N
                 "trading_days": 0,
                 "amavasya_events_loaded": 0,
                 "levels_generated": 0,
+                "skipped_events": [],
             },
         }
 
@@ -443,11 +510,13 @@ def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = N
                 "trading_days": len(ordered_trading_dates),
                 "amavasya_events_loaded": 0,
                 "levels_generated": 0,
+                "skipped_events": [],
             },
         }
 
-    levels: List[Dict] = []
+    levels: List[Dict[str, Any]] = []
     processed_keys = set()
+    skipped_events: List[Dict[str, str]] = []
 
     for event in amavasya_rows:
         event_date = event["event_date"]
@@ -457,51 +526,66 @@ def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = N
             ordered_trading_dates=ordered_trading_dates,
         )
         if not reference_trading_date:
+            skipped_events.append({
+                "event_date": event_date.isoformat(),
+                "month": event.get("month", ""),
+                "reason": "no_previous_or_same_trading_day",
+            })
             continue
 
         reference_day = daily_map.get(reference_trading_date)
         if not reference_day:
+            skipped_events.append({
+                "event_date": event_date.isoformat(),
+                "month": event.get("month", ""),
+                "reason": "reference_day_missing",
+            })
             continue
 
-        next_same_color_date = find_next_same_color_trading_day(
+        future_trading_dates = get_future_trading_dates(
             reference_date=reference_trading_date,
-            reference_color=reference_day.color,
             ordered_trading_dates=ordered_trading_dates,
-            daily_map=daily_map,
         )
-        if not next_same_color_date:
+        if not future_trading_dates:
+            skipped_events.append({
+                "event_date": event_date.isoformat(),
+                "month": event.get("month", ""),
+                "reason": "no_future_trading_days_found",
+            })
             continue
 
-        trigger_day_candles = grouped_intraday.get(next_same_color_date, [])
-        if not trigger_day_candles:
-            continue
-
-        signals = find_breakout_breakdown_signals(
-            intraday_candles=trigger_day_candles,
+        signals_with_dates = find_first_breaks_across_future_days(
+            grouped_intraday=grouped_intraday,
+            future_trading_dates=future_trading_dates,
             reference_high=reference_day.high,
             reference_low=reference_day.low,
         )
-        if not signals:
+        if not signals_with_dates:
+            skipped_events.append({
+                "event_date": event_date.isoformat(),
+                "month": event.get("month", ""),
+                "reason": "no_break_signal_found_across_future_days",
+            })
             continue
 
-        for signal in signals:
+        for trigger_date, signal in signals_with_dates:
             unique_key = (
                 event_date.isoformat(),
                 reference_trading_date.isoformat(),
-                next_same_color_date.isoformat(),
+                trigger_date.isoformat(),
                 signal["type"],
                 round(float(signal["line_price"]), 2),
             )
             if unique_key in processed_keys:
                 continue
-            processed_keys.add(unique_key)
 
+            processed_keys.add(unique_key)
             levels.append(
                 _build_level_payload(
                     event=event,
                     reference_trading_date=reference_trading_date,
                     reference_day=reference_day,
-                    trigger_date=next_same_color_date,
+                    trigger_date=trigger_date,
                     signal=signal,
                 )
             )
@@ -520,5 +604,6 @@ def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = N
             "amavasya_events_loaded": len(amavasya_rows),
             "levels_generated": len(levels),
             "csv_path": str(AMAVASYA_CSV_PATH),
+            "skipped_events": skipped_events,
         },
     }

@@ -2,31 +2,806 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
-<section class="auth-section">
-    <div class="auth-card">
-        <h1>Login</h1>
-        <p class="subtitle">Sign in to open your trading dashboard</p>
+<style>
+    :root {
+        --bg-1: #03131b;
+        --bg-2: #041a25;
+        --bg-3: #05111b;
+        --surface: rgba(5, 24, 33, 0.74);
+        --surface-strong: rgba(4, 20, 28, 0.88);
+        --border: rgba(140, 220, 235, 0.14);
+        --border-strong: rgba(140, 220, 235, 0.28);
 
-        <form method="post" class="auth-form">
-            {% csrf_token %}
-            {{ form.non_field_errors }}
+        --text: #f3fbff;
+        --text-muted: rgba(232, 244, 248, 0.64);
+        --text-faint: rgba(232, 244, 248, 0.42);
 
-            <div class="form-group">
-                <label>Email ID or Mobile Number</label>
-                {{ form.login }}
-                {{ form.login.errors }}
+        --primary: #19d8ea;
+        --primary-2: #16cfab;
+        --primary-text: #052631;
+
+        --success: #31d47a;
+        --danger: #ff5d6c;
+
+        --input-bg: #edf3f6;
+        --input-border: rgba(203, 223, 230, 0.92);
+        --input-text: #17313b;
+        --input-placeholder: #748791;
+
+        --header-h: 92px;
+        --ticker-h: 42px;
+        --radius-xl: 28px;
+        --radius-lg: 20px;
+        --radius-md: 16px;
+        --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+        --card-width: 460px;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+    }
+
+    body {
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+            radial-gradient(circle at 12% 18%, rgba(20, 173, 196, 0.18), transparent 26%),
+            radial-gradient(circle at 85% 80%, rgba(18, 184, 145, 0.13), transparent 28%),
+            linear-gradient(135deg, var(--bg-1) 0%, #021019 35%, #031824 68%, #04111a 100%);
+        color: var(--text);
+    }
+
+    .auth-shell {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        isolation: isolate;
+        background:
+            radial-gradient(circle at 50% 0%, rgba(19, 165, 186, 0.09), transparent 34%),
+            linear-gradient(180deg, rgba(6, 18, 27, 0.2), rgba(2, 10, 16, 0.34));
+    }
+
+    .auth-shell::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(rgba(72, 193, 214, 0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(72, 193, 214, 0.07) 1px, transparent 1px);
+        background-size: 60px 60px;
+        opacity: 0.16;
+        pointer-events: none;
+    }
+
+    .auth-shell::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.38) 100%);
+        pointer-events: none;
+    }
+
+    .orb {
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(48px);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .orb-1 {
+        width: 320px;
+        height: 320px;
+        top: 110px;
+        left: -70px;
+        background: rgba(23, 187, 214, 0.18);
+    }
+
+    .orb-2 {
+        width: 420px;
+        height: 420px;
+        right: -120px;
+        bottom: -50px;
+        background: rgba(16, 196, 153, 0.14);
+    }
+
+    .scan-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(40, 225, 241, 0.92), transparent);
+        opacity: 0.75;
+        z-index: 1;
+        animation: scan 8s linear infinite;
+        pointer-events: none;
+    }
+
+    .auth-header {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        height: var(--header-h);
+        z-index: 4;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 28px;
+        border: 1px solid rgba(192, 233, 241, 0.12);
+        border-radius: 26px 26px 0 0;
+        background:
+            linear-gradient(90deg, rgba(8, 30, 40, 0.95), rgba(4, 19, 34, 0.94) 64%, rgba(3, 14, 27, 0.96)),
+            radial-gradient(circle at 0% 50%, rgba(18, 184, 212, 0.14), transparent 30%);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .brand-mark {
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--primary), var(--primary-2));
+        color: #062731;
+        font-size: 1.25rem;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        box-shadow: 0 0 32px rgba(25, 216, 234, 0.34);
+    }
+
+    .brand-text strong {
+        display: block;
+        font-size: 1.95rem;
+        line-height: 1;
+        letter-spacing: -0.05em;
+    }
+
+    .brand-text span {
+        display: block;
+        margin-top: 4px;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+
+    .auth-nav {
+        font-size: 1.02rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.88);
+    }
+
+    .ticker-wrap {
+        position: absolute;
+        top: calc(12px + var(--header-h));
+        left: 12px;
+        right: 12px;
+        height: var(--ticker-h);
+        z-index: 4;
+        overflow: hidden;
+        border-left: 1px solid rgba(192, 233, 241, 0.12);
+        border-right: 1px solid rgba(192, 233, 241, 0.12);
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        background: rgba(4, 16, 25, 0.78);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .ticker-track {
+        display: flex;
+        width: max-content;
+        min-width: 100%;
+        animation: ticker 30s linear infinite;
+    }
+
+    .ticker-group {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        padding-inline: 20px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .ticker-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .ticker-item .sym {
+        font-weight: 800;
+    }
+
+    .ticker-item .price {
+        color: rgba(255, 255, 255, 0.68);
+    }
+
+    .ticker-item .up {
+        color: var(--success);
+    }
+
+    .ticker-item .down {
+        color: var(--danger);
+    }
+
+    .auth-stage {
+        position: absolute;
+        inset: calc(12px + var(--header-h) + var(--ticker-h)) 12px 12px;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .chart-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 90px;
+        height: 180px;
+        opacity: 0.72;
+        pointer-events: none;
+    }
+
+    .chart-line svg,
+    .candles svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .candles {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 240px;
+        opacity: 0.34;
+        pointer-events: none;
+    }
+
+    .auth-main {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        z-index: 5;
+    }
+
+    .auth-card-wrap {
+        position: relative;
+        width: 100%;
+        max-width: var(--card-width);
+    }
+
+    .auth-card-wrap::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        border-radius: 26px;
+        background: linear-gradient(135deg, rgba(28, 221, 244, 0.26), rgba(28, 221, 244, 0.02), rgba(24, 216, 164, 0.16));
+        filter: blur(20px);
+        opacity: 0.62;
+        z-index: -1;
+    }
+
+    .auth-card {
+        position: relative;
+        padding: 28px 24px 20px;
+        border-radius: 24px;
+        border: 1px solid rgba(144, 221, 233, 0.1);
+        background:
+            linear-gradient(180deg, rgba(6, 31, 41, 0.74), rgba(3, 18, 26, 0.86)),
+            rgba(4, 20, 29, 0.8);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow:
+            0 20px 60px rgba(0, 0, 0, 0.42),
+            0 0 0 1px rgba(25, 216, 234, 0.06),
+            0 0 36px rgba(25, 216, 234, 0.08);
+        overflow: hidden;
+    }
+
+    .auth-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 25% 0%, rgba(30, 207, 228, 0.12), transparent 28%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 35%);
+        pointer-events: none;
+    }
+
+    .auth-card h1 {
+        position: relative;
+        z-index: 1;
+        margin: 0;
+        font-size: clamp(2.8rem, 5vw, 4rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+        font-weight: 900;
+        color: #f5fdff;
+    }
+
+    .subtitle {
+        position: relative;
+        z-index: 1;
+        margin: 10px 0 22px;
+        color: var(--text-muted);
+        font-size: 1rem;
+    }
+
+    .auth-form {
+        position: relative;
+        z-index: 1;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.98rem;
+        font-weight: 700;
+    }
+
+    .auth-form input[type="text"],
+    .auth-form input[type="email"],
+    .auth-form input[type="password"],
+    .auth-form input[type="tel"],
+    .auth-form input[type="number"] {
+        width: 100%;
+        height: 56px;
+        border-radius: 16px;
+        border: 1px solid var(--input-border);
+        background: var(--input-bg);
+        color: var(--input-text);
+        padding: 0 18px;
+        font-size: 1rem;
+        font-weight: 500;
+        outline: none;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+        transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
+    }
+
+    .auth-form input::placeholder {
+        color: var(--input-placeholder);
+        opacity: 1;
+    }
+
+    .auth-form input:focus {
+        border-color: rgba(25, 216, 234, 0.86);
+        transform: translateY(-1px);
+        box-shadow:
+            0 0 0 4px rgba(25, 216, 234, 0.14),
+            0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .btn-primary {
+        position: relative;
+        width: 100%;
+        height: 56px;
+        margin-top: 4px;
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        background: linear-gradient(90deg, var(--primary), var(--primary-2));
+        color: var(--primary-text);
+        font-size: 1.04rem;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+        box-shadow:
+            0 12px 26px rgba(8, 195, 209, 0.22),
+            0 0 28px rgba(20, 208, 218, 0.2);
+        transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.02);
+    }
+
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+
+    .btn-primary:focus-visible {
+        outline: 3px solid rgba(255, 255, 255, 0.85);
+        outline-offset: 3px;
+    }
+
+    .btn-primary::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.42) 50%, transparent 80%);
+        transform: translateX(-130%);
+        animation: shimmer 3s linear infinite;
+    }
+
+    .btn-primary > span {
+        position: relative;
+        z-index: 1;
+    }
+
+    .auth-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 16px;
+        color: var(--text-faint);
+        font-size: 0.86rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .live-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .live-dot {
+        position: relative;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--success);
+        box-shadow: 0 0 12px rgba(49, 212, 122, 0.65);
+        flex-shrink: 0;
+    }
+
+    .live-dot::after {
+        content: "";
+        position: absolute;
+        inset: -5px;
+        border-radius: inherit;
+        border: 1px solid rgba(49, 212, 122, 0.36);
+        animation: pulse 1.8s ease-out infinite;
+    }
+
+    .auth-form .errorlist,
+    .auth-form ul.errorlist {
+        list-style: none;
+        margin: 8px 0 0;
+        padding: 0;
+        color: #ff8b98;
+        font-size: 0.88rem;
+        font-weight: 600;
+    }
+
+    .auth-form .nonfield,
+    .auth-form .errorlist.nonfield {
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 93, 108, 0.18);
+        background: rgba(255, 93, 108, 0.08);
+    }
+
+    @keyframes ticker {
+        from { transform: translateX(0); }
+        to { transform: translateX(-50%); }
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-130%); }
+        100% { transform: translateX(130%); }
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(0.8); opacity: 0.8; }
+        70% { transform: scale(1.7); opacity: 0; }
+        100% { opacity: 0; }
+    }
+
+    @keyframes scan {
+        0% { transform: translateY(0); opacity: 0; }
+        8% { opacity: 0.85; }
+        100% { transform: translateY(100vh); opacity: 0; }
+    }
+
+    @media (max-width: 768px) {
+        :root {
+            --header-h: 78px;
+            --ticker-h: 38px;
+            --card-width: 400px;
+        }
+
+        .auth-header {
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            padding: 0 16px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .ticker-wrap {
+            top: calc(8px + var(--header-h));
+            left: 8px;
+            right: 8px;
+        }
+
+        .auth-stage {
+            inset: calc(8px + var(--header-h) + var(--ticker-h)) 8px 8px;
+        }
+
+        .brand-mark {
+            width: 48px;
+            height: 48px;
+            border-radius: 15px;
+            font-size: 1rem;
+        }
+
+        .brand-text strong {
+            font-size: 1.4rem;
+        }
+
+        .brand-text span {
+            font-size: 0.8rem;
+        }
+
+        .auth-nav {
+            font-size: 0.92rem;
+        }
+
+        .auth-card {
+            padding: 24px 18px 18px;
+            border-radius: 20px;
+        }
+
+        .auth-card h1 {
+            font-size: clamp(2.5rem, 11vw, 3.4rem);
+        }
+
+        .subtitle {
+            font-size: 0.92rem;
+            margin-bottom: 18px;
+        }
+
+        .auth-form input[type="text"],
+        .auth-form input[type="email"],
+        .auth-form input[type="password"],
+        .auth-form input[type="tel"],
+        .auth-form input[type="number"],
+        .btn-primary {
+            height: 52px;
+            border-radius: 14px;
+        }
+
+        .auth-meta {
+            flex-direction: column;
+            align-items: flex-start;
+            font-size: 0.8rem;
+        }
+
+        .chart-line {
+            top: 100px;
+            height: 150px;
+        }
+
+        .candles {
+            height: 190px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        :root {
+            --card-width: 100%;
+        }
+
+        .auth-main {
+            padding: 14px;
+        }
+
+        .auth-card h1 {
+            font-size: 2.5rem;
+        }
+
+        .ticker-item {
+            font-size: 0.78rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+</style>
+
+<section class="auth-shell">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="scan-line"></div>
+
+    {% comment %} <header class="auth-header">
+        <div class="brand">
+            <div class="brand-mark">TS</div>
+            <div class="brand-text">
+                <strong>O Trade</strong>
+                <span>Trading platform</span>
             </div>
+        </div>
+        <div class="auth-nav">Login</div>
+    </header> {% endcomment %}
 
-            <div class="form-group">
-                <label>Password</label>
-                {{ form.password }}
-                {{ form.password.errors }}
+    <div class="ticker-wrap" aria-hidden="true">
+        <div class="ticker-track">
+            <div class="ticker-group">
+                <span class="ticker-item"><span class="sym">TSLA</span><span class="price">412.55</span><span class="down">▼ -0.92%</span></span>
+                <span class="ticker-item"><span class="sym">ETH</span><span class="price">3,612</span><span class="up">▲ +1.05%</span></span>
+                <span class="ticker-item"><span class="sym">NVDA</span><span class="price">168.32</span><span class="up">▲ +3.41%</span></span>
+                <span class="ticker-item"><span class="sym">SPX</span><span class="price">5,872</span><span class="down">▼ -0.18%</span></span>
+                <span class="ticker-item"><span class="sym">MSFT</span><span class="price">438.21</span><span class="up">▲ +0.62%</span></span>
+                <span class="ticker-item"><span class="sym">GOLD</span><span class="price">2,712</span><span class="up">▲ +0.44%</span></span>
+                <span class="ticker-item"><span class="sym">AMZN</span><span class="price">224.10</span><span class="down">▼ -1.12%</span></span>
             </div>
+            <div class="ticker-group">
+                <span class="ticker-item"><span class="sym">TSLA</span><span class="price">412.55</span><span class="down">▼ -0.92%</span></span>
+                <span class="ticker-item"><span class="sym">ETH</span><span class="price">3,612</span><span class="up">▲ +1.05%</span></span>
+                <span class="ticker-item"><span class="sym">NVDA</span><span class="price">168.32</span><span class="up">▲ +3.41%</span></span>
+                <span class="ticker-item"><span class="sym">SPX</span><span class="price">5,872</span><span class="down">▼ -0.18%</span></span>
+                <span class="ticker-item"><span class="sym">MSFT</span><span class="price">438.21</span><span class="up">▲ +0.62%</span></span>
+                <span class="ticker-item"><span class="sym">GOLD</span><span class="price">2,712</span><span class="up">▲ +0.44%</span></span>
+                <span class="ticker-item"><span class="sym">AMZN</span><span class="price">224.10</span><span class="down">▼ -1.12%</span></span>
+            </div>
+        </div>
+    </div>
 
-            <button type="submit" class="btn-primary">
-                Login
-            </button>
-        </form>
+    <div class="auth-stage">
+        <div class="chart-line" aria-hidden="true">
+            <svg viewBox="0 0 1440 240" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="tradeLineStroke" x1="0" x2="1" y1="0" y2="0">
+                        <stop offset="0%" stop-color="rgba(27, 224, 227, 0.30)"></stop>
+                        <stop offset="55%" stop-color="rgba(35, 220, 225, 0.82)"></stop>
+                        <stop offset="100%" stop-color="rgba(27, 224, 227, 0.22)"></stop>
+                    </linearGradient>
+                </defs>
+                <path d="M0,178 C90,86 162,130 238,124 C328,118 382,78 470,92 C566,108 616,22 708,136 C798,194 888,144 966,156 C1068,172 1118,112 1200,170 C1278,214 1358,154 1440,28"
+                      fill="none"
+                      stroke="url(#tradeLineStroke)"
+                      stroke-width="3"
+                      stroke-linecap="round">
+                    <animate attributeName="d"
+                             dur="7s"
+                             repeatCount="indefinite"
+                             values="
+                             M0,178 C90,86 162,130 238,124 C328,118 382,78 470,92 C566,108 616,22 708,136 C798,194 888,144 966,156 C1068,172 1118,112 1200,170 C1278,214 1358,154 1440,28;
+                             M0,164 C88,102 160,138 238,120 C330,96 390,70 470,108 C560,148 624,44 706,122 C800,170 892,158 970,166 C1060,174 1120,102 1206,158 C1290,210 1362,174 1440,44;
+                             M0,178 C90,86 162,130 238,124 C328,118 382,78 470,92 C566,108 616,22 708,136 C798,194 888,144 966,156 C1068,172 1118,112 1200,170 C1278,214 1358,154 1440,28"></animate>
+                </path>
+            </svg>
+        </div>
+
+        <div class="candles" aria-hidden="true">
+            <svg viewBox="0 0 1440 260" preserveAspectRatio="none">
+                <g opacity="0.92">
+                    <line x1="22" y1="204" x2="22" y2="244" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="12" y="212" width="20" height="18" fill="rgba(255,89,101,.4)"/>
+                    <line x1="60" y1="190" x2="60" y2="238" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="50" y="202" width="20" height="22" fill="rgba(255,89,101,.4)"/>
+                    <line x1="100" y1="178" x2="100" y2="226" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="90" y="188" width="20" height="26" fill="rgba(43,211,126,.38)"/>
+                    <line x1="142" y1="152" x2="142" y2="212" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="132" y="166" width="20" height="30" fill="rgba(43,211,126,.38)"/>
+                    <line x1="186" y1="128" x2="186" y2="196" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="176" y="142" width="20" height="34" fill="rgba(43,211,126,.38)"/>
+                    <line x1="228" y1="120" x2="228" y2="184" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="218" y="132" width="20" height="28" fill="rgba(43,211,126,.38)"/>
+                    <line x1="270" y1="126" x2="270" y2="192" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="260" y="140" width="20" height="24" fill="rgba(255,89,101,.4)"/>
+                    <line x1="312" y1="154" x2="312" y2="226" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="302" y="168" width="20" height="34" fill="rgba(255,89,101,.4)"/>
+
+                    <line x1="972" y1="156" x2="972" y2="224" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="962" y="168" width="20" height="32" fill="rgba(255,89,101,.4)"/>
+                    <line x1="1016" y1="168" x2="1016" y2="248" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="1006" y="182" width="20" height="42" fill="rgba(255,89,101,.4)"/>
+                    <line x1="1060" y1="146" x2="1060" y2="236" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="1050" y="162" width="20" height="36" fill="rgba(255,89,101,.4)"/>
+                    <line x1="1108" y1="182" x2="1108" y2="246" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="1098" y="192" width="20" height="32" fill="rgba(43,211,126,.38)"/>
+                    <line x1="1256" y1="146" x2="1256" y2="234" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="1246" y="160" width="20" height="54" fill="rgba(43,211,126,.38)"/>
+                    <line x1="1296" y1="132" x2="1296" y2="212" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="1286" y="146" width="20" height="40" fill="rgba(43,211,126,.38)"/>
+                    <line x1="1336" y1="138" x2="1336" y2="206" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="1326" y="150" width="20" height="28" fill="rgba(255,89,101,.4)"/>
+                    <line x1="1376" y1="142" x2="1376" y2="228" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="1366" y="156" width="20" height="34" fill="rgba(255,89,101,.4)"/>
+                </g>
+                <line x1="0" y1="196" x2="1440" y2="196" stroke="rgba(35, 195, 222, 0.15)" stroke-width="2"/>
+            </svg>
+        </div>
+
+        <main class="auth-main">
+            <div class="auth-card-wrap">
+                <div class="auth-card">
+                    <h1>Login</h1>
+                    <p class="subtitle">Sign in to open your trading dashboard</p>
+
+                    <form method="post" class="auth-form" novalidate>
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+
+                        <div class="form-group">
+                            <label for="{{ form.login.id_for_label }}">Email ID or Mobile Number</label>
+                            {{ form.login }}
+                            {{ form.login.errors }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.password.id_for_label }}">Password</label>
+                            {{ form.password }}
+                            {{ form.password.errors }}
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            <span>Login</span>
+                        </button>
+                    </form>
+
+                    <div class="auth-meta">
+                        <span class="live-indicator">
+                            <span class="live-dot"></span>
+                            <span>Markets live</span>
+                        </span>
+                        <span>Secured · 256-bit TLS</span>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </section>
+
+<script>
+(function () {
+    const form = document.querySelector('.auth-form');
+    if (!form) return;
+
+    const inputs = form.querySelectorAll('input');
+
+    inputs.forEach((input) => {
+        const sync = () => {
+            if (input.value && input.value.trim() !== '') {
+                input.classList.add('is-filled');
+            } else {
+                input.classList.remove('is-filled');
+            }
+        };
+        sync();
+        input.addEventListener('input', sync);
+        input.addEventListener('blur', sync);
+    });
+
+    form.addEventListener('submit', function () {
+        const button = form.querySelector('.btn-primary');
+        const text = button ? button.querySelector('span') : null;
+        if (button) {
+            button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
+        }
+        if (text) {
+            text.textContent = 'Signing in...';
+        }
+    });
+})();
+</script>
 {% endblock %}
