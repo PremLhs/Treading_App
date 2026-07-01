@@ -1725,6 +1725,7 @@ def gapupview(request):
     gap_down_rows = rows.filter(gap_down=True)
     failed_rows = rows.filter(gap_type="SCAN FAILED")
     no_gap_rows = rows.filter(gap_type="NO GAP")
+    runtime = gapup_service.get_gap_scan_runtime_status(trade_date=trade_date)
 
     context = {
         "trade_date": trade_date,
@@ -1736,6 +1737,7 @@ def gapupview(request):
         "failedcount": failed_rows.count(),
         "nogapcount": no_gap_rows.count(),
         "hasdata": rows.exists(),
+        "scan_runtime": runtime,
     }
     return render(request, "dashboard/gapup.html", context)
 
@@ -1744,23 +1746,24 @@ def gapupview(request):
 @require_POST
 def gapuprefreshview(request):
     trade_date = timezone.localdate()
-    limit_raw = (request.POST.get("limit") or "").strip()
-    limit_symbols = int(limit_raw) if limit_raw.isdigit() else None
+    force_refresh = (request.POST.get("force") or "").strip().lower() in {"1", "true", "yes"}
 
-    result = gapup_service.update_all_gapup_data(
+    result = gapup_service.start_gap_scan_in_background(
         trade_date=trade_date,
-        limit_symbols=limit_symbols,
+        limit_symbols=None,
+        scan_type="FORCE" if force_refresh else "MANUAL",
+        trigger_source="web_refresh",
+        force=force_refresh,
     )
 
-    status_code = 200 if result["error_count"] == 0 else 207
+    status_code = 202 if result.get("queued") else 200
 
     return JsonResponse({
-        "status": result["error_count"] == 0,
-        "message": f"Gap scan completed for {trade_date}. Success={result['success_count']} Failed={result['error_count']}",
-        "trade_date": str(trade_date),
-        "success_count": result["success_count"],
-        "error_count": result["error_count"],
-        "errors": result["errors"][:10],
+        "status": result["status"],
+        "queued": result["queued"],
+        "message": result["message"],
+        "trade_date": result["trade_date"],
+        "run_id": result.get("run_id"),
     }, status=status_code)
 
 
@@ -1769,6 +1772,7 @@ def gapuprefreshview(request):
 def gapupstatusapiview(request):
     trade_date = timezone.localdate()
     rows = GapUpStatus.objects.filter(trade_date=trade_date).order_by("symbol")
+    runtime = gapup_service.get_gap_scan_runtime_status(trade_date=trade_date)
 
     gap_up = [
         {
@@ -1826,8 +1830,18 @@ def gapupstatusapiview(request):
         "gap_up": gap_up,
         "gap_down": gap_down,
         "rows": all_rows,
+        "runtime": runtime,
     })
 
+
+@login_required
+@require_GET
+def gapupscanruntimeapiview(request):
+    trade_date = timezone.localdate()
+    runtime = gapup_service.get_gap_scan_runtime_status(trade_date=trade_date)
+    return JsonResponse(runtime)
+
+##############################################################
 @login_required
 @require_GET
 def moon_marse_view(request):

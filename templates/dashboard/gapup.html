@@ -15,13 +15,6 @@
     </div>
 
     <div class="hero-banner-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
-      <select id="scanLimitSelect" class="btn btn-secondary">
-        <option value="5">Scan 5</option>
-        <option value="10" selected>Scan 10</option>
-        <option value="20">Scan 20</option>
-        <option value="">Scan All</option>
-      </select>
-
       <button id="refreshGapScanBtn" type="button" class="btn btn-primary">
         Refresh Gap Scan
       </button>
@@ -62,8 +55,8 @@
   <div id="gapScannerLoading" class="scanner-loading" style="display:none;">
     <div class="spinner"></div>
     <div>
-      <h3>Scanning stocks...</h3>
-      <p>Please wait. Broker API rate limit ke hisaab se scan controlled speed par chal raha hai.</p>
+      <h3>Scanning all Nifty 50 stocks...</h3>
+      <p>Please wait. Broker API rate limit ke hisaab se full scan controlled speed par chal raha hai.</p>
     </div>
   </div>
 
@@ -182,7 +175,6 @@
 <script>
 (function () {
   const refreshBtn = document.getElementById("refreshGapScanBtn");
-  const scanLimitSelect = document.getElementById("scanLimitSelect");
   const loadingBox = document.getElementById("gapScannerLoading");
   const messageBox = document.getElementById("gapScannerMessage");
   const gapUpList = document.getElementById("gapUpList");
@@ -192,6 +184,8 @@
   const failedCount = document.getElementById("failedCount");
   const tradeDateText = document.getElementById("tradeDateText");
   const tableBody = document.getElementById("gapStatusTableBody");
+
+  let runtimePoller = null;
 
   function getCookie(name) {
     let cookieValue = null;
@@ -206,6 +200,15 @@
       }
     }
     return cookieValue;
+  }
+
+  function showMessage(text, type) {
+    messageBox.style.display = "block";
+    messageBox.className = "scanner-message";
+    if (type) {
+      messageBox.classList.add(type);
+    }
+    messageBox.textContent = text || "";
   }
 
   function renderStockList(container, stocks, typeClass, emptyText) {
@@ -266,22 +269,73 @@
     renderStockList(gapUpList, data.gap_up || [], "stock-pill-success", "No gap up stock found.");
     renderStockList(gapDownList, data.gap_down || [], "stock-pill-danger", "No gap down stock found.");
     renderTable(data.rows || []);
+
+    return data;
+  }
+
+  async function loadRuntime() {
+    const response = await fetch("{% url 'gapupscanruntimeapi' %}", {
+      method: "GET",
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    });
+    return await response.json();
+  }
+
+  function stopPolling() {
+    if (runtimePoller) {
+      clearInterval(runtimePoller);
+      runtimePoller = null;
+    }
+  }
+
+  function setIdleState() {
+    loadingBox.style.display = "none";
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = "Refresh Gap Scan";
+  }
+
+  function setRunningState() {
+    loadingBox.style.display = "flex";
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "Scanning...";
+  }
+
+  function startPolling() {
+    stopPolling();
+    runtimePoller = setInterval(async () => {
+      try {
+        const runtime = await loadRuntime();
+        await loadStatus();
+
+        if (runtime.status === "RUNNING") {
+          setRunningState();
+          showMessage(runtime.message || "Full gap scan is running...", "success");
+          return;
+        }
+
+        setIdleState();
+
+        if (runtime.status === "COMPLETED") {
+          showMessage(runtime.message || "Full gap scan completed.", "success");
+        } else if (runtime.status === "FAILED") {
+          showMessage(runtime.message || "Gap scan failed.", "error");
+        }
+
+        stopPolling();
+      } catch (error) {
+        setIdleState();
+        showMessage(error.message || "Unable to fetch scan status.", "error");
+        stopPolling();
+      }
+    }, 5000);
   }
 
   async function refreshScanner() {
-    loadingBox.style.display = "flex";
+    setRunningState();
     messageBox.style.display = "none";
     messageBox.className = "scanner-message";
-    refreshBtn.disabled = true;
-    scanLimitSelect.disabled = true;
-    refreshBtn.textContent = "Scanning...";
 
     try {
-      const formData = new URLSearchParams();
-      if (scanLimitSelect.value) {
-        formData.append("limit", scanLimitSelect.value);
-      }
-
       const response = await fetch("{% url 'gapuprefresh' %}", {
         method: "POST",
         headers: {
@@ -289,28 +343,39 @@
           "X-Requested-With": "XMLHttpRequest",
           "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
         },
-        body: formData.toString()
+        body: ""
       });
 
       const data = await response.json();
+      showMessage(data.message || "Gap scan request accepted.", "success");
       await loadStatus();
-
-      messageBox.style.display = "block";
-      messageBox.classList.add((data.error_count || 0) === 0 ? "success" : "error");
-      messageBox.textContent = data.message || "Gap scan completed.";
+      startPolling();
     } catch (error) {
-      messageBox.style.display = "block";
-      messageBox.classList.add("error");
-      messageBox.textContent = error.message || "Gap scan failed.";
-    } finally {
-      loadingBox.style.display = "none";
-      refreshBtn.disabled = false;
-      scanLimitSelect.disabled = false;
-      refreshBtn.textContent = "Refresh Gap Scan";
+      setIdleState();
+      showMessage(error.message || "Gap scan failed.", "error");
+    }
+  }
+
+  async function init() {
+    try {
+      const statusData = await loadStatus();
+      const runtime = statusData.runtime || await loadRuntime();
+
+      if (runtime && runtime.status === "RUNNING") {
+        setRunningState();
+        showMessage(runtime.message || "Scan is already running...", "success");
+        startPolling();
+      } else {
+        setIdleState();
+      }
+    } catch (error) {
+      setIdleState();
+      showMessage(error.message || "Initial data load failed.", "error");
     }
   }
 
   refreshBtn.addEventListener("click", refreshScanner);
+  init();
 })();
 </script>
 {% endblock %}

@@ -1,11 +1,12 @@
 from django.urls import path
 from . import views
 
+
 urlpatterns = [
     path("", views.home_redirect, name="home"),
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
-    
+
     path("dashboard/", views.dashboard_view, name="dashboard"),
     path("api/broker-health/", views.broker_health_view, name="broker_health"),
     path("api/candles/", views.candles_api_view, name="candles_api"),
@@ -27,7 +28,7 @@ urlpatterns = [
 
     path("moon-marse/", views.moon_marse_view, name="moon_marse"),
     path("api/moon-marse/", views.moon_marse_api_view, name="moon_marse_api"),
-    
+
     path("calendar/", views.calendar_view, name="calendar"),
 
     path("api/notifications/", views.notifications_list_view, name="notifications_list"),
@@ -35,11 +36,11 @@ urlpatterns = [
     path("api/notifications/mark-read/", views.mark_notification_read_view, name="mark_notification_read"),
 
     path("whatsapp-broadcast/", views.whatsapp_broadcast_view, name="whatsapp_broadcast"),
+
     path("gapup/", views.gapupview, name="gapup"),
     path("gapup/refresh/", views.gapuprefreshview, name="gapuprefresh"),
     path("api/gapup/status/", views.gapupstatusapiview, name="gapupstatusapi"),
-    
+    path("api/gapup/runtime/", views.gapupscanruntimeapiview, name="gapupscanruntimeapi"),
 
-    path("api/candles/", views.candles_api_view, name="candles_api"),
     path("api/amavasya-strategy/", views.amavasya_strategy_api_view, name="amavasya_strategy_api"),
 ]
