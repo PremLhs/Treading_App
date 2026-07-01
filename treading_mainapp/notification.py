@@ -64,6 +64,25 @@ def _safe_parse_datetime(value):
     return None
 
 
+def _safe_parse_date(value):
+    value = str(value or "").strip()
+    if not value:
+        return None
+
+    formats = [
+        "%d-%m-%Y",
+        "%Y-%m-%d",
+    ]
+
+    for fmt in formats:
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            continue
+
+    return None
+
+
 def _load_event_rows(config):
     rows = []
     file_path = config["file_path"]
@@ -113,16 +132,80 @@ def _load_event_rows(config):
     return rows
 
 
+def _load_reversal_rows():
+    rows = []
+    seen_keys = set()
+
+    try:
+        from .views import generate_reversal_rows
+    except Exception:
+        return rows
+
+    current_year = datetime.now().year
+    candidate_years = [current_year - 1, current_year, current_year + 1]
+
+    for year in candidate_years:
+        try:
+            reversal_data = generate_reversal_rows(year)
+        except Exception:
+            continue
+
+        for item in reversal_data.get("rows", []):
+            reversal_date_raw = str(item.get("reversal_date", "")).strip()
+            degree = str(item.get("degree", "")).strip()
+            elapsed_days = str(item.get("elapsed_days", "")).strip()
+            calculated_degree = str(item.get("calculated_degree", "")).strip()
+
+            if not reversal_date_raw or reversal_date_raw == "-":
+                continue
+
+            reversal_date = _safe_parse_date(reversal_date_raw)
+            if not reversal_date:
+                continue
+
+            unique_key = f"{reversal_date.isoformat()}-{degree}"
+            if unique_key in seen_keys:
+                continue
+            seen_keys.add(unique_key)
+
+            start_dt = datetime.combine(reversal_date, datetime.min.time())
+
+            rows.append({
+                "title": "Reversal Date",
+                "month": start_dt.strftime("%B"),
+                "year": str(start_dt.year),
+                "paksha": "",
+                "start_raw": reversal_date_raw,
+                "end_raw": "",
+                "start_dt": start_dt,
+                "end_dt": None,
+                "page_url": "/reversal-dates/",
+                "color_class": "notification-primary",
+                "event_key": "reversal",
+                "base_title": "Reversal Date",
+                "degree": degree,
+                "elapsed_days": elapsed_days,
+                "calculated_degree": calculated_degree,
+            })
+
+    return rows
+
+
 def _build_notification_item(event_row, alert_type):
     start_dt = event_row["start_dt"]
     event_date = start_dt.date()
     readable_start = start_dt.strftime("%d %b %Y, %I:%M %p")
 
     subtitle_parts = [readable_start]
+
     if event_row.get("month"):
         subtitle_parts.append(event_row["month"])
+
     if event_row.get("paksha"):
         subtitle_parts.append(event_row["paksha"])
+
+    if event_row.get("event_key") == "reversal" and event_row.get("degree"):
+        subtitle_parts.append(f"Level {event_row['degree']}°")
 
     subtitle = " • ".join(subtitle_parts)
 
@@ -136,6 +219,9 @@ def _build_notification_item(event_row, alert_type):
         sort_order = 1
 
     notification_id = f"{event_row['event_key']}-{event_date.isoformat()}-{alert_type}"
+
+    if event_row.get("event_key") == "reversal" and event_row.get("degree"):
+        notification_id = f"{event_row['event_key']}-{event_date.isoformat()}-{event_row['degree']}-{alert_type}"
 
     return {
         "id": notification_id,
@@ -166,8 +252,20 @@ def get_event_notifications():
 
             if event_date == today:
                 notifications.append(_build_notification_item(event_row, "today"))
+
             if event_date == tomorrow:
                 notifications.append(_build_notification_item(event_row, "upcoming"))
+
+    reversal_rows = _load_reversal_rows()
+
+    for event_row in reversal_rows:
+        event_date = event_row["start_dt"].date()
+
+        if event_date == today:
+            notifications.append(_build_notification_item(event_row, "today"))
+
+        if event_date == tomorrow:
+            notifications.append(_build_notification_item(event_row, "upcoming"))
 
     notifications.sort(key=lambda item: (item["sort_order"], item["event_time"]))
     return notifications
@@ -175,12 +273,26 @@ def get_event_notifications():
 
 def sync_notifications_to_session(request):
     active_notifications = get_event_notifications()
+    active_ids = {item["id"] for item in active_notifications}
 
     inbox = request.session.get("notification_inbox", [])
-    inbox_map = {item["id"]: item for item in inbox}
+    inbox_map = {
+        item["id"]: item
+        for item in inbox
+        if item.get("id") in active_ids
+    }
 
     for item in active_notifications:
-        if item["id"] not in inbox_map:
+        existing_item = inbox_map.get(item["id"])
+
+        if existing_item:
+            inbox_map[item["id"]] = {
+                **existing_item,
+                **item,
+                "read": existing_item.get("read", False),
+                "popup_shown": existing_item.get("popup_shown", False),
+            }
+        else:
             inbox_map[item["id"]] = {
                 **item,
                 "read": False,
@@ -189,14 +301,17 @@ def sync_notifications_to_session(request):
 
     updated_inbox = sorted(
         inbox_map.values(),
-        key=lambda item: (item.get("read", False), item.get("sort_order", 99), item.get("event_time", "")),
+        key=lambda item: (
+            item.get("read", False),
+            item.get("sort_order", 99),
+            item.get("event_time", ""),
+        ),
     )
 
     request.session["notification_inbox"] = updated_inbox
     request.session.modified = True
 
     return updated_inbox
-
 
 def get_unread_popup_notifications(request):
     inbox = sync_notifications_to_session(request)
