@@ -289,17 +289,53 @@ def _latest_run_for_date(trade_date):
     return GapScanRun.objects.filter(trade_date=trade_date).order_by("-started_at", "-id").first()
 
 
-def _can_reuse_existing_data(trade_date, force=False):
-    rows = GapUpStatus.objects.filter(trade_date=trade_date)
+def _get_symbols_needing_scan(trade_date, force=False, limit_symbols: Optional[int] = None) -> List[str]:
+    symbols = list(NIFTY_50_SYMBOLS)
+    if limit_symbols:
+        symbols = symbols[:limit_symbols]
+
     if force:
-        return False, rows.count()
+        return symbols
 
-    if rows.exists():
-        return True, rows.count()
-    return False, 0
+    rows = GapUpStatus.objects.filter(trade_date=trade_date)
+    existing_by_symbol = {row.symbol: row for row in rows}
+
+    pending_symbols: List[str] = []
+    for symbol in symbols:
+        row = existing_by_symbol.get(symbol)
+        if row is None:
+            pending_symbols.append(symbol)
+            continue
+        if row.gap_type == "SCAN FAILED":
+            pending_symbols.append(symbol)
+
+    return pending_symbols
 
 
-def acquire_scan_run(trade_date=None, scan_type="MANUAL", trigger_source="", force=False) -> Tuple[Optional[GapScanRun], bool, str]:
+def _can_reuse_existing_data(trade_date, force=False, limit_symbols: Optional[int] = None):
+    rows = GapUpStatus.objects.filter(trade_date=trade_date)
+    symbols_needing_scan = _get_symbols_needing_scan(
+        trade_date=trade_date,
+        force=force,
+        limit_symbols=limit_symbols,
+    )
+
+    if force:
+        return False, rows.count(), symbols_needing_scan
+
+    if not symbols_needing_scan and rows.exists():
+        return True, rows.count(), []
+
+    return False, rows.count(), symbols_needing_scan
+
+
+def acquire_scan_run(
+    trade_date=None,
+    scan_type="MANUAL",
+    trigger_source="",
+    force=False,
+    limit_symbols: Optional[int] = None,
+) -> Tuple[Optional[GapScanRun], bool, str, List[str]]:
     if trade_date is None:
         trade_date = timezone.localdate()
 
@@ -309,17 +345,35 @@ def acquire_scan_run(trade_date=None, scan_type="MANUAL", trigger_source="", for
         if latest and latest.status == "RUNNING":
             stale = latest.last_heartbeat and (timezone.now() - latest.last_heartbeat).total_seconds() > RUNNING_STALE_SECONDS
             if not stale:
-                return latest, False, "Scan already running."
+                pending_symbols = _get_symbols_needing_scan(
+                    trade_date=trade_date,
+                    force=force,
+                    limit_symbols=limit_symbols,
+                )
+                return latest, False, "Scan already running.", pending_symbols
             latest.status = "FAILED"
             latest.finished_at = timezone.now()
             latest.message = "Previous running scan marked stale and failed automatically."
             latest.save(update_fields=["status", "finished_at", "message", "updated_at"])
 
-        reusable, row_count = _can_reuse_existing_data(trade_date=trade_date, force=force)
+        reusable, row_count, symbols_needing_scan = _can_reuse_existing_data(
+            trade_date=trade_date,
+            force=force,
+            limit_symbols=limit_symbols,
+        )
+
         if reusable:
-            latest_ok = GapScanRun.objects.filter(trade_date=trade_date, status="COMPLETED").order_by("-started_at", "-id").first()
+            latest_ok = GapScanRun.objects.filter(
+                trade_date=trade_date,
+                status="COMPLETED"
+            ).order_by("-started_at", "-id").first()
             if latest_ok:
-                return latest_ok, False, f"Using existing stored scan result ({row_count} rows)."
+                return latest_ok, False, f"Using existing stored scan result ({row_count} rows).", []
+
+        if symbols_needing_scan:
+            message = f"Fresh scan started for {len(symbols_needing_scan)} pending symbol(s)."
+        else:
+            message = "Fresh scan started."
 
         run = GapScanRun.objects.create(
             trade_date=trade_date,
@@ -329,9 +383,9 @@ def acquire_scan_run(trade_date=None, scan_type="MANUAL", trigger_source="", for
             last_heartbeat=timezone.now(),
             trigger_source=trigger_source,
             lock_token=uuid.uuid4().hex,
-            message="Gap scan started.",
+            message=message,
         )
-        return run, True, "Fresh scan started."
+        return run, True, message, symbols_needing_scan
 
 
 def finalize_scan_run(run_id: int, *, success_count: int, error_count: int, total_count: int, message: str, status: str):
@@ -346,15 +400,22 @@ def finalize_scan_run(run_id: int, *, success_count: int, error_count: int, tota
     )
 
 
-def update_all_gapup_data(trade_date=None, limit_symbols: Optional[int] = None, scan_type="MANUAL", trigger_source="", force=False) -> Dict[str, object]:
+def update_all_gapup_data(
+    trade_date=None,
+    limit_symbols: Optional[int] = None,
+    scan_type="MANUAL",
+    trigger_source="",
+    force=False,
+) -> Dict[str, object]:
     if trade_date is None:
         trade_date = timezone.localdate()
 
-    run, should_scan, run_message = acquire_scan_run(
+    run, should_scan, run_message, symbols_to_scan = acquire_scan_run(
         trade_date=trade_date,
         scan_type=scan_type,
         trigger_source=trigger_source,
         force=force,
+        limit_symbols=limit_symbols,
     )
 
     if not should_scan:
@@ -367,7 +428,7 @@ def update_all_gapup_data(trade_date=None, limit_symbols: Optional[int] = None, 
             "error_count": failed_count,
             "errors": errors,
             "records": rows,
-            "status": True,
+            "status": failed_count == 0,
             "message": run_message,
             "scan_skipped": True,
             "run_id": run.id if run else None,
@@ -382,9 +443,14 @@ def update_all_gapup_data(trade_date=None, limit_symbols: Optional[int] = None, 
         if not connection.get("status"):
             raise ValueError(connection.get("message", "Broker login failed."))
 
-        symbols = NIFTY_50_SYMBOLS
+        symbols = symbols_to_scan or _get_symbols_needing_scan(
+            trade_date=trade_date,
+            force=force,
+            limit_symbols=limit_symbols,
+        )
 
         _debug(f"========== GAP STRATEGY SCAN STARTED FOR {trade_date} ==========")
+        _debug(f"Pending symbols count={len(symbols)}")
 
         for idx, symbol in enumerate(symbols, start=1):
             _heartbeat(run.id)
@@ -401,30 +467,38 @@ def update_all_gapup_data(trade_date=None, limit_symbols: Optional[int] = None, 
 
             time_sleep.sleep(INTER_SYMBOL_SLEEP_SECONDS)
 
-        success_count = len(results) - len(errors)
-        error_count = len(errors)
+        all_rows = list(GapUpStatus.objects.filter(trade_date=trade_date).order_by("symbol"))
+        total_failed_now = sum(1 for row in all_rows if row.gap_type == "SCAN FAILED")
+        total_success_now = len(all_rows) - total_failed_now
 
         finalize_scan_run(
             run.id,
-            success_count=success_count,
-            error_count=error_count,
-            total_count=len(results),
-            status="COMPLETED" if error_count == 0 else "COMPLETED",
-            message=f"Gap scan completed for {trade_date}. Success={success_count} Failed={error_count}",
+            success_count=total_success_now,
+            error_count=total_failed_now,
+            total_count=len(all_rows),
+            status="COMPLETED" if total_failed_now == 0 else "COMPLETED",
+            message=(
+                f"Gap scan completed for {trade_date}. "
+                f"Scanned={len(symbols)} TotalSuccess={total_success_now} TotalFailed={total_failed_now}"
+            ),
         )
 
         _debug(
-            f"========== GAP STRATEGY SCAN COMPLETED | success={success_count} failed={error_count} =========="
+            f"========== GAP STRATEGY SCAN COMPLETED | scanned={len(symbols)} "
+            f"total_success={total_success_now} total_failed={total_failed_now} =========="
         )
 
         return {
             "trade_date": trade_date,
-            "success_count": success_count,
-            "error_count": error_count,
+            "success_count": total_success_now,
+            "error_count": total_failed_now,
             "errors": errors,
-            "records": results,
-            "status": error_count == 0,
-            "message": f"Gap scan completed for {trade_date}. Success={success_count} Failed={error_count}",
+            "records": all_rows,
+            "status": total_failed_now == 0,
+            "message": (
+                f"Gap scan completed for {trade_date}. "
+                f"Scanned={len(symbols)} TotalSuccess={total_success_now} TotalFailed={total_failed_now}"
+            ),
             "scan_skipped": False,
             "run_id": run.id,
         }
@@ -442,15 +516,22 @@ def update_all_gapup_data(trade_date=None, limit_symbols: Optional[int] = None, 
         raise
 
 
-def start_gap_scan_in_background(trade_date=None, limit_symbols: Optional[int] = None, scan_type="MANUAL", trigger_source="", force=False) -> Dict[str, object]:
+def start_gap_scan_in_background(
+    trade_date=None,
+    limit_symbols: Optional[int] = None,
+    scan_type="MANUAL",
+    trigger_source="",
+    force=False,
+) -> Dict[str, object]:
     if trade_date is None:
         trade_date = timezone.localdate()
 
-    run, should_scan, run_message = acquire_scan_run(
+    run, should_scan, run_message, symbols_to_scan = acquire_scan_run(
         trade_date=trade_date,
         scan_type=scan_type,
         trigger_source=trigger_source,
         force=force,
+        limit_symbols=limit_symbols,
     )
 
     if not should_scan:
@@ -469,9 +550,16 @@ def start_gap_scan_in_background(trade_date=None, limit_symbols: Optional[int] =
             if not connection.get("status"):
                 raise ValueError(connection.get("message", "Broker login failed."))
 
-            symbols = NIFTY_50_SYMBOLS
+            symbols = symbols_to_scan or _get_symbols_needing_scan(
+                trade_date=trade_date,
+                force=force,
+                limit_symbols=limit_symbols,
+            )
             results = []
             errors = []
+
+            _debug(f"========== BACKGROUND GAP STRATEGY SCAN STARTED FOR {trade_date} ==========")
+            _debug(f"Pending symbols count={len(symbols)}")
 
             for idx, symbol in enumerate(symbols, start=1):
                 _heartbeat(run.id)
@@ -486,13 +574,25 @@ def start_gap_scan_in_background(trade_date=None, limit_symbols: Optional[int] =
                     errors.append({"symbol": symbol, "error": str(exc)})
                 time_sleep.sleep(INTER_SYMBOL_SLEEP_SECONDS)
 
+            all_rows = list(GapUpStatus.objects.filter(trade_date=trade_date).order_by("symbol"))
+            total_failed_now = sum(1 for row in all_rows if row.gap_type == "SCAN FAILED")
+            total_success_now = len(all_rows) - total_failed_now
+
             finalize_scan_run(
                 run.id,
-                success_count=len(results) - len(errors),
-                error_count=len(errors),
-                total_count=len(results),
+                success_count=total_success_now,
+                error_count=total_failed_now,
+                total_count=len(all_rows),
                 status="COMPLETED",
-                message=f"Gap scan completed for {trade_date}. Success={len(results) - len(errors)} Failed={len(errors)}",
+                message=(
+                    f"Gap scan completed for {trade_date}. "
+                    f"Scanned={len(symbols)} TotalSuccess={total_success_now} TotalFailed={total_failed_now}"
+                ),
+            )
+
+            _debug(
+                f"========== BACKGROUND GAP STRATEGY SCAN COMPLETED | scanned={len(symbols)} "
+                f"total_success={total_success_now} total_failed={total_failed_now} =========="
             )
 
         except Exception as exc:
@@ -512,7 +612,10 @@ def start_gap_scan_in_background(trade_date=None, limit_symbols: Optional[int] =
     return {
         "status": True,
         "queued": True,
-        "message": "Gap scan started in background.",
+        "message": (
+            f"Gap scan started in background for "
+            f"{len(symbols_to_scan) if symbols_to_scan else 0} pending symbol(s)."
+        ),
         "run_id": run.id,
         "trade_date": str(trade_date),
     }
@@ -524,6 +627,10 @@ def get_gap_scan_runtime_status(trade_date=None) -> Dict[str, object]:
 
     latest = _latest_run_for_date(trade_date)
     rows = GapUpStatus.objects.filter(trade_date=trade_date)
+    failed_rows = rows.filter(gap_type="SCAN FAILED").count()
+    total_symbols = len(NIFTY_50_SYMBOLS)
+    db_rows = rows.count()
+    pending_count = max(total_symbols - (db_rows - failed_rows), 0)
 
     if not latest:
         return {
@@ -531,7 +638,9 @@ def get_gap_scan_runtime_status(trade_date=None) -> Dict[str, object]:
             "has_run": False,
             "status": "NOT_STARTED",
             "message": "No scan started yet.",
-            "total_rows": rows.count(),
+            "total_rows": db_rows,
+            "failed_count": failed_rows,
+            "pending_count": pending_count,
         }
 
     return {
@@ -547,6 +656,8 @@ def get_gap_scan_runtime_status(trade_date=None) -> Dict[str, object]:
         "success_count": latest.success_count,
         "error_count": latest.error_count,
         "total_count": latest.total_count,
-        "db_rows": rows.count(),
+        "db_rows": db_rows,
+        "failed_count": failed_rows,
+        "pending_count": pending_count,
         "is_running": latest.status == "RUNNING",
     }
