@@ -1021,6 +1021,13 @@ EVENT_SOURCES = {
         "text_color": "#111827",
         "symbol": "●",
     },
+        "reversal": {
+        "file": None,
+        "title": "Reversal",
+        "color": "#a855f7",
+        "text_color": "#ffffff",
+        "symbol": "●",
+    },
 }
 
 
@@ -1092,11 +1099,11 @@ def build_calendar_events():
     events = []
 
     for event_key, config in EVENT_SOURCES.items():
+        if event_key == "reversal":
+            continue
+
         file_path = os.path.join(data_dir, config["file"])
         csv_items = extract_dates_from_csv(file_path)
-
-        print("FILE =", file_path)
-        print("DATES =", len(csv_items))
 
         for item in csv_items:
             actual_title = item["title"] if item["title"] else config["title"]
@@ -1120,6 +1127,57 @@ def build_calendar_events():
                 },
             })
 
+    reversal_config = EVENT_SOURCES["reversal"]
+    current_year = date.today().year
+    years_to_load = range(current_year - 5, current_year + 7)
+
+    seen_reversal = set()
+
+    for year in years_to_load:
+        reversal_data = generate_reversal_rows(year)
+
+        for row in reversal_data.get("rows", []):
+            reversal_date = str(row.get("reversal_date", "")).strip()
+
+            if not reversal_date or reversal_date == "-":
+                continue
+
+            try:
+                parsed_date = datetime.strptime(reversal_date, "%d-%m-%Y")
+            except ValueError:
+                continue
+
+            iso_date = parsed_date.date().isoformat()
+            degree = str(row.get("degree", "")).strip()
+            actual_title = f"Reversal {degree}°" if degree else reversal_config["title"]
+            label = f'{parsed_date.strftime("%d %b %Y")} {actual_title}'
+
+            unique_key = f"{iso_date}|{actual_title}"
+            if unique_key in seen_reversal:
+                continue
+
+            seen_reversal.add(unique_key)
+
+            events.append({
+                "title": actual_title,
+                "start": iso_date,
+                "allDay": True,
+                "backgroundColor": reversal_config["color"],
+                "borderColor": reversal_config["color"],
+                "textColor": reversal_config["text_color"],
+                "classNames": ["event-reversal"],
+                "extendedProps": {
+                    "eventType": "reversal",
+                    "label": label,
+                    "shortLabel": actual_title,
+                    "displayDate": parsed_date.strftime("%d %b %Y"),
+                    "symbol": reversal_config["symbol"],
+                    "markerColor": reversal_config["color"],
+                    "degree": degree,
+                },
+            })
+
+    events.sort(key=lambda item: (item.get("start", ""), item.get("title", "")))
     return events
 
 
@@ -1150,6 +1208,7 @@ def calendar_view(request):
         {"name": "Purnima", "color": "#22c55e", "symbol": "●"},
         {"name": "Trayodashi", "color": "#3b82f6", "symbol": "●"},
         {"name": "Pushya", "color": "#facc15", "symbol": "●"},
+        {"name": "Reversal", "color": "#a855f7", "symbol": "●"},
     ]
 
     context = {
@@ -1165,543 +1224,7 @@ def calendar_view(request):
 
 #######################################################################
 
-import csv
-import io
-import logging
-import os
-import traceback
-from typing import Dict
 
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.shortcuts import redirect, render
-from django.utils import timezone
-from uuid import uuid4
-
-from .forms import WhatsAppBroadcastForm, WhatsAppCSVUploadForm
-from .models import WhatsAppCampaign, WhatsAppContact, WhatsAppMessageLog
-from .whatsapp_broadcast import (
-    WhatsAppBroadcastError,
-    detect_media_type,
-    normalize_indian_mobile,
-    send_media_message,
-    send_text_message,
-    upload_media_to_whatsapp,
-    validate_whatsapp_config,
-)
-
-logger = logging.getLogger(__name__)
-
-
-def _request_trace_id() -> str:
-    return uuid4().hex[:12]
-
-
-def _safe_name(file_obj) -> str:
-    try:
-        return getattr(file_obj, "name", "") or ""
-    except Exception:
-        return ""
-
-
-def _safe_size(file_obj) -> int:
-    try:
-        return int(getattr(file_obj, "size", 0) or 0)
-    except Exception:
-        return 0
-
-
-def _form_errors_as_dict(form) -> Dict:
-    try:
-        return {field: [str(err) for err in errs] for field, errs in form.errors.items()}
-    except Exception:
-        return {"non_field_errors": [str(form.errors)]}
-
-
-def import_contacts_from_csv(user, file_obj, trace_id: str = "-"):
-    logger.info(
-        "[WA][%s] CSV import started user_id=%s file_name=%s file_size=%s",
-        trace_id,
-        getattr(user, "id", None),
-        _safe_name(file_obj),
-        _safe_size(file_obj),
-    )
-
-    try:
-        file_obj.seek(0)
-    except Exception:
-        logger.warning("[WA][%s] Could not seek uploaded file to start", trace_id)
-
-    raw_bytes = file_obj.read()
-    logger.info("[WA][%s] CSV bytes read=%s", trace_id, len(raw_bytes))
-
-    decoded = raw_bytes.decode("utf-8", errors="ignore")
-    reader = csv.DictReader(io.StringIO(decoded))
-
-    headers = reader.fieldnames or []
-    logger.info("[WA][%s] CSV headers detected=%s", trace_id, headers)
-
-    allowed_phone_headers = {"phone", "mobile", "number"}
-    if not any(header in allowed_phone_headers for header in headers):
-        logger.error("[WA][%s] CSV import failed: missing phone/mobile/number column", trace_id)
-        raise WhatsAppBroadcastError(
-            "CSV must contain one of these columns: phone, mobile, number."
-        )
-
-    created_count = 0
-    updated_count = 0
-    skipped_count = 0
-    processed_count = 0
-
-    for row_number, row in enumerate(reader, start=2):
-        processed_count += 1
-        raw_phone = row.get("phone") or row.get("mobile") or row.get("number") or ""
-        phone = normalize_indian_mobile(raw_phone)
-
-        logger.info(
-            "[WA][%s] CSV row=%s raw_phone=%r normalized=%r",
-            trace_id,
-            row_number,
-            raw_phone,
-            phone,
-        )
-
-        if not phone:
-            skipped_count += 1
-            logger.warning(
-                "[WA][%s] CSV row skipped row=%s reason=invalid_phone raw_phone=%r",
-                trace_id,
-                row_number,
-                raw_phone,
-            )
-            continue
-
-        name = (row.get("name") or row.get("username") or "").strip()
-        email = (row.get("email") or "").strip()
-
-        _, created = WhatsAppContact.objects.update_or_create(
-            owner=user,
-            phone=phone,
-            defaults={
-                "name": name,
-                "email": email,
-                "source_file": _safe_name(file_obj),
-                "is_active": True,
-            },
-        )
-
-        if created:
-            created_count += 1
-            logger.info(
-                "[WA][%s] Contact created row=%s phone=%s name=%r",
-                trace_id,
-                row_number,
-                phone,
-                name,
-            )
-        else:
-            updated_count += 1
-            logger.info(
-                "[WA][%s] Contact updated row=%s phone=%s name=%r",
-                trace_id,
-                row_number,
-                phone,
-                name,
-            )
-
-    result = {
-        "created": created_count,
-        "updated": updated_count,
-        "skipped": skipped_count,
-        "processed": processed_count,
-    }
-    logger.info("[WA][%s] CSV import completed result=%s", trace_id, result)
-    return result
-
-
-@login_required
-def whatsapp_broadcast_view(request):
-    trace_id = _request_trace_id()
-    logger.info(
-        "[WA][%s] whatsapp_broadcast_view entered method=%s user_id=%s path=%s",
-        trace_id,
-        request.method,
-        getattr(request.user, "id", None),
-        request.path,
-    )
-
-    csv_form = WhatsAppCSVUploadForm()
-    form = WhatsAppBroadcastForm()
-
-    config_ok, missing_config = validate_whatsapp_config()
-    logger.info(
-        "[WA][%s] WhatsApp config validation config_ok=%s missing=%s",
-        trace_id,
-        config_ok,
-        missing_config,
-    )
-
-    if request.method == "POST":
-        action = (request.POST.get("action") or "").strip()
-        logger.info("[WA][%s] POST action=%r", trace_id, action)
-
-        if action == "upload_csv":
-            csv_form = WhatsAppCSVUploadForm(request.POST, request.FILES)
-            form = WhatsAppBroadcastForm()
-
-            logger.info(
-                "[WA][%s] upload_csv received files=%s",
-                trace_id,
-                list(request.FILES.keys()),
-            )
-
-            if csv_form.is_valid():
-                logger.info("[WA][%s] CSV form valid, starting import", trace_id)
-                try:
-                    result = import_contacts_from_csv(
-                        request.user,
-                        csv_form.cleaned_data["csv_file"],
-                        trace_id=trace_id,
-                    )
-                    messages.success(
-                        request,
-                        (
-                            f"CSV imported successfully. "
-                            f"Created: {result['created']}, "
-                            f"Updated: {result['updated']}, "
-                            f"Skipped: {result['skipped']}"
-                        ),
-                    )
-                    logger.info("[WA][%s] upload_csv success redirecting", trace_id)
-                    return redirect("whatsapp_broadcast")
-                except Exception as exc:
-                    logger.exception("[WA][%s] CSV import failed error=%s", trace_id, exc)
-                    messages.error(request, f"CSV import failed: {str(exc)}")
-            else:
-                logger.error(
-                    "[WA][%s] CSV form invalid errors=%s",
-                    trace_id,
-                    _form_errors_as_dict(csv_form),
-                )
-                messages.error(request, "CSV upload form invalid. Please check file and try again.")
-
-        elif action == "send_campaign":
-            csv_form = WhatsAppCSVUploadForm()
-            form = WhatsAppBroadcastForm(request.POST, request.FILES)
-
-            logger.info(
-                "[WA][%s] send_campaign received files=%s",
-                trace_id,
-                list(request.FILES.keys()),
-            )
-
-            if form.is_valid():
-                logger.info("[WA][%s] Broadcast form valid", trace_id)
-
-                contacts = WhatsAppContact.objects.filter(
-                    owner=request.user,
-                    is_active=True,
-                ).order_by("id")
-
-                contacts_count = contacts.count()
-                logger.info(
-                    "[WA][%s] Active contacts fetched count=%s",
-                    trace_id,
-                    contacts_count,
-                )
-
-                if contacts_count == 0:
-                    logger.warning("[WA][%s] No contacts found, aborting campaign", trace_id)
-                    messages.error(request, "Please upload CSV contacts first.")
-                    return redirect("whatsapp_broadcast")
-
-                if not config_ok:
-                    logger.error(
-                        "[WA][%s] Config missing, aborting campaign missing=%s",
-                        trace_id,
-                        missing_config,
-                    )
-                    messages.error(
-                        request,
-                        f"Missing WhatsApp config: {', '.join(missing_config)}",
-                    )
-                    return redirect("whatsapp_broadcast")
-
-                attachment = form.cleaned_data.get("attachment")
-                attachment_name = getattr(attachment, "name", "") if attachment else ""
-                attachment_size = getattr(attachment, "size", 0) if attachment else 0
-
-                logger.info(
-                    "[WA][%s] Preparing campaign attachment_name=%r attachment_size=%s",
-                    trace_id,
-                    attachment_name,
-                    attachment_size,
-                )
-
-                with transaction.atomic():
-                    campaign = WhatsAppCampaign.objects.create(
-                        owner=request.user,
-                        campaign_name=f"Broadcast {timezone.now().strftime('%d %b %Y %H:%M:%S')}",
-                        message=form.cleaned_data["message"],
-                        media_file=attachment,
-                        media_type=detect_media_type(attachment.name) if attachment else "",
-                        status="processing",
-                        started_at=timezone.now(),
-                        total_contacts=contacts_count,
-                    )
-
-                logger.info(
-                    "[WA][%s] Campaign created campaign_id=%s total_contacts=%s media_type=%r",
-                    trace_id,
-                    campaign.id,
-                    campaign.total_contacts,
-                    campaign.media_type,
-                )
-
-                sent_count = 0
-                failed_count = 0
-                media_id = None
-                media_type = ""
-
-                try:
-                    if campaign.media_file:
-                        logger.info(
-                            "[WA][%s] Media detected path=%s",
-                            trace_id,
-                            campaign.media_file.path,
-                        )
-                        media_type = detect_media_type(campaign.media_file.path)
-                        logger.info(
-                            "[WA][%s] Media type detected media_type=%s",
-                            trace_id,
-                            media_type,
-                        )
-                        media_id = upload_media_to_whatsapp(campaign.media_file.path)
-                        logger.info(
-                            "[WA][%s] Media uploaded successfully media_id=%s",
-                            trace_id,
-                            media_id,
-                        )
-                    else:
-                        logger.info("[WA][%s] No attachment supplied, text-only campaign", trace_id)
-                except Exception as exc:
-                    logger.exception("[WA][%s] Media upload failed error=%s", trace_id, exc)
-                    campaign.status = "failed"
-                    campaign.failed_count = contacts_count
-                    campaign.completed_at = timezone.now()
-                    campaign.save(
-                        update_fields=["status", "failed_count", "completed_at", "updated_at"]
-                        if hasattr(campaign, "updated_at")
-                        else ["status", "failed_count", "completed_at"]
-                    )
-                    messages.error(request, f"Media upload failed: {str(exc)}")
-                    return redirect("whatsapp_broadcast")
-
-                logger.info("[WA][%s] Starting send loop", trace_id)
-
-                for index, contact in enumerate(contacts.iterator(), start=1):
-                    personalized_message = (campaign.message or "").replace(
-                        "{{name}}",
-                        contact.name or "User",
-                    )
-
-                    logger.info(
-                        "[WA][%s] Sending start idx=%s/%s contact_id=%s phone=%s name=%r media=%s",
-                        trace_id,
-                        index,
-                        contacts_count,
-                        contact.id,
-                        contact.phone,
-                        contact.name,
-                        bool(media_id),
-                    )
-
-                    log = WhatsAppMessageLog.objects.create(
-                        campaign=campaign,
-                        contact=contact,
-                        phone=contact.phone,
-                        status="pending",
-                    )
-
-                    logger.info(
-                        "[WA][%s] Message log created log_id=%s campaign_id=%s contact_id=%s",
-                        trace_id,
-                        log.id,
-                        campaign.id,
-                        contact.id,
-                    )
-
-                    try:
-                        if media_id:
-                            response = send_media_message(
-                                to_number=contact.phone,
-                                media_id=media_id,
-                                media_type=media_type,
-                                caption=personalized_message,
-                            )
-                        else:
-                            response = send_text_message(
-                                to_number=contact.phone,
-                                message_text=personalized_message,
-                            )
-
-                        logger.info(
-                            "[WA][%s] API response received phone=%s status_code=%s",
-                            trace_id,
-                            contact.phone,
-                            response.status_code,
-                        )
-
-                        if response.status_code in (200, 201):
-                            sent_count += 1
-                            response_json = {}
-                            message_id = ""
-
-                            try:
-                                response_json = response.json()
-                            except Exception:
-                                logger.warning(
-                                    "[WA][%s] Response JSON parse failed phone=%s body=%r",
-                                    trace_id,
-                                    contact.phone,
-                                    response.text[:1000],
-                                )
-
-                            if response_json.get("messages"):
-                                message_id = response_json["messages"][0].get("id", "")
-
-                            log.status = "sent"
-                            log.whatsapp_message_id = message_id
-                            log.response_code = response.status_code
-                            log.response_body = response.text[:5000]
-                            log.sent_at = timezone.now()
-                            log.save()
-
-                            logger.info(
-                                "[WA][%s] Send success phone=%s message_id=%r sent_count=%s failed_count=%s",
-                                trace_id,
-                                contact.phone,
-                                message_id,
-                                sent_count,
-                                failed_count,
-                            )
-                        else:
-                            failed_count += 1
-                            log.status = "failed"
-                            log.response_code = response.status_code
-                            log.response_body = response.text[:5000]
-                            log.error_message = response.text[:5000]
-                            log.save()
-
-                            logger.error(
-                                "[WA][%s] Send failed phone=%s status_code=%s response=%r sent_count=%s failed_count=%s",
-                                trace_id,
-                                contact.phone,
-                                response.status_code,
-                                response.text[:1000],
-                                sent_count,
-                                failed_count,
-                            )
-
-                    except Exception as exc:
-                        failed_count += 1
-                        log.status = "failed"
-                        log.response_code = 500
-                        log.error_message = str(exc)[:5000]
-                        log.response_body = traceback.format_exc()[:5000]
-                        log.save()
-
-                        logger.exception(
-                            "[WA][%s] Exception during send phone=%s log_id=%s error=%s",
-                            trace_id,
-                            contact.phone,
-                            log.id,
-                            exc,
-                        )
-
-                campaign.sent_count = sent_count
-                campaign.failed_count = failed_count
-                campaign.status = "completed" if failed_count == 0 else "failed"
-                campaign.completed_at = timezone.now()
-                campaign.save()
-
-                logger.info(
-                    "[WA][%s] Campaign completed campaign_id=%s sent=%s failed=%s final_status=%s",
-                    trace_id,
-                    campaign.id,
-                    sent_count,
-                    failed_count,
-                    campaign.status,
-                )
-
-                if sent_count > 0 and failed_count == 0:
-                    messages.success(
-                        request,
-                        f"Campaign completed successfully. Sent: {sent_count}, Failed: {failed_count}",
-                    )
-                elif sent_count > 0 and failed_count > 0:
-                    messages.warning(
-                        request,
-                        f"Campaign partially completed. Sent: {sent_count}, Failed: {failed_count}",
-                    )
-                else:
-                    messages.error(
-                        request,
-                        f"Campaign failed. Sent: {sent_count}, Failed: {failed_count}",
-                    )
-
-                return redirect("whatsapp_broadcast")
-
-            else:
-                logger.error(
-                    "[WA][%s] Broadcast form invalid errors=%s",
-                    trace_id,
-                    _form_errors_as_dict(form),
-                )
-                messages.error(request, "Broadcast form invalid. Please check the fields and try again.")
-
-        else:
-            logger.warning("[WA][%s] Unknown POST action=%r", trace_id, action)
-            messages.error(request, "Invalid action.")
-
-    logger.info("[WA][%s] Loading dashboard data", trace_id)
-
-    contacts_qs = WhatsAppContact.objects.filter(
-        owner=request.user,
-        is_active=True,
-    ).order_by("-created_at")
-
-    campaigns = WhatsAppCampaign.objects.filter(
-        owner=request.user
-    ).order_by("-created_at")[:10]
-
-    latest_campaign = campaigns.first()
-
-    recent_logs = WhatsAppMessageLog.objects.filter(
-        campaign__owner=request.user
-    ).select_related("campaign", "contact").order_by("-created_at")[:20]
-
-    context = {
-        "csv_form": csv_form,
-        "form": form,
-        "contacts_count": contacts_qs.count(),
-        "contacts": contacts_qs[:10],
-        "campaigns": campaigns,
-        "latest_campaign": latest_campaign,
-        "recent_logs": recent_logs,
-        "config_ok": config_ok,
-        "missing_config": missing_config,
-    }
-
-    logger.info(
-        "[WA][%s] Rendering dashboard contacts_count=%s campaigns_count=%s logs_count=%s",
-        trace_id,
-        context["contacts_count"],
-        len(campaigns),
-        len(recent_logs),
-    )
-    return render(request, "dashboard/whatsapp_broadcast.html", context)
 
 ###########################################################################
 

@@ -35,7 +35,7 @@ urlpatterns = [
     path("api/notifications/mark-popup-shown/", views.mark_notifications_popup_shown_view, name="mark_notifications_popup_shown"),
     path("api/notifications/mark-read/", views.mark_notification_read_view, name="mark_notification_read"),
 
-    path("whatsapp-broadcast/", views.whatsapp_broadcast_view, name="whatsapp_broadcast"),
+   
 
     path("gapup/", views.gapupview, name="gapup"),
     path("gapup/refresh/", views.gapuprefreshview, name="gapuprefresh"),
