@@ -45,10 +45,10 @@ let amavasyaPriceLines = [];
 let amavasyaLevelsCacheKey = null;
 
 let indicatorsState = {
-    ema20: true,
-    ema50: true,
-    rsi: true,
-    macd: true,
+    ema20: false,
+    ema50: false,
+    rsi: false,
+    macd: false,
     amavasya: false,
 };
 

@@ -6,11 +6,11 @@
     <div class="hero-banner">
         <div class="hero-banner-content">
             <span class="hero-tag">Nakshatra Calendar</span>
-            <h1>Pushya Nakshatra</h1>
-            <p>View Pushya Nakshatra records by year with start, end, and duration details.</p>
+            <h1>Flower Days Date Calendar</h1>
+            <p>Search for Flower Days between 2024 and 2040</p>
         </div>
         <div class="hero-banner-actions">
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Home</a>
         </div>
     </div>
 
@@ -46,7 +46,7 @@
         </div>
         <div class="stat-card">
             <span>Event Type</span>
-            <strong>Pushya Nakshatra</strong>
+            <strong>Flower Days</strong>
         </div>
     </div>
 
@@ -54,9 +54,9 @@
         <div class="panel-body">
             <p class="panel-main-text">
                 {% if rows %}
-                    Pushya Nakshatra data loaded successfully.
+                    Flower Days data loaded successfully.
                 {% else %}
-                    No Pushya Nakshatra data found for the selected year.
+                    No Flower Days data found for the selected year.
                 {% endif %}
             </p>
         </div>
@@ -65,7 +65,7 @@
     <div class="panel-card quick-panel">
         <div class="panel-head">
             <span class="panel-kicker">Calendar Data</span>
-            <h3>Pushya Nakshatra Dates</h3>
+            <h3>Flower Days Dates</h3>
         </div>
 
         <div class="panel-body">
@@ -93,7 +93,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="empty-cell">No Pushya Nakshatra data found for the selected year.</td>
+                            <td colspan="6" class="empty-cell">No Flower Days data found for the selected year.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -6,13 +6,13 @@
     <div class="hero-banner">
         <div class="hero-banner-content">
             <span class="hero-tag">Moon Cycle Data</span>
-            <h1>Purnima Calendar</h1>
-            <p>Explore year-wise Purnima records with a fast search experience, professional summary cards, and clean tabular presentation.</p>
+            <h1>Light Day Calendar</h1>
+            <p>Search for Light Days between 2024 and 2040</p>
         </div>
 
         <div class="hero-banner-actions">
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
-            <a href="{% url 'amavasya' %}" class="btn btn-secondary">Amavasya</a>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Home</a>
+            <a href="{% url 'amavasya' %}" class="btn btn-secondary">Dark Day</a>
         </div>
     </div>
 
@@ -20,7 +20,7 @@
         <div class="panel-head panel-head-split">
             <div>
                 <span class="panel-kicker">Year Search</span>
-                <h3>Purnima Lookup</h3>
+                <h3>Light Days Lookup</h3>
             </div>
             <button type="button" class="btn btn-secondary" id="togglePurnimaSearchBtn">Open Search</button>
         </div>
@@ -32,7 +32,7 @@
                 </div>
             {% else %}
                 <div class="inline-alert inline-alert-success" id="purnimaStatusMessage">
-                    Default year Purnima data loaded successfully.
+                    Default year Light Day data loaded successfully.
                 </div>
             {% endif %}
 
@@ -54,7 +54,7 @@
                     <div class="field-wrap search-action-wrap">
                         <label>&nbsp;</label>
                         <button type="button" class="btn btn-primary toolbar-btn" id="purnimaSearchBtn">
-                            Get Purnima Data
+                            Get Light Day Data
                         </button>
                     </div>
                 </div>
@@ -178,7 +178,7 @@ document.addEventListener("DOMContentLoaded", function () {
             statusMessage.className = "inline-alert inline-alert-danger";
         } finally {
             searchBtn.disabled = false;
-            searchBtn.textContent = "Get Purnima Data";
+            searchBtn.textContent = "Get Light Day Data";
         }
     }
 

@@ -1021,6 +1021,13 @@ EVENT_SOURCES = {
         "text_color": "#111827",
         "symbol": "●",
     },
+    "moon_marse": {
+        "file": "moon_marse.csv",
+        "title": "Moon Mars",
+        "color": "#6c0b2e",  # updated color per request
+        "text_color": "#ffffff",
+        "symbol": "●",
+    },
         "reversal": {
         "file": None,
         "title": "Reversal",
@@ -1207,6 +1214,7 @@ def calendar_view(request):
         {"name": "Amavasya", "color": "#ef4444", "symbol": "●"},
         {"name": "Purnima", "color": "#22c55e", "symbol": "●"},
         {"name": "Trayodashi", "color": "#3b82f6", "symbol": "●"},
+        {"name": "Moon Mars", "color": "#6c0b2e", "symbol": "●"},
         {"name": "Pushya", "color": "#facc15", "symbol": "●"},
         {"name": "Reversal", "color": "#a855f7", "symbol": "●"},
     ]

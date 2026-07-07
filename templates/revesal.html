@@ -6,19 +6,19 @@
     <div class="hero-banner">
         <div class="hero-banner-content">
             <span class="hero-tag">Cycle Research</span>
-            <h1>Reversal Date Calendar</h1>
-            <p>Search and view reversal dates for any supported year using your zero-date cycle logic in a polished production-ready interface.</p>
+            <h1>Degree Date Calendar</h1>
+            
         </div>
 
         <div class="hero-banner-actions">
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Home</a>
         </div>
     </div>
 
     <div class="panel-card reversal-panel">
         <div class="reversal-toolbar">
             <button type="button" class="btn btn-secondary" id="toggleSearchBtn">
-                Open Reversal Search
+                Open Degree Search
             </button>
 
             <div class="search-box" id="searchBox">
@@ -32,7 +32,7 @@
                     max="2100"
                 >
                 <button type="button" class="btn btn-primary" id="searchBtn">
-                    Get Reversal Dates
+                    Get Degree Dates
                 </button>
             </div>
         </div>
@@ -68,7 +68,7 @@
             <div class="table-shell-head">
                 <div>
                     <span class="panel-kicker">Calculated Output</span>
-                    <h3>Reversal Date Table</h3>
+                    <h3>Degree Date Table</h3>
                 </div>
             </div>
 
@@ -116,8 +116,8 @@ if (toggleSearchBtn) {
     toggleSearchBtn.addEventListener('click', function () {
         searchBox.classList.toggle('active');
         toggleSearchBtn.textContent = searchBox.classList.contains('active')
-            ? 'Close Reversal Search'
-            : 'Open Reversal Search';
+            ? 'Close Degree Search'
+            : 'Open Degree Search';
 
         if (searchBox.classList.contains('active')) {
             yearInput.focus();

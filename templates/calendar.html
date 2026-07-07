@@ -3,6 +3,25 @@
 
 {% block extra_head %}
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+    <style>
+        /* Render calendar events as a small colored symbol only (no text) */
+        .calendar-event-entry {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 0;
+            background: transparent !important;
+            border: none !important;
+        }
+
+        .calendar-event-marker {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.12) inset;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -11,16 +30,32 @@
         <div class="hero-banner-content">
             <span class="hero-tag">Event Calendar</span>
             <h1>Trading Calendar</h1>
-            <p>CSV files ki dates yahan alag alag color symbols ke saath calendar me show hongi.</p>
+            <p>View and manage your trading events and important dates in a convenient calendar format.</p>
         </div>
 
         <div class="hero-banner-actions calendar-legend-wrap">
-            {% for item in legend_items %}
-                <div class="calendar-legend-item">
-                    <span class="calendar-legend-dot" style="background-color: {{ item.color }};"></span>
-                    <span>{{ item.name }}</span>
-                </div>
-            {% endfor %}
+                {% for item in legend_items %}
+                    <div class="calendar-legend-item">
+                        <span class="calendar-legend-dot" style="background-color: {{ item.color }};"></span>
+                        <span>
+                            {% if item.name == 'Amavasya' %}
+                                Dark Day
+                            {% elif item.name == 'Purnima' %}
+                                Light Day
+                            {% elif item.name == 'Trayodashi' %}
+                                Intra Day
+                            {% elif item.name == 'Pushya' %}
+                                Flower
+                            {% elif item.name == 'Moon Mars' %}
+                                Top/Bottom
+                            {% elif item.name == 'Reversal' %}
+                                Degree Date
+                            {% else %}
+                                {{ item.name }}
+                            {% endif %}
+                        </span>
+                    </div>
+                {% endfor %}
         </div>
     </div>
 
@@ -110,37 +145,23 @@ document.addEventListener("DOMContentLoaded", function () {
         events: calendarEvents,
         eventDisplay: "block",
         eventContent: function(arg) {
-            const markerColor = arg.event.extendedProps.markerColor || arg.event.backgroundColor;
-            const label = arg.event.extendedProps.label || arg.event.title;
+            const markerColor = arg.event.extendedProps.markerColor || arg.event.backgroundColor || '#999';
 
             const wrap = document.createElement("div");
             wrap.className = "calendar-event-entry";
-            wrap.style.backgroundColor = markerColor;
-            wrap.style.borderColor = markerColor;
 
             const dot = document.createElement("span");
             dot.className = "calendar-event-marker";
+            dot.style.backgroundColor = markerColor;
 
-            const text = document.createElement("span");
-            text.className = "calendar-event-label";
-            text.textContent = label;
-
+            // Special-case styling per eventType if needed
             if (arg.event.extendedProps.eventType === "pushya") {
                 dot.style.backgroundColor = "#111827";
-                text.style.color = "#111827";
-            } else {
-                dot.style.backgroundColor = "#ffffff";
-                text.style.color = "#ffffff";
             }
 
             wrap.appendChild(dot);
-            wrap.appendChild(text);
 
             return { domNodes: [wrap] };
-        },
-        eventDidMount: function(info) {
-            const label = info.event.extendedProps.label || info.event.title;
-            info.el.setAttribute("title", label);
         },
         datesSet: function(info) {
             const currentDate = info.view.currentStart;
