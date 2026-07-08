@@ -80,7 +80,7 @@ def load_moon_mars_events(csv_file: Optional[str] = None) -> List[MoonMarsEvent]
         for row in reader:
             year = _safe_int(row.get("year"))
             month = (row.get("month") or "").strip()
-            title = (row.get("title") or "Chandra Mangal Yoga").strip()
+            title = (row.get("title") or "-").strip()
 
             start_dt = _parse_datetime(row.get("start", ""))
             end_dt = _parse_datetime(row.get("end", ""))

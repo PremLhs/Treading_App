@@ -509,7 +509,7 @@ function normalizeCandles(candles) {
 function buildAmavasyaLineTitle(level) {
     if (!level) return "Amavasya";
 
-    const side = level.signal_type === "high_break" ? "AMV HIGH" : "AMV LOW";
+    const side = level.signal_type === "high_break" ? "DDD High" : "DDD Low";
     const refDate = level.reference_date || level.amavasya_calendar_date || "-";
     const triggerDate = level.trigger_date || "-";
 
@@ -572,7 +572,8 @@ async function loadAmavasyaStrategy(symbol, interval, options = {}) {
             setStatus("Loading Amavasya...");
         }
 
-        const strategyInterval = "15";
+        // Use daily candles for Amavasya breakout marking so breakouts reflect full day OHLC
+        const strategyInterval = "D";
         const requestKey = `${symbol}__${strategyInterval}`;
         const url = `${window.APP_CONFIG.amavasyaStrategyApiUrl}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(strategyInterval)}`;
 

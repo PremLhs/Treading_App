@@ -18,6 +18,8 @@ AMAVASYA_CSV_PATH = DATA_DIR / "amavasya.csv"
 
 STRATEGY_INTERVAL = "15"
 SUPPORTED_INTRADAY_INTERVALS = {"1", "3", "5", "15", "30", "60"}
+# Allow daily 'D' strategy to evaluate breakouts using the whole trading day's candle
+SUPPORTED_INTERVALS = set(SUPPORTED_INTRADAY_INTERVALS) | {"D"}
 
 
 @dataclass(frozen=True)
@@ -360,49 +362,94 @@ def get_future_trading_dates(reference_date: date, ordered_trading_dates: List[d
 
 def find_first_breaks_across_future_days(
     grouped_intraday: Dict[date, List[Candle]],
+    daily_map: Dict[date, Candle],
     future_trading_dates: List[date],
     reference_high: float,
     reference_low: float,
 ) -> List[Tuple[date, Dict[str, Any]]]:
+    """Find first break signals across future trading days.
+
+    This function prefers using the day's aggregated OHLC (from daily_map)
+    to detect and mark breakouts so the breakout line reflects the full
+    trading day's high/low instead of a single intraday candle.
+    """
     high_signal: Optional[Tuple[date, Dict[str, Any]]] = None
     low_signal: Optional[Tuple[date, Dict[str, Any]]] = None
 
     for trading_day in future_trading_dates:
+        # Prefer the aggregated daily candle if available
+        day_candle = daily_map.get(trading_day)
         intraday_candles = grouped_intraday.get(trading_day, [])
-        if not intraday_candles:
-            continue
 
-        for candle in intraday_candles:
-            if high_signal is None and candle.high > reference_high:
+        if day_candle:
+            # Use full-day high/low to determine break
+            if high_signal is None and day_candle.high > reference_high:
+                # Use the day's high as the breakout price; for timing use last intraday candle if present
+                trigger_dt = intraday_candles[-1].dt if intraday_candles else day_candle.dt
                 high_signal = (
                     trading_day,
                     {
                         "type": "high_break",
-                        "line_price": candle.high,
-                        "candle_time": candle.dt,
-                        "break_candle_open": candle.open,
-                        "break_candle_high": candle.high,
-                        "break_candle_low": candle.low,
-                        "break_candle_close": candle.close,
+                        "line_price": day_candle.high,
+                        "candle_time": trigger_dt,
+                        "break_candle_open": day_candle.open,
+                        "break_candle_high": day_candle.high,
+                        "break_candle_low": day_candle.low,
+                        "break_candle_close": day_candle.close,
                     },
                 )
 
-            if low_signal is None and candle.low < reference_low:
+            if low_signal is None and day_candle.low < reference_low:
+                trigger_dt = intraday_candles[-1].dt if intraday_candles else day_candle.dt
                 low_signal = (
                     trading_day,
                     {
                         "type": "low_break",
-                        "line_price": candle.low,
-                        "candle_time": candle.dt,
-                        "break_candle_open": candle.open,
-                        "break_candle_high": candle.high,
-                        "break_candle_low": candle.low,
-                        "break_candle_close": candle.close,
+                        "line_price": day_candle.low,
+                        "candle_time": trigger_dt,
+                        "break_candle_open": day_candle.open,
+                        "break_candle_high": day_candle.high,
+                        "break_candle_low": day_candle.low,
+                        "break_candle_close": day_candle.close,
                     },
                 )
 
-            if high_signal is not None and low_signal is not None:
-                break
+        else:
+            # Fallback: scan intraday candles if no aggregated day candle available
+            if not intraday_candles:
+                continue
+
+            for candle in intraday_candles:
+                if high_signal is None and candle.high > reference_high:
+                    high_signal = (
+                        trading_day,
+                        {
+                            "type": "high_break",
+                            "line_price": candle.high,
+                            "candle_time": candle.dt,
+                            "break_candle_open": candle.open,
+                            "break_candle_high": candle.high,
+                            "break_candle_low": candle.low,
+                            "break_candle_close": candle.close,
+                        },
+                    )
+
+                if low_signal is None and candle.low < reference_low:
+                    low_signal = (
+                        trading_day,
+                        {
+                            "type": "low_break",
+                            "line_price": candle.low,
+                            "candle_time": candle.dt,
+                            "break_candle_open": candle.open,
+                            "break_candle_high": candle.high,
+                            "break_candle_low": candle.low,
+                            "break_candle_close": candle.close,
+                        },
+                    )
+
+                if high_signal is not None and low_signal is not None:
+                    break
 
         if high_signal is not None and low_signal is not None:
             break
@@ -460,10 +507,10 @@ def _build_level_payload(
 def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = None, **kwargs) -> Dict[str, Any]:
     requested_interval = str(interval or STRATEGY_INTERVAL).strip()
 
-    if requested_interval not in SUPPORTED_INTRADAY_INTERVALS:
+    if requested_interval not in SUPPORTED_INTERVALS:
         return {
             "status": False,
-            "message": f"Amavasya strategy supports only intraday intervals {sorted(SUPPORTED_INTRADAY_INTERVALS)}. Received: {requested_interval}",
+            "message": f"Amavasya strategy supports only intervals {sorted(SUPPORTED_INTERVALS)}. Received: {requested_interval}",
             "levels": [],
             "meta": {
                 "strategy_interval": STRATEGY_INTERVAL,
@@ -493,8 +540,16 @@ def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = N
             },
         }
 
-    grouped_intraday = group_candles_by_date(candles)
-    daily_map = build_daily_ohlc_from_intraday(grouped_intraday)
+    # If requested interval is daily, build daily OHLC by grouping intraday and
+    # using each trading day's full range (high/low over the day).
+    if requested_interval == "D":
+        grouped_intraday = group_candles_by_date(candles)
+        daily_map = build_daily_ohlc_from_intraday(grouped_intraday)
+    else:
+        grouped_intraday = group_candles_by_date(candles)
+        # For intraday strategy, the grouped_intraday is used as-is and daily_map is built
+        # from the group's first/last candle logic (already handled by function)
+        daily_map = build_daily_ohlc_from_intraday(grouped_intraday)
     ordered_trading_dates = sorted(daily_map.keys())
     amavasya_rows = load_amavasya_reference_dates()
 
@@ -556,6 +611,7 @@ def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = N
 
         signals_with_dates = find_first_breaks_across_future_days(
             grouped_intraday=grouped_intraday,
+            daily_map=daily_map,
             future_trading_dates=future_trading_dates,
             reference_high=reference_day.high,
             reference_low=reference_day.low,

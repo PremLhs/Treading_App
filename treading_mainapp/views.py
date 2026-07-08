@@ -8,6 +8,7 @@ from django.shortcuts import redirect, render
 
 from .forms import LoginForm
 from .services.angel_api import AngelBroker
+from .services.nifty50_loader import get_nifty50_symbols
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -28,57 +29,7 @@ INDEX_SYMBOLS = [
     "NSE:BANKNIFTY",
 ]
 
-STOCK_SYMBOLS = [
-    "NSE:RELIANCE",
-    "NSE:TCS",
-    "NSE:HDFCBANK",
-    "NSE:ICICIBANK",
-    "NSE:INFY",
-    "NSE:BHARTIARTL",
-    "NSE:ITC",
-    "NSE:SBIN",
-    "NSE:LT",
-    "NSE:HINDUNILVR",
-    "NSE:AXISBANK",
-    "NSE:KOTAKBANK",
-    "NSE:BAJFINANCE",
-    "NSE:M&M",
-    "NSE:MARUTI",
-    "NSE:SUNPHARMA",
-    "NSE:NTPC",
-    "NSE:POWERGRID",
-    "NSE:ULTRACEMCO",
-    "NSE:TITAN",
-    "NSE:ASIANPAINT",
-    "NSE:ADANIPORTS",
-    "NSE:BAJAJFINSV",
-    "NSE:NESTLEIND",
-    "NSE:WIPRO",
-    "NSE:TECHM",
-    "NSE:HCLTECH",
-    "NSE:INDUSINDBK",
-    "NSE:TATAMOTORS",
-    "NSE:ETERNAL",
-    "NSE:TRENT",
-    "NSE:SHRIRAMFIN",
-    "NSE:BEL",
-    "NSE:COALINDIA",
-    "NSE:JSWSTEEL",
-    "NSE:TATASTEEL",
-    "NSE:GRASIM",
-    "NSE:DRREDDY",
-    "NSE:CIPLA",
-    "NSE:APOLLOHOSP",
-    "NSE:SBILIFE",
-    "NSE:HDFCLIFE",
-    "NSE:BRITANNIA",
-    "NSE:HEROMOTOCO",
-    "NSE:EICHERMOT",
-    "NSE:BPCL",
-    "NSE:ONGC",
-    "NSE:HINDALCO",
-    "NSE:ADANIENT",
-]
+STOCK_SYMBOLS = get_nifty50_symbols()
 
 DEFAULT_SYMBOL = "NSE:RELIANCE"
 ALLOWED_INTERVALS = ["1", "3", "5", "15", "30", "60", "D", "W"]
@@ -495,7 +446,7 @@ def load_purnima_data():
 
             data.setdefault(year, []).append({
                 "month": month,
-                "title": title or "Purnima",
+                "title": title or "-",
                 "start": start,
                 "end": end,
             })
@@ -657,7 +608,8 @@ def load_trayodashi_data():
             start = str(row.get("start", "")).strip()
             end = str(row.get("end", "")).strip()
 
-            if not year_raw or not month or not paksha or not start or not end:
+            # paksha is optional, all other fields are required
+            if not year_raw or not month or not start or not end:
                 continue
 
             try:
@@ -668,7 +620,7 @@ def load_trayodashi_data():
             data.setdefault(year, []).append({
                 "month": month,
                 "paksha": paksha,
-                "title": title or "Trayodashi",
+                "title": title or "-",
                 "start": start,
                 "end": end,
             })
@@ -1419,7 +1371,7 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 
-from .amavsya import generate_amavasya_levels, STRATEGY_INTERVAL
+from .amavsya import generate_amavasya_levels, STRATEGY_INTERVAL, SUPPORTED_INTERVALS
 from .services.angel_api import AngelBroker
 
 logger = logging.getLogger(__name__)
@@ -1434,7 +1386,11 @@ def amavasya_strategy_api_view(request):
     if symbol not in all_symbols:
         symbol = DEFAULT_SYMBOL
 
-    strategy_interval = STRATEGY_INTERVAL
+    # Allow client to request different intervals (e.g., '15' or 'D')
+    strategy_interval = request.GET.get("interval", STRATEGY_INTERVAL).strip()
+    # validate interval
+    if strategy_interval not in SUPPORTED_INTERVALS:
+        strategy_interval = STRATEGY_INTERVAL
 
     try:
         broker = AngelBroker()

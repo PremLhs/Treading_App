@@ -9,6 +9,8 @@ import pyotp
 import requests
 from django.utils import timezone
 
+from .nifty50_loader import get_symbol_token_map
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,59 +24,7 @@ class AngelBroker:
     RETRY_SLEEP_SECONDS = 2.5
     RATE_LIMIT_SLEEP_SECONDS = 1.5
 
-    SYMBOL_TOKEN_MAP = {
-        "NSE:RELIANCE": {"exchange": "NSE", "tradingsymbol": "RELIANCE-EQ", "symboltoken": "2885"},
-        "NSE:TCS": {"exchange": "NSE", "tradingsymbol": "TCS-EQ", "symboltoken": "11536"},
-        "NSE:HDFCBANK": {"exchange": "NSE", "tradingsymbol": "HDFCBANK-EQ", "symboltoken": "1333"},
-        "NSE:ICICIBANK": {"exchange": "NSE", "tradingsymbol": "ICICIBANK-EQ", "symboltoken": "4963"},
-        "NSE:INFY": {"exchange": "NSE", "tradingsymbol": "INFY-EQ", "symboltoken": "1594"},
-        "NSE:BHARTIARTL": {"exchange": "NSE", "tradingsymbol": "BHARTIARTL-EQ", "symboltoken": "10604"},
-        "NSE:ITC": {"exchange": "NSE", "tradingsymbol": "ITC-EQ", "symboltoken": "1660"},
-        "NSE:SBIN": {"exchange": "NSE", "tradingsymbol": "SBIN-EQ", "symboltoken": "3045"},
-        "NSE:LT": {"exchange": "NSE", "tradingsymbol": "LT-EQ", "symboltoken": "11483"},
-        "NSE:HINDUNILVR": {"exchange": "NSE", "tradingsymbol": "HINDUNILVR-EQ", "symboltoken": "1394"},
-        "NSE:AXISBANK": {"exchange": "NSE", "tradingsymbol": "AXISBANK-EQ", "symboltoken": "5900"},
-        "NSE:KOTAKBANK": {"exchange": "NSE", "tradingsymbol": "KOTAKBANK-EQ", "symboltoken": "1922"},
-        "NSE:BAJFINANCE": {"exchange": "NSE", "tradingsymbol": "BAJFINANCE-EQ", "symboltoken": "317"},
-        "NSE:M&M": {"exchange": "NSE", "tradingsymbol": "M&M-EQ", "symboltoken": "2031"},
-        "NSE:MARUTI": {"exchange": "NSE", "tradingsymbol": "MARUTI-EQ", "symboltoken": "10999"},
-        "NSE:SUNPHARMA": {"exchange": "NSE", "tradingsymbol": "SUNPHARMA-EQ", "symboltoken": "3351"},
-        "NSE:NTPC": {"exchange": "NSE", "tradingsymbol": "NTPC-EQ", "symboltoken": "11630"},
-        "NSE:POWERGRID": {"exchange": "NSE", "tradingsymbol": "POWERGRID-EQ", "symboltoken": "14977"},
-        "NSE:ULTRACEMCO": {"exchange": "NSE", "tradingsymbol": "ULTRACEMCO-EQ", "symboltoken": "11532"},
-        "NSE:TITAN": {"exchange": "NSE", "tradingsymbol": "TITAN-EQ", "symboltoken": "3506"},
-        "NSE:ASIANPAINT": {"exchange": "NSE", "tradingsymbol": "ASIANPAINT-EQ", "symboltoken": "236"},
-        "NSE:ADANIPORTS": {"exchange": "NSE", "tradingsymbol": "ADANIPORTS-EQ", "symboltoken": "15083"},
-        "NSE:BAJAJFINSV": {"exchange": "NSE", "tradingsymbol": "BAJAJFINSV-EQ", "symboltoken": "16675"},
-        "NSE:NESTLEIND": {"exchange": "NSE", "tradingsymbol": "NESTLEIND-EQ", "symboltoken": "17963"},
-        "NSE:WIPRO": {"exchange": "NSE", "tradingsymbol": "WIPRO-EQ", "symboltoken": "3787"},
-        "NSE:TECHM": {"exchange": "NSE", "tradingsymbol": "TECHM-EQ", "symboltoken": "13538"},
-        "NSE:HCLTECH": {"exchange": "NSE", "tradingsymbol": "HCLTECH-EQ", "symboltoken": "7229"},
-        "NSE:INDUSINDBK": {"exchange": "NSE", "tradingsymbol": "INDUSINDBK-EQ", "symboltoken": "5258"},
-        "NSE:TATAMOTORS": {"exchange": "NSE", "tradingsymbol": "TATAMOTORS-EQ", "symboltoken": "3456"},
-        "NSE:ETERNAL": {"exchange": "NSE", "tradingsymbol": "ETERNAL-EQ", "symboltoken": "10000"},
-        "NSE:TRENT": {"exchange": "NSE", "tradingsymbol": "TRENT-EQ", "symboltoken": "1964"},
-        "NSE:SHRIRAMFIN": {"exchange": "NSE", "tradingsymbol": "SHRIRAMFIN-EQ", "symboltoken": "4306"},
-        "NSE:BEL": {"exchange": "NSE", "tradingsymbol": "BEL-EQ", "symboltoken": "383"},
-        "NSE:COALINDIA": {"exchange": "NSE", "tradingsymbol": "COALINDIA-EQ", "symboltoken": "20374"},
-        "NSE:JSWSTEEL": {"exchange": "NSE", "tradingsymbol": "JSWSTEEL-EQ", "symboltoken": "11723"},
-        "NSE:TATASTEEL": {"exchange": "NSE", "tradingsymbol": "TATASTEEL-EQ", "symboltoken": "3499"},
-        "NSE:GRASIM": {"exchange": "NSE", "tradingsymbol": "GRASIM-EQ", "symboltoken": "1232"},
-        "NSE:DRREDDY": {"exchange": "NSE", "tradingsymbol": "DRREDDY-EQ", "symboltoken": "881"},
-        "NSE:CIPLA": {"exchange": "NSE", "tradingsymbol": "CIPLA-EQ", "symboltoken": "694"},
-        "NSE:APOLLOHOSP": {"exchange": "NSE", "tradingsymbol": "APOLLOHOSP-EQ", "symboltoken": "157"},
-        "NSE:SBILIFE": {"exchange": "NSE", "tradingsymbol": "SBILIFE-EQ", "symboltoken": "21808"},
-        "NSE:HDFCLIFE": {"exchange": "NSE", "tradingsymbol": "HDFCLIFE-EQ", "symboltoken": "467"},
-        "NSE:BRITANNIA": {"exchange": "NSE", "tradingsymbol": "BRITANNIA-EQ", "symboltoken": "547"},
-        "NSE:HEROMOTOCO": {"exchange": "NSE", "tradingsymbol": "HEROMOTOCO-EQ", "symboltoken": "1348"},
-        "NSE:EICHERMOT": {"exchange": "NSE", "tradingsymbol": "EICHERMOT-EQ", "symboltoken": "910"},
-        "NSE:BPCL": {"exchange": "NSE", "tradingsymbol": "BPCL-EQ", "symboltoken": "526"},
-        "NSE:ONGC": {"exchange": "NSE", "tradingsymbol": "ONGC-EQ", "symboltoken": "2475"},
-        "NSE:HINDALCO": {"exchange": "NSE", "tradingsymbol": "HINDALCO-EQ", "symboltoken": "1363"},
-        "NSE:ADANIENT": {"exchange": "NSE", "tradingsymbol": "ADANIENT-EQ", "symboltoken": "25"},
-        "NSE:NIFTY": {"exchange": "NSE", "tradingsymbol": "Nifty 50", "symboltoken": "99926000"},
-        "NSE:BANKNIFTY": {"exchange": "NSE", "tradingsymbol": "Nifty Bank", "symboltoken": "99926009"},
-    }
+    SYMBOL_TOKEN_MAP = get_symbol_token_map()
 
     INTERVAL_MAP = {
         "1": "ONE_MINUTE",
