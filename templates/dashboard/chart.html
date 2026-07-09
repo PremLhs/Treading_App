@@ -5,26 +5,34 @@
 {% block content %}
 <style>
     :root {
-        --bg: #07111f;
-        --bg-soft: #0b1728;
-        --panel: rgba(10, 21, 38, 0.86);
-        --panel-2: rgba(13, 27, 48, 0.92);
-        --panel-3: rgba(15, 33, 58, 0.98);
-        --surface: rgba(255, 255, 255, 0.035);
-        --surface-strong: rgba(255, 255, 255, 0.07);
-        --border: rgba(148, 163, 184, 0.16);
-        --border-strong: rgba(56, 189, 248, 0.26);
-        --text: #eaf2ff;
-        --text-soft: #b8c7de;
-        --text-muted: #8fa3bf;
-        --primary: #38bdf8;
-        --primary-strong: #0ea5e9;
-        --success: #22c55e;
-        --danger: #ef4444;
-        --warning: #f59e0b;
-        --shadow-sm: 0 10px 24px rgba(2, 8, 23, 0.22);
-        --shadow-md: 0 18px 44px rgba(2, 8, 23, 0.34);
-        --shadow-lg: 0 26px 60px rgba(2, 8, 23, 0.46);
+        --bg: #fbf8ef;
+        --bg-soft: #f7f2e8;
+        --panel: rgba(255, 250, 240, 0.94);
+        --panel-2: rgba(255, 248, 234, 0.98);
+        --panel-3: rgba(255, 245, 250, 0.98);
+        --surface: rgba(92, 84, 66, 0.05);
+        --surface-strong: rgba(92, 84, 66, 0.10);
+        --border: rgba(163, 152, 132, 0.24);
+        --border-strong: rgba(194, 207, 255, 0.52);
+        --text: #3b342b;
+        --text-soft: #665d52;
+        --text-muted: #8b8174;
+        --primary: #c2cfff;
+        --primary-strong: #aebeff;
+        --success: #9ccda8;
+        --danger: #e1a9c8;
+        --warning: #e9c28e;
+        --cream: #fff2c2;
+        --mint: #c2ffd3;
+        --lavender: #c2cfff;
+        --pink: #ffc2ed;
+        --peach: #ffd3c2;
+        --apricot: #ffe0c2;
+        --soft-yellow: #fff8c9;
+        --lime: #edffc2;
+        --shadow-sm: 0 10px 24px rgba(82, 68, 49, 0.08);
+        --shadow-md: 0 18px 44px rgba(82, 68, 49, 0.12);
+        --shadow-lg: 0 26px 60px rgba(82, 68, 49, 0.14);
         --radius-sm: 12px;
         --radius-md: 16px;
         --radius-lg: 22px;
@@ -48,11 +56,16 @@
         margin: 0 auto;
         padding: 24px;
         color: var(--text);
+        background:
+            radial-gradient(circle at top left, rgba(255, 242, 194, 0.34), transparent 20%),
+            radial-gradient(circle at 100% 0, rgba(194, 207, 255, 0.28), transparent 22%),
+            radial-gradient(circle at 100% 100%, rgba(255, 194, 237, 0.18), transparent 24%),
+            linear-gradient(180deg, #fdfaf3 0%, #f8f3eb 100%);
     }
 
     .page-shell * {
         scrollbar-width: thin;
-        scrollbar-color: rgba(56, 189, 248, 0.34) rgba(255,255,255,0.04);
+        scrollbar-color: rgba(194, 207, 255, 0.75) rgba(163, 152, 132, 0.10);
     }
 
     .page-shell *::-webkit-scrollbar {
@@ -61,12 +74,12 @@
     }
 
     .page-shell *::-webkit-scrollbar-thumb {
-        background: rgba(56, 189, 248, 0.32);
+        background: rgba(194, 207, 255, 0.75);
         border-radius: 999px;
     }
 
     .page-shell *::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.04);
+        background: rgba(163, 152, 132, 0.10);
     }
 
     .hero-banner {
@@ -78,10 +91,11 @@
         padding: 28px;
         border-radius: var(--radius-xl);
         background:
-            radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 34%),
-            radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.14), transparent 30%),
-            linear-gradient(135deg, rgba(6, 14, 28, 0.98), rgba(11, 25, 46, 0.98));
-        border: 1px solid rgba(56, 189, 248, 0.14);
+            radial-gradient(circle at top left, rgba(255, 242, 194, 0.72), transparent 32%),
+            radial-gradient(circle at 88% 22%, rgba(194, 255, 211, 0.38), transparent 26%),
+            radial-gradient(circle at bottom right, rgba(194, 207, 255, 0.40), transparent 30%),
+            linear-gradient(135deg, rgba(255, 252, 245, 0.98), rgba(255, 246, 250, 0.98));
+        border: 1px solid rgba(224, 208, 180, 0.64);
         box-shadow: var(--shadow-lg);
         margin-bottom: 22px;
     }
@@ -91,8 +105,7 @@
         position: absolute;
         inset: 0;
         pointer-events: none;
-        background:
-            linear-gradient(120deg, transparent, rgba(255,255,255,0.03), transparent);
+        background: linear-gradient(120deg, transparent, rgba(255,255,255,0.42), transparent);
         opacity: 0.7;
     }
 
@@ -108,13 +121,13 @@
         gap: 8px;
         padding: 8px 14px;
         border-radius: 999px;
-        background: rgba(56, 189, 248, 0.12);
-        color: #8edbff;
+        background: linear-gradient(180deg, rgba(255, 242, 194, 0.70), rgba(255, 224, 194, 0.62));
+        color: #6f604b;
         font-size: 12px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         font-weight: 800;
-        border: 1px solid rgba(56, 189, 248, 0.18);
+        border: 1px solid rgba(233, 194, 142, 0.44);
         margin-bottom: 14px;
     }
 
@@ -124,7 +137,7 @@
         line-height: 1.04;
         letter-spacing: -0.03em;
         font-weight: 800;
-        color: #f8fbff;
+        color: #3b342b;
     }
 
     .hero-banner p {
@@ -172,24 +185,26 @@
     }
 
     .btn-primary {
-        color: #06111f;
-        background: linear-gradient(180deg, #67d2ff, #2dbcf7);
-        box-shadow: 0 12px 28px rgba(14, 165, 233, 0.28);
+        color: #4b4033;
+        background: linear-gradient(135deg, #fff2c2 0%, #ffe0c2 48%, #c2cfff 100%);
+        box-shadow: 0 12px 28px rgba(194, 207, 255, 0.28);
+        border-color: rgba(224, 208, 180, 0.60);
     }
 
     .btn-primary:hover {
-        background: linear-gradient(180deg, #84dcff, #40c4fb);
+        background: linear-gradient(135deg, #fff5d4 0%, #ffe8cf 48%, #d4dcff 100%);
     }
 
     .btn-secondary {
         color: var(--text);
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(148, 163, 184, 0.14);
+        background: linear-gradient(180deg, rgba(255, 251, 243, 0.98), rgba(255, 246, 235, 0.98));
+        border-color: rgba(224, 208, 180, 0.52);
+        box-shadow: 0 8px 22px rgba(82, 68, 49, 0.05);
     }
 
     .btn-secondary:hover {
-        border-color: rgba(56, 189, 248, 0.3);
-        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(194, 207, 255, 0.60);
+        background: linear-gradient(180deg, rgba(255, 248, 235, 1), rgba(255, 242, 228, 1));
     }
 
     .status-pill {
@@ -200,17 +215,17 @@
         min-height: 44px;
         padding: 11px 15px;
         border-radius: 999px;
-        border: 1px solid rgba(239, 68, 68, 0.18);
-        background: rgba(239, 68, 68, 0.08);
-        color: #ffd5d5;
+        border: 1px solid rgba(225, 169, 200, 0.46);
+        background: linear-gradient(180deg, rgba(255, 194, 237, 0.40), rgba(255, 211, 194, 0.28));
+        color: #8e6177;
         font-size: 13px;
         font-weight: 800;
     }
 
     .status-pill.online {
-        border-color: rgba(34, 197, 94, 0.18);
-        background: rgba(34, 197, 94, 0.09);
-        color: #d7ffe5;
+        border-color: rgba(156, 205, 168, 0.52);
+        background: linear-gradient(180deg, rgba(194, 255, 211, 0.44), rgba(237, 255, 194, 0.30));
+        color: #56715d;
     }
 
     .status-dot {
@@ -218,12 +233,12 @@
         height: 10px;
         border-radius: 999px;
         background: var(--danger);
-        box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.14);
+        box-shadow: 0 0 0 5px rgba(225, 169, 200, 0.16);
     }
 
     .status-pill.online .status-dot {
         background: var(--success);
-        box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.14);
+        box-shadow: 0 0 0 5px rgba(156, 205, 168, 0.18);
     }
 
     .small-toggle-row {
@@ -241,8 +256,9 @@
 
     .toggle-panel-btn {
         appearance: none;
-        border: 1px solid rgba(56, 189, 248, 0.18);
-        background: linear-gradient(180deg, rgba(10, 21, 38, 0.95), rgba(12, 26, 46, 0.98));
+        border: 1px solid rgba(224, 208, 180, 0.56);
+        background:
+            linear-gradient(180deg, rgba(255, 251, 243, 0.98), rgba(255, 244, 236, 0.98));
         color: var(--text);
         padding: 14px 16px;
         width: 100%;
@@ -263,12 +279,14 @@
         content: "";
         position: absolute;
         inset: 0;
-        background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.14), transparent 44%);
+        background:
+            radial-gradient(circle at top left, rgba(255, 242, 194, 0.32), transparent 44%),
+            radial-gradient(circle at bottom right, rgba(194, 207, 255, 0.18), transparent 30%);
         pointer-events: none;
     }
 
     .toggle-panel-btn:hover {
-        border-color: rgba(56, 189, 248, 0.32);
+        border-color: rgba(194, 207, 255, 0.66);
         transform: translateY(-1px);
         box-shadow: var(--shadow-md);
     }
@@ -276,9 +294,10 @@
     .dashboard-toolbar-panel {
         padding: 20px 20px 24px;
         border-radius: 26px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: linear-gradient(180deg, rgba(8, 18, 34, 0.92), rgba(10, 22, 38, 0.96));
-        box-shadow: 0 28px 70px rgba(0, 0, 0, 0.24);
+        border: 1px solid rgba(224, 208, 180, 0.54);
+        background:
+            linear-gradient(180deg, rgba(255, 252, 245, 0.98), rgba(255, 245, 236, 0.98));
+        box-shadow: 0 28px 70px rgba(82, 68, 49, 0.08);
         margin-bottom: 24px;
     }
 
@@ -305,16 +324,17 @@
     .kpi-card {
         padding: 18px 18px 16px;
         border-radius: 22px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.005));
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), 0 20px 40px rgba(0, 0, 0, 0.18);
+        border: 1px solid rgba(224, 208, 180, 0.46);
+        background:
+            linear-gradient(180deg, rgba(255, 250, 240, 0.98), rgba(255, 243, 247, 0.98));
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.52), 0 20px 40px rgba(82, 68, 49, 0.06);
         display: grid;
         gap: 8px;
     }
 
     .kpi-card span {
         display: block;
-        color: #91b7ff;
+        color: #8f8376;
         font-size: 11px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
@@ -324,7 +344,7 @@
     .kpi-card strong {
         font-size: 1.9rem;
         line-height: 1.05;
-        color: #ffffff;
+        color: #3b342b;
         font-weight: 900;
     }
 
@@ -334,11 +354,11 @@
         gap: 6px;
         font-size: 0.95rem;
         font-weight: 700;
-        color: #22c55e;
+        color: #6ea57c;
     }
 
     .kpi-change.negative {
-        color: #f87171;
+        color: #c27a9a;
     }
 
     .kpi-change svg {
@@ -363,14 +383,33 @@
         font-size: 11px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: #7ac7ff;
+        color: #8f83ba;
         font-weight: 800;
+    }
+
+    .dashboard-toolbar-form .toolbar-select,
+    .dashboard-toolbar-form .toolbar-input {
+        min-height: 46px;
+        border-radius: 14px;
+        background: rgba(255, 251, 243, 0.98);
+        border: 1px solid rgba(167, 139, 213, 0.18);
+        padding: 0 14px;
+        width: 100%;
+        color: #1f2937;
+        font-size: 0.95rem;
+    }
+
+    .dashboard-toolbar-form .toolbar-input:focus,
+    .dashboard-toolbar-form .toolbar-select:focus {
+        outline: none;
+        border-color: rgba(111, 99, 247, 0.65);
+        box-shadow: 0 0 0 3px rgba(111, 99, 247, 0.12);
     }
 
     .dashboard-toolbar-form .toolbar-select {
         min-height: 46px;
         border-radius: 14px;
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(255, 251, 243, 0.98);
     }
 
     .dashboard-toolbar-form .toolbar-btn {
@@ -387,9 +426,9 @@
         display: inline-flex;
         align-items: center;
         gap: 12px;
-        background: linear-gradient(180deg, rgba(10, 20, 36, 0.95), rgba(10, 20, 36, 0.99));
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+        background: linear-gradient(180deg, rgba(255, 252, 245, 0.98), rgba(255, 245, 236, 0.98));
+        border: 1px solid rgba(224, 208, 180, 0.50);
+        box-shadow: 0 10px 28px rgba(82, 68, 49, 0.06);
     }
 
     .toggle-panel-btn.small .toggle-panel-text {
@@ -407,7 +446,7 @@
     .toggle-panel-btn.small .toggle-panel-title {
         font-size: 0.95rem;
         letter-spacing: 0.01em;
-        color: #e5f6ff;
+        color: #3b342b;
         white-space: nowrap;
     }
 
@@ -421,7 +460,7 @@
         width: 34px;
         height: 34px;
         border-radius: 12px;
-        background: rgba(8, 22, 40, 0.78);
+        background: linear-gradient(180deg, rgba(255, 242, 194, 0.50), rgba(255, 224, 194, 0.34));
     }
 
     .toggle-panel-btn.small .toggle-panel-icon svg {
@@ -431,7 +470,7 @@
 
     .toggle-panel-btn.small:hover {
         transform: translateY(0);
-        border-color: rgba(56, 189, 248, 0.28);
+        border-color: rgba(194, 207, 255, 0.62);
     }
 
     .toggle-panel-icon {
@@ -441,9 +480,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: rgba(56, 189, 248, 0.12);
-        border: 1px solid rgba(56, 189, 248, 0.18);
-        color: #5ad0ff;
+        background: linear-gradient(180deg, rgba(194, 207, 255, 0.34), rgba(255, 194, 237, 0.22));
+        border: 1px solid rgba(194, 207, 255, 0.42);
+        color: #7f77a3;
         flex-shrink: 0;
     }
 
@@ -460,7 +499,7 @@
         text-transform: uppercase;
         letter-spacing: 0.12em;
         font-weight: 800;
-        color: #7dd9ff;
+        color: #8f83ba;
         margin-bottom: 3px;
     }
 
@@ -468,7 +507,7 @@
         font-size: 15px;
         font-weight: 800;
         line-height: 1.2;
-        color: #f8fbff;
+        color: #3b342b;
     }
 
     .toggle-panel-subtitle {
@@ -491,9 +530,9 @@
         gap: 8px;
         padding: 8px 12px;
         border-radius: 999px;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(148, 163, 184, 0.14);
-        color: #d9e8fb;
+        background: rgba(255, 250, 242, 0.86);
+        border: 1px solid rgba(224, 208, 180, 0.36);
+        color: #766c61;
         font-size: 12px;
         font-weight: 800;
         white-space: nowrap;
@@ -503,19 +542,19 @@
         width: 8px;
         height: 8px;
         border-radius: 999px;
-        background: #64748b;
-        box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.12);
+        background: #b9ae9f;
+        box-shadow: 0 0 0 4px rgba(185, 174, 159, 0.14);
     }
 
     .toggle-panel-state.online .toggle-panel-state-dot {
         background: var(--success);
-        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.14);
+        box-shadow: 0 0 0 4px rgba(156, 205, 168, 0.16);
     }
 
     .toggle-panel-chevron {
         width: 18px;
         height: 18px;
-        color: #cbd5e1;
+        color: #aa9f92;
         transition: transform 0.25s ease;
     }
 
@@ -552,7 +591,7 @@
         overflow: hidden;
         border-radius: var(--radius-lg);
         background:
-            linear-gradient(180deg, rgba(13, 27, 48, 0.95), rgba(10, 22, 39, 0.97));
+            linear-gradient(180deg, rgba(255, 251, 243, 0.98), rgba(255, 245, 236, 0.98));
         border: 1px solid var(--border);
         box-shadow: var(--shadow-md);
     }
@@ -562,22 +601,24 @@
         position: absolute;
         inset: 0;
         pointer-events: none;
-        background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), transparent 34%);
+        background:
+            radial-gradient(circle at top right, rgba(194, 255, 211, 0.16), transparent 30%),
+            radial-gradient(circle at bottom left, rgba(255, 194, 237, 0.10), transparent 26%);
     }
 
     .panel-success {
-        border-color: rgba(34, 197, 94, 0.22);
+        border-color: rgba(156, 205, 168, 0.48);
     }
 
     .panel-danger {
-        border-color: rgba(239, 68, 68, 0.22);
+        border-color: rgba(225, 169, 200, 0.44);
     }
 
     .panel-head {
         position: relative;
         z-index: 1;
         padding: 18px 20px 14px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        border-bottom: 1px solid rgba(224, 208, 180, 0.26);
         display: flex;
         flex-direction: column;
         gap: 5px;
@@ -588,14 +629,14 @@
         text-transform: uppercase;
         letter-spacing: 0.12em;
         font-weight: 800;
-        color: #7dd9ff;
+        color: #8f83ba;
     }
 
     .panel-head h3 {
         margin: 0;
         font-size: 18px;
         line-height: 1.2;
-        color: #f7fbff;
+        color: #3b342b;
         font-weight: 800;
     }
 
@@ -607,7 +648,7 @@
 
     .panel-main-text {
         margin: 0;
-        color: #e7f1ff;
+        color: #5f564c;
         font-size: 15px;
         line-height: 1.75;
         font-weight: 600;
@@ -622,8 +663,8 @@
     .debug-tile {
         border-radius: 16px;
         padding: 14px;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(148, 163, 184, 0.12);
+        background: linear-gradient(180deg, rgba(255, 249, 240, 0.96), rgba(255, 243, 247, 0.94));
+        border: 1px solid rgba(224, 208, 180, 0.28);
         min-height: 88px;
         display: flex;
         flex-direction: column;
@@ -640,7 +681,7 @@
 
     .debug-tile strong {
         display: block;
-        color: #f8fbff;
+        color: #3b342b;
         font-size: 15px;
         line-height: 1.45;
         font-weight: 800;
@@ -673,29 +714,30 @@
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        color: #87dfff;
+        color: #8f83ba;
     }
 
     .toolbar-select {
         width: 100%;
         min-height: 48px;
         border-radius: 14px;
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(224, 208, 180, 0.46);
+        background: linear-gradient(180deg, rgba(255, 251, 243, 0.98), rgba(255, 247, 239, 0.98));
         color: var(--text);
         padding: 0 14px;
         outline: none;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.42);
     }
 
     .toolbar-select:focus {
-        border-color: rgba(56, 189, 248, 0.4);
-        box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+        border-color: rgba(194, 207, 255, 0.78);
+        box-shadow: 0 0 0 4px rgba(194, 207, 255, 0.18);
     }
 
     .toolbar-select option,
     .toolbar-select optgroup {
-        color: #0f172a;
+        color: #3b342b;
+        background: #fffaf2;
     }
 
     .toolbar-btn {
@@ -719,9 +761,9 @@
         min-height: 40px;
         padding: 10px 14px;
         border-radius: 999px;
-        border: 1px solid rgba(148, 163, 184, 0.14);
-        background: rgba(255,255,255,0.04);
-        color: #e7f1ff;
+        border: 1px solid rgba(224, 208, 180, 0.34);
+        background: linear-gradient(180deg, rgba(255, 251, 243, 0.96), rgba(255, 245, 236, 0.96));
+        color: #5f564c;
         font-size: 13px;
         font-weight: 700;
         line-height: 1;
@@ -732,26 +774,27 @@
     }
 
     .quick-chip:hover {
-        border-color: rgba(56, 189, 248, 0.28);
-        background: rgba(56, 189, 248, 0.08);
+        border-color: rgba(194, 207, 255, 0.60);
+        background: linear-gradient(180deg, rgba(255, 242, 194, 0.44), rgba(255, 224, 194, 0.34));
         transform: translateY(-1px);
     }
 
     .quick-chip.active,
     .index-chip.active {
-        color: #06111f;
-        background: linear-gradient(180deg, #71d8ff, #38bdf8);
-        border-color: transparent;
-        box-shadow: 0 10px 22px rgba(56, 189, 248, 0.22);
+        color: #4b4033;
+        background: linear-gradient(135deg, #fff2c2 0%, #c2ffd3 48%, #c2cfff 100%);
+        border-color: rgba(194, 207, 255, 0.54);
+        box-shadow: 0 10px 22px rgba(194, 207, 255, 0.20);
     }
 
     .chart-workspace {
         overflow: hidden;
         border-radius: 26px;
         background:
-            radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 32%),
-            linear-gradient(180deg, rgba(9, 20, 36, 0.98), rgba(8, 18, 32, 0.98));
-        border: 1px solid rgba(56, 189, 248, 0.12);
+            radial-gradient(circle at top right, rgba(255, 194, 237, 0.18), transparent 24%),
+            radial-gradient(circle at top left, rgba(255, 242, 194, 0.20), transparent 24%),
+            linear-gradient(180deg, rgba(255, 250, 242, 0.98), rgba(255, 244, 236, 0.98));
+        border: 1px solid rgba(224, 208, 180, 0.48);
         box-shadow: var(--shadow-lg);
     }
 
@@ -761,7 +804,7 @@
         justify-content: space-between;
         gap: 18px;
         padding: 22px 22px 16px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        border-bottom: 1px solid rgba(224, 208, 180, 0.24);
     }
 
     .chart-workspace-head h3 {
@@ -769,7 +812,7 @@
         font-size: 22px;
         line-height: 1.15;
         font-weight: 800;
-        color: #f8fbff;
+        color: #3b342b;
     }
 
     .chart-badges {
@@ -786,9 +829,9 @@
         gap: 6px;
         padding: 8px 12px;
         border-radius: 999px;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(148, 163, 184, 0.12);
-        color: #dce9fb;
+        background: linear-gradient(180deg, rgba(255, 248, 239, 0.94), rgba(255, 243, 247, 0.90));
+        border: 1px solid rgba(224, 208, 180, 0.26);
+        color: #6f6559;
         font-size: 12px;
         font-weight: 800;
     }
@@ -798,17 +841,17 @@
         flex-wrap: wrap;
         gap: 10px;
         padding: 16px 22px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-        background: rgba(255,255,255,0.02);
+        border-bottom: 1px solid rgba(224, 208, 180, 0.22);
+        background: linear-gradient(180deg, rgba(255, 247, 239, 0.68), rgba(255,255,255,0.22));
     }
 
     .chart-tool-btn {
         min-height: 40px;
         padding: 10px 14px;
         border-radius: 12px;
-        border: 1px solid rgba(148, 163, 184, 0.12);
-        background: rgba(255,255,255,0.045);
-        color: #e8f2ff;
+        border: 1px solid rgba(224, 208, 180, 0.30);
+        background: linear-gradient(180deg, rgba(255, 251, 243, 0.96), rgba(255, 245, 236, 0.94));
+        color: #655b50;
         font-size: 13px;
         font-weight: 800;
         line-height: 1;
@@ -817,15 +860,15 @@
 
     .chart-tool-btn:hover {
         transform: translateY(-1px);
-        border-color: rgba(56, 189, 248, 0.28);
-        background: rgba(56, 189, 248, 0.08);
+        border-color: rgba(194, 207, 255, 0.62);
+        background: linear-gradient(135deg, rgba(255, 242, 194, 0.54), rgba(255, 224, 194, 0.42));
     }
 
     .chart-tool-btn.active {
-        background: rgba(56, 189, 248, 0.14);
-        color: #98e4ff;
-        border-color: rgba(56, 189, 248, 0.26);
-        box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.08);
+        background: linear-gradient(135deg, rgba(255, 242, 194, 0.82), rgba(194, 207, 255, 0.74));
+        color: #594f43;
+        border-color: rgba(194, 207, 255, 0.60);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.30);
     }
 
     .chart-status-row {
@@ -833,24 +876,24 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 12px;
         padding: 16px 22px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-        background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0));
+        border-bottom: 1px solid rgba(224, 208, 180, 0.22);
+        background: linear-gradient(180deg, rgba(255, 248, 239, 0.42), rgba(255,255,255,0));
     }
 
     .chart-status-item {
         min-height: 58px;
         padding: 12px 14px;
         border-radius: 14px;
-        border: 1px solid rgba(148, 163, 184, 0.1);
-        background: rgba(255,255,255,0.04);
-        color: #9db0ca;
+        border: 1px solid rgba(224, 208, 180, 0.24);
+        background: linear-gradient(180deg, rgba(255, 251, 243, 0.95), rgba(255, 244, 236, 0.90));
+        color: #8c8072;
         font-size: 12px;
         font-weight: 700;
         line-height: 1.5;
     }
 
     .chart-status-item span {
-        color: #f4f9ff;
+        color: #3b342b;
         font-weight: 800;
     }
 
@@ -862,10 +905,12 @@
         position: relative;
         min-height: 600px;
         border-radius: 22px;
-        border: 1px solid rgba(148, 163, 184, 0.12);
+        border: 1px solid rgba(224, 208, 180, 0.26);
         background:
-            linear-gradient(180deg, rgba(5, 14, 28, 0.98), rgba(8, 18, 34, 0.98));
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+            radial-gradient(circle at top left, rgba(255, 242, 194, 0.10), transparent 22%),
+            radial-gradient(circle at bottom right, rgba(194, 207, 255, 0.12), transparent 26%),
+            linear-gradient(180deg, rgba(255, 251, 243, 0.99), rgba(255, 246, 238, 0.99));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.40);
         overflow: hidden;
     }
 
@@ -875,10 +920,10 @@
         inset: 0;
         pointer-events: none;
         background:
-            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            linear-gradient(rgba(194, 207, 255, 0.18) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 211, 194, 0.18) 1px, transparent 1px);
         background-size: 100% 42px, 42px 100%;
-        opacity: 0.16;
+        opacity: 0.34;
     }
 
     .main-chart-canvas {
@@ -1079,19 +1124,16 @@
 
             <form method="get" class="dashboard-toolbar-form" id="chartForm">
                 <div class="field-wrap">
-                    <label for="symbol">Select Symbol</label>
-                    <select name="symbol" id="symbol" class="toolbar-select">
-                        <optgroup label="Indices">
-                            {% for item in index_symbols %}
-                                <option value="{{ item }}" {% if item == tv_symbol %}selected{% endif %}>{{ item }}</option>
-                            {% endfor %}
-                        </optgroup>
-                        <optgroup label="Stocks">
-                            {% for item in stock_symbols %}
-                                <option value="{{ item }}" {% if item == tv_symbol %}selected{% endif %}>{{ item }}</option>
-                            {% endfor %}
-                        </optgroup>
-                    </select>
+                    <label for="symbolInput">Select Symbol</label>
+                    <input list="symbolDatalist" name="symbol" id="symbolInput" class="toolbar-input" placeholder="Type symbol or select..." value="{{ tv_symbol }}" autocomplete="off">
+                    <datalist id="symbolDatalist">
+                        {% for item in index_symbols %}
+                            <option value="{{ item }}"></option>
+                        {% endfor %}
+                        {% for item in stock_symbols %}
+                            <option value="{{ item }}"></option>
+                        {% endfor %}
+                    </datalist>
                 </div>
 
                 <div class="field-wrap">
@@ -1216,7 +1258,21 @@
             <button type="button" class="chart-tool-btn active" id="toggleEMA50">EMA 50</button>
             <button type="button" class="chart-tool-btn active" id="toggleRSI">RSI</button>
             <button type="button" class="chart-tool-btn active" id="toggleMACD">MACD</button>
-            <button type="button" class="chart-tool-btn" id="toggleAmavasya">Dark Days</button>
+            <div class="chart-toolbar-end">
+                <div class="chart-tool-pill">
+                    <button type="button" class="chart-tool-btn" id="toggleAmavasya">Dark Days</button>
+                </div>
+
+                <div class="chart-tool-year">
+                    <label for="amavasyaYearSelect" class="chart-tool-label">Year</label>
+                    <select id="amavasyaYearSelect" class="chart-tool-select-white">
+                        <option value="ALL">All</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026" selected>2026</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div class="chart-status-row">
@@ -1299,5 +1355,5 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% block extra_js %}
 <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
-<script src="{% static 'js/chart.js' %}"></script>
+<script src="{% static 'js/chart.js' %}?v={% now "U" %}"></script>
 {% endblock %}

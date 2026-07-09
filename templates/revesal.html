@@ -16,12 +16,9 @@
     </div>
 
     <div class="panel-card reversal-panel">
-        <div class="reversal-toolbar">
-            <button type="button" class="btn btn-secondary" id="toggleSearchBtn">
-                Open Degree Search
-            </button>
-
-            <div class="search-box" id="searchBox">
+        <div class="amavasya-toolbar">
+            <div class="field-wrap year-search-wrap">
+                <label for="yearInput">Enter Year</label>
                 <input
                     type="number"
                     id="yearInput"
@@ -31,10 +28,10 @@
                     min="1900"
                     max="2100"
                 >
-                <button type="button" class="btn btn-primary" id="searchBtn">
-                    Get Degree Dates
-                </button>
             </div>
+            <button type="button" class="btn btn-primary" id="searchBtn">
+                Get Degree Dates
+            </button>
         </div>
 
         <div class="summary-grid">
@@ -105,25 +102,10 @@
 
 {% block extra_js %}
 <script>
-const toggleSearchBtn = document.getElementById('toggleSearchBtn');
-const searchBox = document.getElementById('searchBox');
 const searchBtn = document.getElementById('searchBtn');
 const yearInput = document.getElementById('yearInput');
 const resultsBody = document.getElementById('resultsBody');
 const statusMessage = document.getElementById('statusMessage');
-
-if (toggleSearchBtn) {
-    toggleSearchBtn.addEventListener('click', function () {
-        searchBox.classList.toggle('active');
-        toggleSearchBtn.textContent = searchBox.classList.contains('active')
-            ? 'Close Degree Search'
-            : 'Open Degree Search';
-
-        if (searchBox.classList.contains('active')) {
-            yearInput.focus();
-        }
-    });
-}
 
 function renderRows(rows) {
     if (!rows || !rows.length) {

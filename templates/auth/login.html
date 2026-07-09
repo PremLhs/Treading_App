@@ -1,158 +1,139 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Login{% endblock %}
 
 {% block content %}
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
+
     :root {
-        --bg-1: #03131b;
-        --bg-2: #041a25;
-        --bg-3: #05111b;
-        --surface: rgba(5, 24, 33, 0.74);
-        --surface-strong: rgba(4, 20, 28, 0.88);
-        --border: rgba(140, 220, 235, 0.14);
-        --border-strong: rgba(140, 220, 235, 0.28);
+        --login-bg: #f6f4e8;
+        --login-bg-soft: #f1eedf;
+        --login-bg-top: #f7f5e9;
+        --login-bg-bottom: #f4f1e3;
+        --login-panel: rgba(248, 247, 243, 0.96);
+        --login-input: #f4f0d8;
+        --login-input-2: #f8f5e4;
+        --login-grid: rgba(70, 66, 55, 0.045);
 
-        --text: #f3fbff;
-        --text-muted: rgba(232, 244, 248, 0.64);
-        --text-faint: rgba(232, 244, 248, 0.42);
+        --login-text: #1f1f1a;
+        --login-text-soft: #6b675d;
+        --login-text-muted: #817c72;
+        --login-line: rgba(54, 50, 41, 0.10);
+        --login-line-strong: rgba(54, 50, 41, 0.16);
 
-        --primary: #19d8ea;
-        --primary-2: #16cfab;
-        --primary-text: #052631;
+        --login-success: #14905d;
+        --login-danger: #d65973;
 
-        --success: #31d47a;
-        --danger: #ff5d6c;
+        --login-btn: #171717;
+        --login-btn-2: #232323;
+        --login-btn-text: #ffffff;
 
-        --input-bg: #edf3f6;
-        --input-border: rgba(203, 223, 230, 0.92);
-        --input-text: #17313b;
-        --input-placeholder: #748791;
+        --login-shadow-card: 0 24px 64px rgba(74, 68, 54, 0.10);
+        --login-shadow-soft: 0 12px 30px rgba(74, 68, 54, 0.06);
 
-        --header-h: 92px;
-        --ticker-h: 42px;
-        --radius-xl: 28px;
-        --radius-lg: 20px;
-        --radius-md: 16px;
-        --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
-        --card-width: 460px;
+        --login-radius-xl: 34px;
+        --login-radius-lg: 28px;
+        --login-radius-md: 18px;
+        --login-radius-sm: 14px;
+
+        --login-header-h: 92px;
+        --login-ticker-h: 40px;
+        --login-transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    * {
-        box-sizing: border-box;
-    }
-
-    html, body {
-        margin: 0;
+    html,
+    body {
         width: 100%;
         height: 100%;
-        overflow: hidden;
-        -webkit-text-size-adjust: 100%;
-        text-size-adjust: 100%;
+        min-height: 100%;
+        overflow: hidden !important;
     }
 
     body {
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background:
-            radial-gradient(circle at 12% 18%, rgba(20, 173, 196, 0.18), transparent 26%),
-            radial-gradient(circle at 85% 80%, rgba(18, 184, 145, 0.13), transparent 28%),
-            linear-gradient(135deg, var(--bg-1) 0%, #021019 35%, #031824 68%, #04111a 100%);
-        color: var(--text);
+        background: var(--login-bg) !important;
     }
 
-    .auth-shell {
-        position: fixed;
-        inset: 0;
-        width: 100vw;
+    body::before,
+    body::after,
+    .app-shell::before,
+    .app-shell::after,
+    .site-header,
+    .main-wrap > .container::before,
+    .main-wrap > .container::after,
+    .flash-stack,
+    .notification-modal-backdrop {
+        display: none !important;
+    }
+
+    .app-shell,
+    .main-wrap,
+    .main-wrap > .container {
+        height: 100vh !important;
+        min-height: 100vh !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+    }
+
+    .main-wrap {
+        padding: 0 !important;
+    }
+
+    .main-wrap > .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .login-shell {
+        position: relative;
+        width: 100%;
         height: 100vh;
+        min-height: 100vh;
+        max-height: 100vh;
         overflow: hidden;
-        isolation: isolate;
         background:
-            radial-gradient(circle at 50% 0%, rgba(19, 165, 186, 0.09), transparent 34%),
-            linear-gradient(180deg, rgba(6, 18, 27, 0.2), rgba(2, 10, 16, 0.34));
+            linear-gradient(var(--login-grid) 1px, transparent 1px),
+            linear-gradient(90deg, var(--login-grid) 1px, transparent 1px),
+            linear-gradient(180deg, var(--login-bg-top) 0%, var(--login-bg-bottom) 100%);
+        background-size: 94px 94px, 94px 94px, 100% 100%;
     }
 
-    .auth-shell::before {
+    .login-shell::before {
         content: "";
         position: absolute;
         inset: 0;
+        pointer-events: none;
         background:
-            linear-gradient(rgba(72, 193, 214, 0.07) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(72, 193, 214, 0.07) 1px, transparent 1px);
-        background-size: 60px 60px;
-        opacity: 0.16;
-        pointer-events: none;
+            radial-gradient(circle at 18% 28%, rgba(255,255,255,0.34), transparent 24%),
+            radial-gradient(circle at 84% 72%, rgba(255,255,255,0.24), transparent 22%);
     }
 
-    .auth-shell::after {
-        content: "";
+    .login-topbar {
         position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.38) 100%);
-        pointer-events: none;
+        inset: 0 0 auto 0;
+        z-index: 5;
+        border-top: 3px solid #2f2d26;
+        background: rgba(247, 245, 233, 0.96);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
 
-    .orb {
-        position: absolute;
-        border-radius: 999px;
-        filter: blur(48px);
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    .orb-1 {
-        width: 320px;
-        height: 320px;
-        top: 110px;
-        left: -70px;
-        background: rgba(23, 187, 214, 0.18);
-    }
-
-    .orb-2 {
-        width: 420px;
-        height: 420px;
-        right: -120px;
-        bottom: -50px;
-        background: rgba(16, 196, 153, 0.14);
-    }
-
-    .scan-line {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(40, 225, 241, 0.92), transparent);
-        opacity: 0.75;
-        z-index: 1;
-        animation: scan 8s linear infinite;
-        pointer-events: none;
-    }
-
-    .auth-header {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        right: 12px;
-        height: var(--header-h);
-        z-index: 4;
+    .brand-row {
+        height: var(--login-header-h);
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 0 28px;
-        border: 1px solid rgba(192, 233, 241, 0.12);
-        border-radius: 26px 26px 0 0;
-        background:
-            linear-gradient(90deg, rgba(8, 30, 40, 0.95), rgba(4, 19, 34, 0.94) 64%, rgba(3, 14, 27, 0.96)),
-            radial-gradient(circle at 0% 50%, rgba(18, 184, 212, 0.14), transparent 30%);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+        padding: 0 34px;
+        border-bottom: 1px solid var(--login-line);
     }
 
     .brand {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 14px;
     }
 
     .brand-mark {
@@ -160,65 +141,45 @@
         width: 195px;
         height: 80px;
         display: flex;
-        background: linear-gradient(135deg, #0d1a29 0%, #061923 100%);
-        color: #0e1d2c;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 12px 32px rgb(22 37 40 / 26%);
+        background: linear-gradient(180deg, var(--login-bg-top) 0%, var(--login-bg-bottom) 100%);
+        border: 1px solid rgba(54, 50, 41, 0.08);
+        box-shadow: 0 10px 24px rgba(74, 68, 54, 0.08);
         flex-shrink: 0;
         overflow: hidden;
+        border-radius: 18px;
     }
 
-    .brand-text strong {
+    .brand-logo {
+        width: 286px;
+        height: 156px;
+        object-fit: contain;
+        object-position: left center;
         display: block;
-        font-size: 1.95rem;
-        line-height: 1;
-        letter-spacing: -0.05em;
-    }
-
-    .brand-text span {
-        display: block;
-        margin-top: 4px;
-        color: var(--text-muted);
-        font-size: 0.95rem;
-    }
-
-    .auth-nav {
-        font-size: 1.02rem;
-        font-weight: 700;
-        color: rgba(255, 255, 255, 0.88);
     }
 
     .ticker-wrap {
-        position: absolute;
-        top: calc(12px + var(--header-h));
-        left: 12px;
-        right: 12px;
-        height: var(--ticker-h);
-        z-index: 4;
+        height: var(--login-ticker-h);
         overflow: hidden;
-        border-left: 1px solid rgba(192, 233, 241, 0.12);
-        border-right: 1px solid rgba(192, 233, 241, 0.12);
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        background: rgba(4, 16, 25, 0.78);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--login-line);
+        background: rgba(246, 244, 232, 0.92);
     }
 
     .ticker-track {
         display: flex;
         width: max-content;
         min-width: 100%;
-        animation: ticker 30s linear infinite;
+        animation: ticker 34s linear infinite;
     }
 
     .ticker-group {
         display: flex;
         align-items: center;
-        gap: 24px;
-        padding-inline: 20px;
+        gap: 40px;
         white-space: nowrap;
+        padding-inline: 32px;
+        min-height: var(--login-ticker-h);
         flex-shrink: 0;
     }
 
@@ -226,148 +187,215 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        font-size: 0.88rem;
+        font-size: 0.98rem;
         font-weight: 700;
-        color: rgba(255, 255, 255, 0.9);
+        color: #3b3831;
     }
 
     .ticker-item .sym {
         font-weight: 800;
+        color: #2d2a24;
     }
 
     .ticker-item .price {
-        color: rgba(255, 255, 255, 0.68);
+        color: #6d6a61;
+        font-weight: 600;
     }
 
     .ticker-item .up {
-        color: var(--success);
+        color: #48a88a;
+        font-weight: 700;
     }
 
     .ticker-item .down {
-        color: var(--danger);
+        color: #e35a76;
+        font-weight: 700;
     }
 
-    .auth-stage {
-        position: absolute;
-        inset: calc(12px + var(--header-h) + var(--ticker-h)) 12px 12px;
+    .login-stage {
+        position: relative;
+        height: 100vh;
+        min-height: 100vh;
+        max-height: 100vh;
+        padding-top: calc(var(--login-header-h) + var(--login-ticker-h));
         overflow: hidden;
-        z-index: 1;
     }
 
-    .chart-line {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 90px;
-        height: 180px;
-        opacity: 0.72;
-        pointer-events: none;
-    }
-
-    .chart-line svg,
-    .candles svg {
-        display: block;
-        width: 100%;
-        height: 100%;
-    }
-
-    .candles {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 240px;
-        opacity: 0.34;
-        pointer-events: none;
-    }
-
-    .auth-main {
-        position: absolute;
-        inset: 0;
+    .login-layout {
+        height: calc(100vh - var(--login-header-h) - var(--login-ticker-h));
+        min-height: calc(100vh - var(--login-header-h) - var(--login-ticker-h));
+        max-height: calc(100vh - var(--login-header-h) - var(--login-ticker-h));
         display: grid;
-        place-items: center;
-        padding: 24px;
-        z-index: 5;
+        grid-template-columns: minmax(0, 1.12fr) minmax(420px, 0.88fr);
+        align-items: center;
+        gap: 56px;
+        padding: 10px 50px 25px;
+        overflow: hidden;
+    }
+
+    .hero-pane {
+        max-width: 760px;
+        padding-right: 20px;
+    }
+
+    .hero-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 38px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(54, 50, 41, 0.10);
+        background: rgba(255,255,255,0.55);
+        box-shadow: var(--login-shadow-soft);
+        color: #6d685d;
+        font-size: 0.94rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    .hero-chip::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: transparent;
+        border: 2px solid #30a287;
+        box-shadow: inset 0 0 0 2px rgba(48, 162, 135, 0.14);
+    }
+
+    .hero-title {
+        margin: 28px 0 18px;
+        font-family: "Cormorant Garamond", Georgia, serif;
+        color: #1f1f1a;
+        letter-spacing: -0.05em;
+        line-height: 0.88;
+        font-weight: 500;
+        font-size: clamp(0.4rem, 7vw, 7.6rem);
+        max-width: 15.4ch;
+
+    }
+
+    .hero-title .line-italic {
+        display: block;
+        font-style: italic;
+        font-weight: 400;
+        opacity: 0.9;
+    }
+
+    .hero-copy {
+        max-width: 31ch;
+        margin: 0 0 34px;
+        color: #6f6b61;
+        font-size: 1.06rem;
+        line-height: 1.62;
+        font-weight: 500;
+    }
+
+    .hero-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        min-width: 214px;
+        min-height: 52px;
+        padding: 0 24px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--login-btn) 0%, var(--login-btn-2) 100%);
+        color: var(--login-btn-text);
+        border: none;
+        font-size: 1rem;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 18px 30px rgba(28, 28, 28, 0.16);
+        transition: transform var(--login-transition), box-shadow var(--login-transition), filter var(--login-transition);
+    }
+
+    .hero-cta:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.03);
+        box-shadow: 0 22px 36px rgba(28, 28, 28, 0.20);
+    }
+
+    .hero-cta::after {
+        content: "↗";
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    .login-pane {
+        display: flex;
+        justify-content: center;
     }
 
     .auth-card-wrap {
         position: relative;
-        width: 100%;
-        max-width: var(--card-width);
-    }
-
-    .auth-card-wrap::before {
-        content: "";
-        position: absolute;
-        inset: -1px;
-        border-radius: 26px;
-        background: linear-gradient(135deg, rgba(28, 221, 244, 0.26), rgba(28, 221, 244, 0.02), rgba(24, 216, 164, 0.16));
-        filter: blur(20px);
-        opacity: 0.62;
-        z-index: -1;
+        width: min(100%, 560px);
     }
 
     .auth-card {
         position: relative;
-        padding: 28px 24px 20px;
-        border-radius: 24px;
-        border: 1px solid rgba(144, 221, 233, 0.1);
-        background:
-            linear-gradient(180deg, rgba(6, 31, 41, 0.74), rgba(3, 18, 26, 0.86)),
-            rgba(4, 20, 29, 0.8);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        box-shadow:
-            0 20px 60px rgba(0, 0, 0, 0.42),
-            0 0 0 1px rgba(25, 216, 234, 0.06),
-            0 0 36px rgba(25, 216, 234, 0.08);
-        overflow: hidden;
+        border-radius: var(--login-radius-xl);
+        background: rgba(248, 247, 243, 0.96);
+        border: 1px solid rgba(62, 58, 49, 0.08);
+        box-shadow: var(--login-shadow-card);
+        padding: 34px 34px 26px;
     }
 
-    .auth-card::after {
-        content: "";
+    .auth-badge {
         position: absolute;
-        inset: 0;
-        background:
-            radial-gradient(circle at 25% 0%, rgba(30, 207, 228, 0.12), transparent 28%),
-            linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 35%);
-        pointer-events: none;
+        top: -14px;
+        left: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 30px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: #1d1d1d;
+        color: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
     }
 
     .auth-card h1 {
-        position: relative;
-        z-index: 1;
-        margin: 0;
-        font-size: clamp(2.8rem, 5vw, 4rem);
+        margin: 12px 0 8px;
+        color: #1b1a17;
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: clamp(3rem, 4vw, 4.1rem);
         line-height: 0.95;
-        letter-spacing: -0.06em;
-        font-weight: 900;
-        color: #f5fdff;
+        letter-spacing: -0.05em;
+        font-weight: 500;
     }
 
     .subtitle {
-        position: relative;
-        z-index: 1;
-        margin: 10px 0 22px;
-        color: var(--text-muted);
-        font-size: 1rem;
+        margin: 0 0 28px;
+        color: #6d6a61;
+        font-size: 1.02rem;
+        line-height: 1.5;
+        font-weight: 500;
     }
 
     .auth-form {
         position: relative;
-        z-index: 1;
     }
 
     .form-group {
-        margin-bottom: 16px;
+        margin-bottom: 20px;
     }
 
     .form-group label {
         display: block;
-        margin-bottom: 8px;
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 0.98rem;
-        font-weight: 700;
+        margin-bottom: 10px;
+        color: #6d685e;
+        font-size: 0.94rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
     }
 
     .auth-form input[type="text"],
@@ -376,54 +404,56 @@
     .auth-form input[type="tel"],
     .auth-form input[type="number"] {
         width: 100%;
-        height: 56px;
-        border-radius: 16px;
-        border: 1px solid var(--input-border);
-        background: var(--input-bg);
-        color: var(--input-text);
+        height: 62px;
+        border-radius: 22px;
+        border: 1px solid rgba(61, 58, 49, 0.12);
+        background: linear-gradient(180deg, #f7f4df 0%, #f2efd8 100%);
+        color: #2a2923;
         padding: 0 18px;
-        font-size: 1rem;
+        font-size: 1.03rem;
         font-weight: 500;
         outline: none;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
-        transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.72),
+            0 2px 6px rgba(68, 64, 52, 0.03);
+        transition: border-color var(--login-transition), box-shadow var(--login-transition), transform var(--login-transition), background var(--login-transition);
     }
 
     .auth-form input::placeholder {
-        color: var(--input-placeholder);
+        color: #8e8b81;
         opacity: 1;
     }
 
     .auth-form input:focus {
-        border-color: rgba(25, 216, 234, 0.86);
+        border-color: rgba(40, 40, 40, 0.16);
+        background: linear-gradient(180deg, #faf8e8 0%, #f4f0d8 100%);
         transform: translateY(-1px);
         box-shadow:
-            0 0 0 4px rgba(25, 216, 234, 0.14),
-            0 12px 24px rgba(0, 0, 0, 0.12);
+            0 0 0 4px rgba(53, 49, 40, 0.06),
+            0 10px 24px rgba(68, 64, 52, 0.08);
     }
 
     .btn-primary {
         position: relative;
         width: 100%;
-        height: 56px;
-        margin-top: 4px;
+        height: 60px;
+        margin-top: 6px;
         border: none;
-        border-radius: 16px;
+        border-radius: 999px;
         overflow: hidden;
-        background: linear-gradient(90deg, var(--primary), var(--primary-2));
-        color: var(--primary-text);
-        font-size: 1.04rem;
-        font-weight: 900;
-        letter-spacing: 0.01em;
-        box-shadow:
-            0 12px 26px rgba(8, 195, 209, 0.22),
-            0 0 28px rgba(20, 208, 218, 0.2);
-        transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+        background: linear-gradient(135deg, #111111 0%, #1d1d1d 55%, #222222 100%);
+        color: #ffffff;
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        box-shadow: 0 18px 28px rgba(17, 17, 17, 0.18);
+        transition: transform var(--login-transition), box-shadow var(--login-transition), filter var(--login-transition);
     }
 
     .btn-primary:hover {
         transform: translateY(-1px);
-        filter: brightness(1.02);
+        filter: brightness(1.04);
+        box-shadow: 0 20px 34px rgba(17, 17, 17, 0.24);
     }
 
     .btn-primary:active {
@@ -431,34 +461,29 @@
     }
 
     .btn-primary:focus-visible {
-        outline: 3px solid rgba(255, 255, 255, 0.85);
+        outline: 3px solid rgba(31, 31, 26, 0.34);
         outline-offset: 3px;
     }
 
-    .btn-primary::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.42) 50%, transparent 80%);
-        transform: translateX(-130%);
-        animation: shimmer 3s linear infinite;
-    }
-
-    .btn-primary > span {
+    .btn-primary::after {
+        content: "↗";
         position: relative;
-        z-index: 1;
+        margin-left: 10px;
+        font-size: 1rem;
+        line-height: 1;
     }
 
     .auth-meta {
+        margin-top: 24px;
+        padding-top: 18px;
+        border-top: 1px solid var(--login-line-strong);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
-        margin-top: 16px;
-        color: var(--text-faint);
-        font-size: 0.86rem;
-        position: relative;
-        z-index: 1;
+        gap: 14px;
+        color: #7b776d;
+        font-size: 0.94rem;
+        font-weight: 500;
     }
 
     .live-indicator {
@@ -468,22 +493,12 @@
     }
 
     .live-dot {
-        position: relative;
-        width: 9px;
-        height: 9px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
-        background: var(--success);
-        box-shadow: 0 0 12px rgba(49, 212, 122, 0.65);
+        background: var(--login-success);
+        box-shadow: 0 0 0 3px rgba(20, 144, 93, 0.12);
         flex-shrink: 0;
-    }
-
-    .live-dot::after {
-        content: "";
-        position: absolute;
-        inset: -5px;
-        border-radius: inherit;
-        border: 1px solid rgba(49, 212, 122, 0.36);
-        animation: pulse 1.8s ease-out infinite;
     }
 
     .auth-form .errorlist,
@@ -491,7 +506,7 @@
         list-style: none;
         margin: 8px 0 0;
         padding: 0;
-        color: #ff8b98;
+        color: #c2536b;
         font-size: 0.88rem;
         font-weight: 600;
     }
@@ -499,10 +514,10 @@
     .auth-form .nonfield,
     .auth-form .errorlist.nonfield {
         margin-bottom: 12px;
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 93, 108, 0.18);
-        background: rgba(255, 93, 108, 0.08);
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(194, 83, 107, 0.14);
+        background: rgba(255, 232, 236, 0.76);
     }
 
     @keyframes ticker {
@@ -510,74 +525,113 @@
         to { transform: translateX(-50%); }
     }
 
-    @keyframes shimmer {
-        0% { transform: translateX(-130%); }
-        100% { transform: translateX(130%); }
-    }
+    @media (max-width: 1180px) {
+        .login-layout {
+            grid-template-columns: minmax(0, 1fr) minmax(380px, 460px);
+            gap: 34px;
+            padding: 28px 28px 28px;
+        }
 
-    @keyframes pulse {
-        0% { transform: scale(0.8); opacity: 0.8; }
-        70% { transform: scale(1.7); opacity: 0; }
-        100% { opacity: 0; }
-    }
+        .hero-pane {
+            max-width: 100%;
+            padding-right: 0;
+        }
 
-    @keyframes scan {
-        0% { transform: translateY(0); opacity: 0; }
-        8% { opacity: 0.85; }
-        100% { transform: translateY(100vh); opacity: 0; }
+        .hero-title {
+            max-width: 8.7ch;
+            font-size: clamp(3.5rem, 6vw, 5.4rem);
+        }
+
+        .hero-copy {
+            max-width: 34ch;
+        }
     }
 
     @media (max-width: 768px) {
         :root {
-            --header-h: 78px;
-            --ticker-h: 38px;
-            --card-width: 400px;
+            --login-header-h: 78px;
+            --login-ticker-h: 36px;
         }
 
-        .auth-header {
-            top: 8px;
-            left: 8px;
-            right: 8px;
-            padding: 0 16px;
-            border-radius: 20px 20px 0 0;
-        }
-
-        .ticker-wrap {
-            top: calc(8px + var(--header-h));
-            left: 8px;
-            right: 8px;
-        }
-
-        .auth-stage {
-            inset: calc(8px + var(--header-h) + var(--ticker-h)) 8px 8px;
+        .brand-row {
+            padding: 0 18px;
         }
 
         .brand-mark {
-            width: 48px;
-            height: 48px;
-            border-radius: 15px;
-            font-size: 1rem;
+            width: 190px;
+            height: 80px;
         }
 
-        .brand-text strong {
-            font-size: 1.4rem;
+        .brand-logo {
+            width: 176px;
+            height: 96px;
         }
 
-        .brand-text span {
+        .ticker-group {
+            gap: 26px;
+            padding-inline: 16px;
+        }
+
+        .ticker-item {
             font-size: 0.8rem;
         }
 
-        .auth-nav {
+        .login-layout {
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            padding: 20px 16px 20px;
+        }
+
+        .hero-pane {
+            max-width: 100%;
+            align-self: center;
+        }
+
+        .hero-chip {
+            min-height: 34px;
+            font-size: 0.78rem;
+            letter-spacing: 0.10em;
+        }
+
+        .hero-title {
+            margin: 18px 0 14px;
+            font-size: clamp(2.5rem, 6vw, 3.4rem);
+            max-width: 8ch;
+        }
+
+        .hero-copy {
+            max-width: 28ch;
+            font-size: 0.92rem;
+            line-height: 1.52;
+            margin-bottom: 20px;
+        }
+
+        .hero-cta {
+            min-width: 172px;
+            min-height: 46px;
             font-size: 0.92rem;
         }
 
+        .login-pane {
+            justify-content: center;
+            align-self: center;
+        }
+
+        .auth-card-wrap {
+            width: min(100%, 420px);
+        }
+
         .auth-card {
-            padding: 24px 18px 18px;
-            border-radius: 20px;
+            padding: 24px 18px 20px;
+            border-radius: 24px;
+        }
+
+        .auth-badge {
+            left: 20px;
         }
 
         .auth-card h1 {
-            font-size: clamp(2.5rem, 11vw, 3.4rem);
+            font-size: 2.5rem;
         }
 
         .subtitle {
@@ -585,47 +639,48 @@
             margin-bottom: 18px;
         }
 
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+        }
+
         .auth-form input[type="text"],
         .auth-form input[type="email"],
         .auth-form input[type="password"],
         .auth-form input[type="tel"],
-        .auth-form input[type="number"],
+        .auth-form input[type="number"] {
+            height: 52px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+        }
+
         .btn-primary {
             height: 52px;
-            border-radius: 14px;
+            font-size: 0.95rem;
         }
 
         .auth-meta {
-            flex-direction: column;
-            align-items: flex-start;
-            font-size: 0.8rem;
-        }
-
-        .chart-line {
-            top: 100px;
-            height: 150px;
-        }
-
-        .candles {
-            height: 190px;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            gap: 10px;
         }
     }
 
     @media (max-width: 480px) {
-        :root {
-            --card-width: 100%;
-        }
-
-        .auth-main {
-            padding: 14px;
-        }
-
-        .auth-card h1 {
-            font-size: 2.5rem;
-        }
-
-        .ticker-item {
-            font-size: 0.78rem;
+        html,
+        body,
+        .app-shell,
+        .main-wrap,
+        .main-wrap > .container,
+        .login-shell,
+        .login-stage {
+            min-width: 1280px;
+            width: 1280px;
         }
     }
 
@@ -640,133 +695,102 @@
     }
 </style>
 
-<section class="auth-shell">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="scan-line"></div>
-
-    {% comment %} <header class="auth-header">
-        <div class="brand">
-            <div class="brand-mark">TS</div>
-            <div class="brand-text">
-                <strong>O Trade</strong>
-                <span>Trading platform</span>
+<section class="login-shell">
+    <div class="login-topbar">
+        <div class="brand-row">
+            <div class="brand">
+                <div class="brand-mark">
+                    <img
+                        src="{% static 'image/e9f861aa-37b4-410b-97e8-bef12e414bdc.png' %}"
+                        alt="O Trade Logo"
+                        class="brand-logo"
+                        loading="eager"
+                        decoding="async"
+                    >
+                </div>
             </div>
         </div>
-        <div class="auth-nav">Login</div>
-    </header> {% endcomment %}
 
-    <div class="ticker-wrap" aria-hidden="true">
-        <div class="ticker-track">
-            <div class="ticker-group">
-                <span class="ticker-item"><span class="sym">TSLA</span><span class="price">412.55</span><span class="down">▼ -0.92%</span></span>
-                <span class="ticker-item"><span class="sym">ETH</span><span class="price">3,612</span><span class="up">▲ +1.05%</span></span>
-                <span class="ticker-item"><span class="sym">NVDA</span><span class="price">168.32</span><span class="up">▲ +3.41%</span></span>
-                <span class="ticker-item"><span class="sym">SPX</span><span class="price">5,872</span><span class="down">▼ -0.18%</span></span>
-                <span class="ticker-item"><span class="sym">MSFT</span><span class="price">438.21</span><span class="up">▲ +0.62%</span></span>
-                <span class="ticker-item"><span class="sym">GOLD</span><span class="price">2,712</span><span class="up">▲ +0.44%</span></span>
-                <span class="ticker-item"><span class="sym">AMZN</span><span class="price">224.10</span><span class="down">▼ -1.12%</span></span>
-            </div>
-            <div class="ticker-group">
-                <span class="ticker-item"><span class="sym">TSLA</span><span class="price">412.55</span><span class="down">▼ -0.92%</span></span>
-                <span class="ticker-item"><span class="sym">ETH</span><span class="price">3,612</span><span class="up">▲ +1.05%</span></span>
-                <span class="ticker-item"><span class="sym">NVDA</span><span class="price">168.32</span><span class="up">▲ +3.41%</span></span>
-                <span class="ticker-item"><span class="sym">SPX</span><span class="price">5,872</span><span class="down">▼ -0.18%</span></span>
-                <span class="ticker-item"><span class="sym">MSFT</span><span class="price">438.21</span><span class="up">▲ +0.62%</span></span>
-                <span class="ticker-item"><span class="sym">GOLD</span><span class="price">2,712</span><span class="up">▲ +0.44%</span></span>
-                <span class="ticker-item"><span class="sym">AMZN</span><span class="price">224.10</span><span class="down">▼ -1.12%</span></span>
+        <div class="ticker-wrap" aria-hidden="true">
+            <div class="ticker-track">
+                <div class="ticker-group">
+                    <span class="ticker-item"><span class="sym">SPX</span><span class="price">5,872</span><span class="down">▼ -0.18%</span></span>
+                    <span class="ticker-item"><span class="sym">MSFT</span><span class="price">438.21</span><span class="up">▲ +0.62%</span></span>
+                    <span class="ticker-item"><span class="sym">GOLD</span><span class="price">2,712</span><span class="up">▲ +0.44%</span></span>
+                    <span class="ticker-item"><span class="sym">AMZN</span><span class="price">224.10</span><span class="down">▼ -1.12%</span></span>
+                    <span class="ticker-item"><span class="sym">TSLA</span><span class="price">412.55</span><span class="down">▼ -0.92%</span></span>
+                    <span class="ticker-item"><span class="sym">ETH</span><span class="price">3,612</span><span class="up">▲ +1.05%</span></span>
+                    <span class="ticker-item"><span class="sym">BTC</span><span class="price">97,240</span><span class="up">▲ +0.86%</span></span>
+                    <span class="ticker-item"><span class="sym">AAPL</span><span class="price">241.18</span><span class="up">▲ +0.31%</span></span>
+                </div>
+                <div class="ticker-group">
+                    <span class="ticker-item"><span class="sym">SPX</span><span class="price">5,872</span><span class="down">▼ -0.18%</span></span>
+                    <span class="ticker-item"><span class="sym">MSFT</span><span class="price">438.21</span><span class="up">▲ +0.62%</span></span>
+                    <span class="ticker-item"><span class="sym">GOLD</span><span class="price">2,712</span><span class="up">▲ +0.44%</span></span>
+                    <span class="ticker-item"><span class="sym">AMZN</span><span class="price">224.10</span><span class="down">▼ -1.12%</span></span>
+                    <span class="ticker-item"><span class="sym">TSLA</span><span class="price">412.55</span><span class="down">▼ -0.92%</span></span>
+                    <span class="ticker-item"><span class="sym">ETH</span><span class="price">3,612</span><span class="up">▲ +1.05%</span></span>
+                    <span class="ticker-item"><span class="sym">BTC</span><span class="price">97,240</span><span class="up">▲ +0.86%</span></span>
+                    <span class="ticker-item"><span class="sym">AAPL</span><span class="price">241.18</span><span class="up">▲ +0.31%</span></span>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="auth-stage">
-        <div class="chart-line" aria-hidden="true">
-            <svg viewBox="0 0 1440 240" preserveAspectRatio="none">
-                <defs>
-                    <linearGradient id="tradeLineStroke" x1="0" x2="1" y1="0" y2="0">
-                        <stop offset="0%" stop-color="rgba(27, 224, 227, 0.30)"></stop>
-                        <stop offset="55%" stop-color="rgba(35, 220, 225, 0.82)"></stop>
-                        <stop offset="100%" stop-color="rgba(27, 224, 227, 0.22)"></stop>
-                    </linearGradient>
-                </defs>
-                <path d="M0,178 C90,86 162,130 238,124 C328,118 382,78 470,92 C566,108 616,22 708,136 C798,194 888,144 966,156 C1068,172 1118,112 1200,170 C1278,214 1358,154 1440,28"
-                      fill="none"
-                      stroke="url(#tradeLineStroke)"
-                      stroke-width="3"
-                      stroke-linecap="round">
-                    <animate attributeName="d"
-                             dur="7s"
-                             repeatCount="indefinite"
-                             values="
-                             M0,178 C90,86 162,130 238,124 C328,118 382,78 470,92 C566,108 616,22 708,136 C798,194 888,144 966,156 C1068,172 1118,112 1200,170 C1278,214 1358,154 1440,28;
-                             M0,164 C88,102 160,138 238,120 C330,96 390,70 470,108 C560,148 624,44 706,122 C800,170 892,158 970,166 C1060,174 1120,102 1206,158 C1290,210 1362,174 1440,44;
-                             M0,178 C90,86 162,130 238,124 C328,118 382,78 470,92 C566,108 616,22 708,136 C798,194 888,144 966,156 C1068,172 1118,112 1200,170 C1278,214 1358,154 1440,28"></animate>
-                </path>
-            </svg>
-        </div>
+    <div class="login-stage">
+        <div class="login-layout">
+            <section class="hero-pane" aria-label="Workspace introduction">
+                <span class="hero-chip">Markets live · V4.2</span>
+                <h2 class="hero-title">
+                    Precision Trading, Powered by time &amp; trend.
+                    <span class="line-italic"></span>
+                    <span class="line-italic"></span>
+                </h2>
+                <p class="hero-copy">
+                    Analyze market cycles, monitor planetary events, detect gap opportunities, and execute informed trades with AI-powered insights—all from a single trading dashboard.
+                </p>
+                <a href="javascript:void(0)" class="hero-cta" aria-hidden="true">Enter workspace</a>
+            </section>
 
-        <div class="candles" aria-hidden="true">
-            <svg viewBox="0 0 1440 260" preserveAspectRatio="none">
-                <g opacity="0.92">
-                    <line x1="22" y1="204" x2="22" y2="244" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="12" y="212" width="20" height="18" fill="rgba(255,89,101,.4)"/>
-                    <line x1="60" y1="190" x2="60" y2="238" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="50" y="202" width="20" height="22" fill="rgba(255,89,101,.4)"/>
-                    <line x1="100" y1="178" x2="100" y2="226" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="90" y="188" width="20" height="26" fill="rgba(43,211,126,.38)"/>
-                    <line x1="142" y1="152" x2="142" y2="212" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="132" y="166" width="20" height="30" fill="rgba(43,211,126,.38)"/>
-                    <line x1="186" y1="128" x2="186" y2="196" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="176" y="142" width="20" height="34" fill="rgba(43,211,126,.38)"/>
-                    <line x1="228" y1="120" x2="228" y2="184" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="218" y="132" width="20" height="28" fill="rgba(43,211,126,.38)"/>
-                    <line x1="270" y1="126" x2="270" y2="192" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="260" y="140" width="20" height="24" fill="rgba(255,89,101,.4)"/>
-                    <line x1="312" y1="154" x2="312" y2="226" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="302" y="168" width="20" height="34" fill="rgba(255,89,101,.4)"/>
+            <main class="login-pane">
+                <div class="auth-card-wrap">
+                    <div class="auth-card">
+                        <span class="auth-badge">Trader access</span>
+                        <h1>Login</h1>
+                        <p class="subtitle">Sign in to open your trading dashboard.</p>
 
-                    <line x1="972" y1="156" x2="972" y2="224" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="962" y="168" width="20" height="32" fill="rgba(255,89,101,.4)"/>
-                    <line x1="1016" y1="168" x2="1016" y2="248" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="1006" y="182" width="20" height="42" fill="rgba(255,89,101,.4)"/>
-                    <line x1="1060" y1="146" x2="1060" y2="236" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="1050" y="162" width="20" height="36" fill="rgba(255,89,101,.4)"/>
-                    <line x1="1108" y1="182" x2="1108" y2="246" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="1098" y="192" width="20" height="32" fill="rgba(43,211,126,.38)"/>
-                    <line x1="1256" y1="146" x2="1256" y2="234" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="1246" y="160" width="20" height="54" fill="rgba(43,211,126,.38)"/>
-                    <line x1="1296" y1="132" x2="1296" y2="212" stroke="rgba(43,211,126,.65)" stroke-width="2"/><rect x="1286" y="146" width="20" height="40" fill="rgba(43,211,126,.38)"/>
-                    <line x1="1336" y1="138" x2="1336" y2="206" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="1326" y="150" width="20" height="28" fill="rgba(255,89,101,.4)"/>
-                    <line x1="1376" y1="142" x2="1376" y2="228" stroke="rgba(255,89,101,.55)" stroke-width="2"/><rect x="1366" y="156" width="20" height="34" fill="rgba(255,89,101,.4)"/>
-                </g>
-                <line x1="0" y1="196" x2="1440" y2="196" stroke="rgba(35, 195, 222, 0.15)" stroke-width="2"/>
-            </svg>
-        </div>
+                        <form method="post" class="auth-form" novalidate>
+                            {% csrf_token %}
+                            {{ form.non_field_errors }}
 
-        <main class="auth-main">
-            <div class="auth-card-wrap">
-                <div class="auth-card">
-                    <h1>Login</h1>
-                    <p class="subtitle">Sign in to open your trading dashboard</p>
+                            <div class="form-group">
+                                <label for="{{ form.login.id_for_label }}">Email or mobile</label>
+                                {{ form.login }}
+                                {{ form.login.errors }}
+                            </div>
 
-                    <form method="post" class="auth-form" novalidate>
-                        {% csrf_token %}
-                        {{ form.non_field_errors }}
+                            <div class="form-group">
+                                <label for="{{ form.password.id_for_label }}">Password</label>
+                                {{ form.password }}
+                                {{ form.password.errors }}
+                            </div>
 
-                        <div class="form-group">
-                            <label for="{{ form.login.id_for_label }}">Email ID or Mobile Number</label>
-                            {{ form.login }}
-                            {{ form.login.errors }}
+                            <button type="submit" class="btn-primary">
+                                <span>Enter workspace</span>
+                            </button>
+                        </form>
+
+                        <div class="auth-meta">
+                            <span class="live-indicator">
+                                <span class="live-dot"></span>
+                                <span>Markets live</span>
+                            </span>
+                            <span>Secured · 256-bit TLS</span>
                         </div>
-
-                        <div class="form-group">
-                            <label for="{{ form.password.id_for_label }}">Password</label>
-                            {{ form.password }}
-                            {{ form.password.errors }}
-                        </div>
-
-                        <button type="submit" class="btn-primary">
-                            <span>Login</span>
-                        </button>
-                    </form>
-
-                    <div class="auth-meta">
-                        <span class="live-indicator">
-                            <span class="live-dot"></span>
-                            <span>Markets live</span>
-                        </span>
-                        <span>Secured · 256-bit TLS</span>
                     </div>
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 </section>
 

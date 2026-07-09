@@ -1391,6 +1391,11 @@ def amavasya_strategy_api_view(request):
     # validate interval
     if strategy_interval not in SUPPORTED_INTERVALS:
         strategy_interval = STRATEGY_INTERVAL
+    # optional year filter for breakout levels (e.g., 2024). If provided, only return levels
+    # where the trigger_date or amavasya_calendar_date belongs to that year.
+    year_filter = request.GET.get("year", "").strip()
+    if year_filter and not year_filter.isdigit():
+        year_filter = ""
 
     try:
         broker = AngelBroker()
@@ -1422,18 +1427,30 @@ def amavasya_strategy_api_view(request):
             interval=strategy_interval,
         )
 
+        levels = strategy_result.get("levels", []) or []
+        if year_filter:
+            def _in_year(item):
+                try:
+                    td = item.get("trigger_date", "")
+                    ad = item.get("amavasya_calendar_date", "")
+                    return (td.startswith(year_filter) or ad.startswith(year_filter))
+                except Exception:
+                    return False
+
+            levels = [l for l in levels if _in_year(l)]
+
         return JsonResponse({
             "status": bool(strategy_result.get("status")),
             "message": strategy_result.get("message", ""),
             "symbol": symbol,
             "interval": strategy_interval,
-            "levels": strategy_result.get("levels", []),
+            "levels": levels,
             "meta": {
                 **strategy_result.get("meta", {}),
                 "broker_status": candle_result.get("status"),
                 "broker_message": candle_result.get("message", ""),
                 "raw_candles_count": len(raw_candles),
-                "levels_count": len(strategy_result.get("levels", [])),
+                "levels_count": len(levels),
             },
         }, status=200)
 

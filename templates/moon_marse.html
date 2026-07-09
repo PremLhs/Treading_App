@@ -26,16 +26,19 @@
             </div>
 
             <div class="panel-body">
-                <form method="get" class="symbol-form">
-                    <div class="field-wrap">
-                        <label for="year">Select Year</label>
-                        <select name="year" id="year" class="toolbar-select">
-                            {% for year in available_years %}
-                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
-                                    {{ year }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                <form method="get" class="amavasya-toolbar">
+                    <div class="field-wrap year-search-wrap">
+                        <label for="year">Enter Year</label>
+                        <input
+                            type="number"
+                            name="year"
+                            id="year"
+                            class="toolbar-input"
+                            placeholder="Enter year like 2026"
+                            value="{{ selected_year }}"
+                            min="{{ available_years|first }}"
+                            max="{{ available_years|last }}"
+                        >
                     </div>
 
                     <button type="submit" class="btn btn-primary toolbar-btn">Load Dates</button>

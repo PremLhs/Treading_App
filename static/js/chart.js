@@ -1,5 +1,5 @@
 const chartContainer = document.getElementById("tvchart");
-const symbolSelect = document.getElementById("symbol");
+const symbolInput = document.getElementById("symbolInput");
 const intervalSelect = document.getElementById("interval");
 const activeSymbolLabel = document.getElementById("activeSymbolLabel");
 const activeIntervalLabel = document.getElementById("activeIntervalLabel");
@@ -40,7 +40,6 @@ let refreshTimer = null;
 let isLoadingCandles = false;
 let isLoadingAmavasya = false;
 let hasFittedInitially = false;
-
 let amavasyaPriceLines = [];
 let amavasyaLevelsCacheKey = null;
 
@@ -89,7 +88,7 @@ function ensureLibraryLoaded() {
 }
 
 function getSelectedSymbol() {
-    return symbolSelect ? symbolSelect.value : window.APP_CONFIG.symbol;
+    return symbolInput ? symbolInput.value : window.APP_CONFIG.symbol;
 }
 
 function getSelectedInterval() {
@@ -574,8 +573,14 @@ async function loadAmavasyaStrategy(symbol, interval, options = {}) {
 
         // Use daily candles for Amavasya breakout marking so breakouts reflect full day OHLC
         const strategyInterval = "D";
-        const requestKey = `${symbol}__${strategyInterval}`;
-        const url = `${window.APP_CONFIG.amavasyaStrategyApiUrl}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(strategyInterval)}`;
+        const yearSelect = document.getElementById("amavasyaYearSelect");
+        const selectedYear = yearSelect ? yearSelect.value : "ALL";
+
+        const requestKey = `${symbol}__${strategyInterval}__${selectedYear}`;
+        let url = `${window.APP_CONFIG.amavasyaStrategyApiUrl}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(strategyInterval)}`;
+        if (selectedYear && selectedYear !== "ALL") {
+            url += `&year=${encodeURIComponent(selectedYear)}`;
+        }
 
         const response = await fetch(url, {
             method: "GET",
@@ -1003,8 +1008,8 @@ function bindToolbarEvents() {
 function bindEvents() {
     window.addEventListener("resize", resizeCharts);
 
-    if (symbolSelect) {
-        symbolSelect.addEventListener("change", () => {
+    if (symbolInput) {
+        symbolInput.addEventListener("input", () => {
             hasFittedInitially = false;
             loadCandles(getSelectedSymbol(), getSelectedInterval(), { forceFit: true });
         });
@@ -1049,9 +1054,17 @@ function validateAppConfig() {
     }
 }
 
+function gatherOriginalSymbolOptions() {
+    // No-op fallback for symbol input mode.
+    // The chart dashboard now uses a datalist-backed input instead of a multi-option select.
+}
+
 async function initializeChartsApp() {
     validateAppConfig();
     ensureLibraryLoaded();
+    if (typeof gatherOriginalSymbolOptions === "function") {
+        gatherOriginalSymbolOptions();
+    }
     clearExistingCharts();
     createMainChart();
     createIndicatorContainers();

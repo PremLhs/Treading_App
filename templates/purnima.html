@@ -17,12 +17,11 @@
     </div>
 
     <div class="panel-card premium-table-panel">
-        <div class="panel-head panel-head-split">
+        <div class="panel-head">
             <div>
                 <span class="panel-kicker">Year Search</span>
                 <h3>Light Days Lookup</h3>
             </div>
-            <button type="button" class="btn btn-secondary" id="togglePurnimaSearchBtn">Open Search</button>
         </div>
 
         <div class="panel-body">
@@ -36,28 +35,22 @@
                 </div>
             {% endif %}
 
-            <div class="search-expand-box" id="purnimaSearchBox">
-                <div class="search-grid">
-                    <div class="field-wrap">
-                        <label for="purnimaYearInput">Year</label>
-                        <input
-                            type="number"
-                            id="purnimaYearInput"
-                            class="toolbar-input"
-                            placeholder="Enter year like 2026"
-                            value="{{ year }}"
-                            min="{{ min_year|default:1900 }}"
-                            max="{{ max_year|default:2100 }}"
-                        >
-                    </div>
-
-                    <div class="field-wrap search-action-wrap">
-                        <label>&nbsp;</label>
-                        <button type="button" class="btn btn-primary toolbar-btn" id="purnimaSearchBtn">
-                            Get Light Day Data
-                        </button>
-                    </div>
+            <div class="amavasya-toolbar">
+                <div class="field-wrap year-search-wrap">
+                    <label for="purnimaYearInput">Year</label>
+                    <input
+                        type="number"
+                        id="purnimaYearInput"
+                        class="toolbar-input"
+                        placeholder="Enter year like 2026"
+                        value="{{ year }}"
+                        min="{{ min_year|default:1900 }}"
+                        max="{{ max_year|default:2100 }}"
+                    >
                 </div>
+                <button type="button" class="btn btn-primary toolbar-btn" id="purnimaSearchBtn">
+                    Get Light Day Data
+                </button>
             </div>
 
             <div class="summary-grid moon-summary-grid">
@@ -115,8 +108,6 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const toggleBtn = document.getElementById("togglePurnimaSearchBtn");
-    const searchBox = document.getElementById("purnimaSearchBox");
     const searchBtn = document.getElementById("purnimaSearchBtn");
     const yearInput = document.getElementById("purnimaYearInput");
     const resultsBody = document.getElementById("purnimaResultsBody");
@@ -180,19 +171,6 @@ document.addEventListener("DOMContentLoaded", function () {
             searchBtn.disabled = false;
             searchBtn.textContent = "Get Light Day Data";
         }
-    }
-
-    if (toggleBtn) {
-        toggleBtn.addEventListener("click", function () {
-            searchBox.classList.toggle("active");
-            toggleBtn.textContent = searchBox.classList.contains("active")
-                ? "Close Search"
-                : "Open Search";
-
-            if (searchBox.classList.contains("active")) {
-                yearInput.focus();
-            }
-        });
     }
 
     if (searchBtn) {
