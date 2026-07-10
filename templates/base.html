@@ -1061,15 +1061,23 @@
 
         if (bellBtn && dropdown) {
             bellBtn.addEventListener("click", function (e) {
+                e.preventDefault();
                 e.stopPropagation();
+                const isShowing = dropdown.classList.contains("show");
                 dropdown.classList.toggle("show");
+                console.log("Bell clicked, dropdown now showing:", !isShowing);
             });
 
             document.addEventListener("click", function (e) {
-                if (!dropdown.contains(e.target) && !bellBtn.contains(e.target)) {
+                if (dropdown.classList.contains("show") && !dropdown.contains(e.target) && !bellBtn.contains(e.target)) {
                     dropdown.classList.remove("show");
+                    console.log("Dropdown closed by outside click");
                 }
             });
+            
+            console.log("Bell button event listeners attached");
+        } else {
+            console.warn("Bell button or dropdown not found", { bellBtn, dropdown });
         }
 
         if (modal && modalOkBtn) {
@@ -1092,8 +1100,9 @@
         }
 
         document.querySelectorAll(".notification-dropdown-item").forEach(function (item) {
-            item.addEventListener("click", async function () {
+            item.addEventListener("click", async function (e) {
                 const notificationId = item.getAttribute("data-notification-id");
+                const pageUrl = item.getAttribute("href");
 
                 try {
                     await fetch("{% url 'mark_notification_read' %}", {
@@ -1108,6 +1117,10 @@
                     });
                 } catch (error) {
                     console.error("Read mark error:", error);
+                }
+
+                if (pageUrl) {
+                    window.location.href = pageUrl;
                 }
             });
         });

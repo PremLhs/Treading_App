@@ -31,6 +31,7 @@ urlpatterns = [
 
     path("calendar/", views.calendar_view, name="calendar"),
 
+    path("notifications/", views.notifications_page_view, name="notifications_page"),
     path("api/notifications/", views.notifications_list_view, name="notifications_list"),
     path("api/notifications/mark-popup-shown/", views.mark_notifications_popup_shown_view, name="mark_notifications_popup_shown"),
     path("api/notifications/mark-read/", views.mark_notification_read_view, name="mark_notification_read"),

@@ -914,6 +914,14 @@ def mark_notification_read_view(request):
 
 
 @login_required
+def notifications_page_view(request):
+    context = {
+        "page_title": "Notifications",
+    }
+    return render(request, "notifications.html", with_global_notifications(request, context))
+
+
+@login_required
 def notifications_list_view(request):
     inbox = request.session.get("notification_inbox", [])
     unread_count = len([item for item in inbox if not item.get("read", False)])

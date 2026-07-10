@@ -130,8 +130,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: "dayGridMonth",
         initialDate: `${yearSelect.value}-${String(monthSelect.value).padStart(2, "0")}-01`,
-        height: "auto",
-        expandRows: true,
+        height: "100%",
+        expandRows: false,
         timeZone: "Asia/Kolkata",
         dayMaxEvents: 4,
         fixedWeekCount: false,
@@ -144,6 +144,10 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         events: calendarEvents,
         eventDisplay: "block",
+        eventClassNames: function(arg) {
+            const eventType = arg.event.extendedProps.eventType || '';
+            return [eventType];
+        },
         eventContent: function(arg) {
             const markerColor = arg.event.extendedProps.markerColor || arg.event.backgroundColor || '#999';
 
@@ -153,11 +157,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const dot = document.createElement("span");
             dot.className = "calendar-event-marker";
             dot.style.backgroundColor = markerColor;
-
-            // Special-case styling per eventType if needed
-            if (arg.event.extendedProps.eventType === "pushya") {
-                dot.style.backgroundColor = "#111827";
-            }
 
             wrap.appendChild(dot);
 

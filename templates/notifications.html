@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="notification-page-wrap">
+    <div class="notification-page-card">
+        <div class="notification-page-header">
+            <h2>Notifications</h2>
+            <p>All active alerts and reminders for today and tomorrow.</p>
+        </div>
+
+        {% if global_notifications %}
+            <div class="notification-page-list">
+                {% for item in global_notifications %}
+                    <a href="{{ item.page_url }}" class="notification-page-item {{ item.color_class }} {% if not item.read %}is-unread{% endif %}">
+                        <div class="notification-page-title">{{ item.message }}</div>
+                        <div class="notification-page-subtitle">{{ item.submessage }}</div>
+                        <div class="notification-page-meta">
+                            {% if item.type == 'today' %}Live{% else %}Upcoming{% endif %}
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="notification-empty-state">No notifications available right now.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -40,6 +40,14 @@ EVENT_CONFIGS = [
         "color_class": "notification-success",
         "required_columns": {"year", "month", "title", "start", "end"},
     },
+    {
+        "key": "moon_marse",
+        "title": "Top/Bottom Days",
+        "file_path": DATA_DIR / "moon_marse.csv",
+        "page_url": "/moon-marse/",
+        "color_class": "notification-primary",
+        "required_columns": {"year", "month", "title", "start", "end"},
+    },
 ]
 
 
@@ -218,10 +226,10 @@ def _build_notification_item(event_row, alert_type):
         label = "Upcoming Event Alert"
         sort_order = 1
 
-    notification_id = f"{event_row['event_key']}-{event_date.isoformat()}-{alert_type}"
+    notification_id = f"{event_row['event_key']}-{event_date.isoformat()}"
 
     if event_row.get("event_key") == "reversal" and event_row.get("degree"):
-        notification_id = f"{event_row['event_key']}-{event_date.isoformat()}-{event_row['degree']}-{alert_type}"
+        notification_id = f"{event_row['event_key']}-{event_date.isoformat()}-{event_row['degree']}"
 
     return {
         "id": notification_id,
@@ -286,11 +294,12 @@ def sync_notifications_to_session(request):
         existing_item = inbox_map.get(item["id"])
 
         if existing_item:
+            is_new_occurrence = existing_item.get("type") != item.get("type")
             inbox_map[item["id"]] = {
                 **existing_item,
                 **item,
-                "read": existing_item.get("read", False),
-                "popup_shown": existing_item.get("popup_shown", False),
+                "read": False if is_new_occurrence else existing_item.get("read", False),
+                "popup_shown": False if is_new_occurrence else existing_item.get("popup_shown", False),
             }
         else:
             inbox_map[item["id"]] = {
