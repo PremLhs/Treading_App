@@ -146,7 +146,7 @@ async function fetchReversalDates() {
     searchBtn.textContent = 'Loading...';
 
     try {
-        const response = await fetch(`/api/reversal-dates/?year=${encodeURIComponent(year)}`);
+        const response = await fetch(`/api/degree-date/?year=${encodeURIComponent(year)}`);
         const result = await response.json();
 
         if (!response.ok || !result.success) {

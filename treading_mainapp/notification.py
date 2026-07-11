@@ -10,41 +10,41 @@ DATA_DIR = APP_DIR / "data"
 EVENT_CONFIGS = [
     {
         "key": "amavasya",
-        "title": "Amavasya",
+        "title": "Dark Day",
         "file_path": DATA_DIR / "amavasya.csv",
-        "page_url": "/amavasya/",
+        "page_url": "/dark-day/",
         "color_class": "notification-danger",
         "required_columns": {"year", "month", "title", "start", "end"},
     },
     {
         "key": "purnima",
-        "title": "Purnima",
+        "title": "Light Day",
         "file_path": DATA_DIR / "purnima.csv",
-        "page_url": "/purnima/",
+        "page_url": "/light-day/",
         "color_class": "notification-info",
         "required_columns": {"year", "month", "title", "start", "end"},
     },
     {
         "key": "trayodashi",
-        "title": "Trayodashi",
+        "title": "Intra Day",
         "file_path": DATA_DIR / "trayodashi.csv",
-        "page_url": "/trayodashi/",
+        "page_url": "/intra-day/",
         "color_class": "notification-warning",
         "required_columns": {"year", "month", "paksha", "title", "start", "end"},
     },
     {
         "key": "pushya",
-        "title": "Pushya Nakshatra",
+        "title": "Flower",
         "file_path": DATA_DIR / "pushya.csv",
-        "page_url": "/pushya/",
+        "page_url": "/flower/",
         "color_class": "notification-success",
         "required_columns": {"year", "month", "title", "start", "end"},
     },
     {
         "key": "moon_marse",
-        "title": "Top/Bottom Days",
+        "title": "Top/Bottom",
         "file_path": DATA_DIR / "moon_marse.csv",
-        "page_url": "/moon-marse/",
+        "page_url": "/top-bottom/",
         "color_class": "notification-primary",
         "required_columns": {"year", "month", "title", "start", "end"},
     },
@@ -111,7 +111,10 @@ def _load_event_rows(config):
         for row in reader:
             start_raw = str(row.get("start", "")).strip()
             end_raw = str(row.get("end", "")).strip()
-            title = str(row.get("title", "")).strip() or config["title"]
+            title = config["title"]
+            if config["key"] == "reversal":
+                title = "Degree Date"
+
             month = str(row.get("month", "")).strip()
             year = str(row.get("year", "")).strip()
             paksha = str(row.get("paksha", "")).strip()
@@ -187,7 +190,7 @@ def _load_reversal_rows():
                 "end_raw": "",
                 "start_dt": start_dt,
                 "end_dt": None,
-                "page_url": "/reversal-dates/",
+                "page_url": "/degree-date/",
                 "color_class": "notification-primary",
                 "event_key": "reversal",
                 "base_title": "Reversal Date",
