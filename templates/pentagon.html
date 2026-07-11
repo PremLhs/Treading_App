@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% block title %}Pentagon Calendar{% endblock %}
+
+{% block content %}
+<section class="page-shell">
+    <div class="hero-banner">
+        <div class="hero-banner-content">
+            <span class="hero-tag">Pentagon Calendar</span>
+            <h1>Pentagon Calendar</h1>
+            <p>Search for Pentagon dates between {{ min_year|default:"2024" }} and {{ max_year|default:"2040" }}</p>
+        </div>
+
+        <div class="hero-banner-actions">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Home</a>
+            <a href="{% url 'reversal_dates' %}" class="btn btn-secondary">Degree Date</a>
+        </div>
+    </div>
+
+    <div class="panel-card premium-table-panel">
+        <div class="panel-head">
+            <div>
+                <span class="panel-kicker">Pentagon Search</span>
+                <h3>Find Pentagon Dates by Year</h3>
+            </div>
+        </div>
+
+        <div class="panel-body">
+            {% if error_message %}
+                <div class="inline-alert inline-alert-danger" id="pentagonStatusMessage">
+                    {{ error_message }}
+                </div>
+            {% else %}
+                <div class="inline-alert inline-alert-success" id="pentagonStatusMessage">
+                    Default year Pentagon data loaded successfully.
+                </div>
+            {% endif %}
+
+            <div class="amavasya-toolbar">
+                <div class="field-wrap year-search-wrap">
+                    <label for="pentagonYearInput">Year</label>
+                    <input
+                        type="number"
+                        id="pentagonYearInput"
+                        class="toolbar-input"
+                        placeholder="Enter year like 2026"
+                        value="{{ year }}"
+                        min="{{ min_year|default:1900 }}"
+                        max="{{ max_year|default:2100 }}"
+                    >
+                </div>
+                <button type="button" class="btn btn-primary toolbar-btn" id="pentagonSearchBtn">
+                    Get Pentagon Dates
+                </button>
+            </div>
+
+            <div class="summary-grid moon-summary-grid">
+                <div class="summary-card">
+                    <span>Selected Year</span>
+                    <strong id="pentagonSelectedYear">{{ year }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Available Range</span>
+                    <strong id="pentagonRange">{{ min_year|default:"-" }} - {{ max_year|default:"-" }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Total Records</span>
+                    <strong id="pentagonTotalRecords">{{ total_records }}</strong>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="reversal-table moon-table">
+                    <thead>
+                        <tr>
+                            <th>Start Date</th>
+                            <th>Start Weekday</th>
+                            <th>Start Time</th>
+                            <th>End Date</th>
+                            <th>End Weekday</th>
+                            <th>End Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pentagonResultsBody">
+                        {% if rows %}
+                            {% for item in rows %}
+                                <tr>
+                                    <td>{{ item.start_date }}</td>
+                                    <td>{{ item.start_weekday }}</td>
+                                    <td>{{ item.start_time }}</td>
+                                    <td>{{ item.end_date }}</td>
+                                    <td>{{ item.end_weekday }}</td>
+                                    <td>{{ item.end_time }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+
+                {% if not rows %}
+                    <div class="empty-cell" id="pentagonEmptyState">No Pentagon data found.</div>
+                {% else %}
+                    <div class="empty-cell" id="pentagonEmptyState" style="display:none;">No Pentagon data found.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchBtn = document.getElementById("pentagonSearchBtn");
+    const yearInput = document.getElementById("pentagonYearInput");
+    const resultsBody = document.getElementById("pentagonResultsBody");
+    const statusMessage = document.getElementById("pentagonStatusMessage");
+    const emptyState = document.getElementById("pentagonEmptyState");
+
+    function renderRows(rows) {
+        if (!rows || !rows.length) {
+            resultsBody.innerHTML = "";
+            emptyState.style.display = "block";
+            return;
+        }
+
+        emptyState.style.display = "none";
+        resultsBody.innerHTML = rows.map(item => `
+            <tr>
+                <td>${item.start_date}</td>
+                <td>${item.start_weekday}</td>
+                <td>${item.start_time}</td>
+                <td>${item.end_date}</td>
+                <td>${item.end_weekday}</td>
+                <td>${item.end_time}</td>
+            </tr>
+        `).join("");
+    }
+
+    function updateSummary(data) {
+        document.getElementById("pentagonSelectedYear").textContent = data.year ?? "-";
+        document.getElementById("pentagonRange").textContent = `${data.min_year ?? "-"} - ${data.max_year ?? "-"}`;
+        document.getElementById("pentagonTotalRecords").textContent = data.total_records ?? 0;
+    }
+
+    async function fetchPentagonData() {
+        const year = yearInput.value.trim();
+
+        if (!year) {
+            statusMessage.textContent = "Please enter a year.";
+            statusMessage.className = "inline-alert inline-alert-danger";
+            return;
+        }
+
+        searchBtn.disabled = true;
+        searchBtn.textContent = "Loading...";
+        statusMessage.textContent = "Loading Pentagon data...";
+        statusMessage.className = "inline-alert inline-alert-success";
+
+        try {
+            const response = await fetch(`/api/pentagon/?year=${encodeURIComponent(year)}`);
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                statusMessage.textContent = result.message || "Something went wrong.";
+                statusMessage.className = "inline-alert inline-alert-danger";
+                renderRows([]);
+                updateSummary(result.data || {});
+                return;
+            }
+
+            renderRows(result.data.rows);
+            updateSummary(result.data);
+            statusMessage.textContent = `Pentagon data loaded for ${result.data.year}.`;
+            statusMessage.className = "inline-alert inline-alert-success";
+        } catch (error) {
+            statusMessage.textContent = "Server error. Please try again.";
+            statusMessage.className = "inline-alert inline-alert-danger";
+        } finally {
+            searchBtn.disabled = false;
+            searchBtn.textContent = "Get Pentagon Dates";
+        }
+    }
+
+    if (searchBtn) {
+        searchBtn.addEventListener("click", fetchPentagonData);
+    }
+
+    if (yearInput) {
+        yearInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                fetchPentagonData();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -289,7 +289,7 @@
             align-items: center;
             justify-content: flex-end;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 1px;
             position: relative;
             z-index: 1;
         }
@@ -305,7 +305,7 @@
             border: 1px solid transparent;
             background: transparent;
             color: rgba(3, 49, 95, 0.84);
-            font-size: 1.0rem;
+            font-size: 1.2rem;
             font-weight: 600;
             letter-spacing: 0.01em;
             transition:
@@ -958,6 +958,8 @@
                         <a href="{% url 'calendar' %}" class="nav-item">Calendar</a>
                         <a href="{% url 'gapup' %}" class="nav-item">DD Stock</a>
                         <a href="{% url 'moon_marse' %}" class="nav-item">Top/Bottom</a>
+                        <a href="{% url 'pentagon' %}" class="nav-item">Pentagon</a>
+                        <a href="{% url 'red_ball' %}" class="nav-item">Red Ball</a>
 
                         <div class="notification-bell-wrap">
                             <button type="button" class="notification-bell-btn" id="notificationBellBtn" aria-label="Notifications">

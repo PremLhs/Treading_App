@@ -1068,7 +1068,9 @@
             <a href="{% url 'calendar' %}" class="btn btn-secondary">Calendar</a>
             <a href="{% url 'gapup' %}" class="btn btn-secondary">DD Date</a>
             <a href="{% url 'moon_marse' %}" class="btn btn-secondary">Top/Bottom</a>
-
+            <a href="{% url 'pentagon' %}" class="btn btn-secondary">Pentagon</a>
+            <a href="{% url 'red_ball' %}" class="btn btn-secondary">Red Ball</a>
+            
             <div class="status-pill {% if broker_connected %}online{% else %}offline{% endif %}">
                 <span class="status-dot"></span>
                 {% if broker_connected %}Broker Connected{% else %}Broker Not Connected{% endif %}

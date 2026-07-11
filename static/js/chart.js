@@ -568,10 +568,10 @@ async function loadAmavasyaStrategy(symbol, interval, options = {}) {
 
     try {
         if (!silent) {
-            setStatus("Loading Amavasya...");
+            setStatus("Loading Dark Day...");
         }
 
-        // Use daily candles for Amavasya breakout marking so breakouts reflect full day OHLC
+        // Use daily candles for Dark Day breakout marking so breakouts reflect full day OHLC
         const strategyInterval = "D";
         const yearSelect = document.getElementById("amavasyaYearSelect");
         const selectedYear = yearSelect ? yearSelect.value : "ALL";
@@ -613,14 +613,14 @@ async function loadAmavasyaStrategy(symbol, interval, options = {}) {
             drawAmavasyaLines(data.levels);
             amavasyaLevelsCacheKey = requestKey;
             if (backendMessage && !silent) {
-                backendMessage.textContent = data.message || "Amavasya strategy loaded.";
+                backendMessage.textContent = data.message || "Dark Day strategy loaded.";
             }
         } else {
             clearAmavasyaLines();
             amavasyaLevelsCacheKey = null;
-            logWarn("Amavasya API returned empty or invalid data.", data);
+            logWarn("Dark Day API returned empty or invalid data.", data);
             if (backendMessage && !silent) {
-                backendMessage.textContent = data.message || "Amavasya levels not available.";
+                backendMessage.textContent = data.message || "Dark Day levels not available.";
             }
         }
 
@@ -633,7 +633,7 @@ async function loadAmavasyaStrategy(symbol, interval, options = {}) {
         logError("loadAmavasyaStrategy failed", error);
 
         if (backendMessage && !silent) {
-            backendMessage.textContent = `Amavasya load failed: ${error.message}`;
+            backendMessage.textContent = `Dark Day load failed: ${error.message}`;
         }
 
         if (!silent) {

@@ -1,74 +1,70 @@
 {% extends 'base.html' %}
-{% block title %}Light Day Calendar{% endblock %}
+{% block title %}Red Ball Calendar{% endblock %}
 
 {% block content %}
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Light Day Data</span>
-            <h1>Light Day Calendar</h1>
-            <p>Search for Light Days between 2024 and 2040</p>
+            <span class="hero-tag">Red Ball Calendar</span>
+            <h1>Red Ball Calendar</h1>
+            <p>Search for Red Ball dates between {{ min_year|default:"2024" }} and {{ max_year|default:"2040" }}</p>
         </div>
 
         <div class="hero-banner-actions">
             <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Home</a>
-            <a href="{% url 'amavasya' %}" class="btn btn-secondary">Dark Day</a>
+            <a href="{% url 'pentagon' %}" class="btn btn-secondary">Pentagon</a>
         </div>
     </div>
 
     <div class="panel-card premium-table-panel">
         <div class="panel-head">
             <div>
-                <span class="panel-kicker">Year Search</span>
-                <h3>Light Days Lookup</h3>
+                <span class="panel-kicker">Red Ball Search</span>
+                <h3>Find Red Ball Dates by Year</h3>
             </div>
         </div>
 
         <div class="panel-body">
             {% if error_message %}
-                <div class="inline-alert inline-alert-danger" id="purnimaStatusMessage">
+                <div class="inline-alert inline-alert-danger" id="redBallStatusMessage">
                     {{ error_message }}
                 </div>
             {% else %}
-                <div class="inline-alert inline-alert-success" id="purnimaStatusMessage">
-                    Default year Light Day data loaded successfully.
+                <div class="inline-alert inline-alert-success" id="redBallStatusMessage">
+                    Default year Red Ball data loaded successfully.
                 </div>
             {% endif %}
 
             <div class="amavasya-toolbar">
                 <div class="field-wrap year-search-wrap">
-                    <label for="purnimaYearInput">Year</label>
+                    <label for="redBallYearInput">Year</label>
                     <input
                         type="number"
-                        id="purnimaYearInput"
+                        id="redBallYearInput"
                         class="toolbar-input"
-                        placeholder="Enter year like 2026"
+                        placeholder="Enter year like 2025"
                         value="{{ year }}"
                         min="{{ min_year|default:1900 }}"
                         max="{{ max_year|default:2100 }}"
                     >
                 </div>
-                <button type="button" class="btn btn-primary toolbar-btn" id="purnimaSearchBtn">
-                    Get Light Day Data
+                <button type="button" class="btn btn-primary toolbar-btn" id="redBallSearchBtn">
+                    Get Red Ball Data
                 </button>
             </div>
 
             <div class="summary-grid moon-summary-grid">
                 <div class="summary-card">
                     <span>Selected Year</span>
-                    <strong id="purnimaSelectedYear">{{ year }}</strong>
+                    <strong id="redBallSelectedYear">{{ year }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Available Range</span>
+                    <strong id="redBallRange">{{ min_year|default:"-" }} - {{ max_year|default:"-" }}</strong>
                 </div>
                 <div class="summary-card">
                     <span>Total Records</span>
-                    <strong id="purnimaTotalRecords">{{ total_records }}</strong>
-                </div>
-                <div class="summary-card">
-                    <span>Minimum Year</span>
-                    <strong id="purnimaMinYear">{{ min_year|default:"-" }}</strong>
-                </div>
-                <div class="summary-card">
-                    <span>Maximum Year</span>
-                    <strong id="purnimaMaxYear">{{ max_year|default:"-" }}</strong>
+                    <strong id="redBallTotalRecords">{{ total_records }}</strong>
                 </div>
             </div>
 
@@ -76,29 +72,35 @@
                 <table class="reversal-table moon-table">
                     <thead>
                         <tr>
+                            <th>Date</th>
+                            <th>Day</th>
                             <th>Month</th>
-                            <th>Title</th>
-                            <th>Start</th>
-                            <th>End</th>
+                            <th>Year</th>
+                            <th>Weekday</th>
+                            <th>Time</th>
                         </tr>
                     </thead>
-                    <tbody id="purnimaResultsBody">
+                    <tbody id="redBallResultsBody">
                         {% if rows %}
                             {% for item in rows %}
                                 <tr>
+                                    <td>{{ item.date }}</td>
+                                    <td>{{ item.day }}</td>
                                     <td>{{ item.month }}</td>
-                                    <td>{{ item.title }}</td>
-                                    <td>{{ item.start }}</td>
-                                    <td>{{ item.end }}</td>
+                                    <td>{{ item.year }}</td>
+                                    <td>{{ item.weekday }}</td>
+                                    <td>{{ item.time }}</td>
                                 </tr>
                             {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="4" class="empty-cell">No Purnima data found.</td>
-                            </tr>
                         {% endif %}
                     </tbody>
                 </table>
+
+                {% if not rows %}
+                    <div class="empty-cell" id="redBallEmptyState">No Red Ball data found.</div>
+                {% else %}
+                    <div class="empty-cell" id="redBallEmptyState" style="display:none;">No Red Ball data found.</div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -108,35 +110,39 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const searchBtn = document.getElementById("purnimaSearchBtn");
-    const yearInput = document.getElementById("purnimaYearInput");
-    const resultsBody = document.getElementById("purnimaResultsBody");
-    const statusMessage = document.getElementById("purnimaStatusMessage");
+    const searchBtn = document.getElementById("redBallSearchBtn");
+    const yearInput = document.getElementById("redBallYearInput");
+    const resultsBody = document.getElementById("redBallResultsBody");
+    const statusMessage = document.getElementById("redBallStatusMessage");
+    const emptyState = document.getElementById("redBallEmptyState");
 
     function renderRows(rows) {
         if (!rows || !rows.length) {
-            resultsBody.innerHTML = '<tr><td colspan="4" class="empty-cell">No Purnima data found.</td></tr>';
+            resultsBody.innerHTML = "";
+            emptyState.style.display = "block";
             return;
         }
 
+        emptyState.style.display = "none";
         resultsBody.innerHTML = rows.map(item => `
             <tr>
+                <td>${item.date}</td>
+                <td>${item.day}</td>
                 <td>${item.month}</td>
-                <td>${item.title}</td>
-                <td>${item.start}</td>
-                <td>${item.end}</td>
+                <td>${item.year}</td>
+                <td>${item.weekday}</td>
+                <td>${item.time}</td>
             </tr>
         `).join("");
     }
 
     function updateSummary(data) {
-        document.getElementById("purnimaSelectedYear").textContent = data.year ?? "-";
-        document.getElementById("purnimaTotalRecords").textContent = data.total_records ?? 0;
-        document.getElementById("purnimaMinYear").textContent = data.min_year ?? "-";
-        document.getElementById("purnimaMaxYear").textContent = data.max_year ?? "-";
+        document.getElementById("redBallSelectedYear").textContent = data.year ?? "-";
+        document.getElementById("redBallRange").textContent = `${data.min_year ?? "-"} - ${data.max_year ?? "-"}`;
+        document.getElementById("redBallTotalRecords").textContent = data.total_records ?? 0;
     }
 
-    async function fetchPurnimaData() {
+    async function fetchRedBallData() {
         const year = yearInput.value.trim();
 
         if (!year) {
@@ -147,40 +153,42 @@ document.addEventListener("DOMContentLoaded", function () {
 
         searchBtn.disabled = true;
         searchBtn.textContent = "Loading...";
-        statusMessage.textContent = "Loading Purnima data...";
+        statusMessage.textContent = "Loading Red Ball data...";
         statusMessage.className = "inline-alert inline-alert-success";
 
         try {
-            const response = await fetch(`/api/purnima/?year=${encodeURIComponent(year)}`);
+            const response = await fetch(`/api/red-ball/?year=${encodeURIComponent(year)}`);
             const result = await response.json();
 
             if (!response.ok || !result.success) {
                 statusMessage.textContent = result.message || "Something went wrong.";
                 statusMessage.className = "inline-alert inline-alert-danger";
+                renderRows([]);
+                updateSummary(result.data || {});
                 return;
             }
 
             renderRows(result.data.rows);
             updateSummary(result.data);
-            statusMessage.textContent = `Light Day data loaded for ${result.data.year}.`;
+            statusMessage.textContent = `Red Ball data loaded for ${result.data.year}.`;
             statusMessage.className = "inline-alert inline-alert-success";
         } catch (error) {
             statusMessage.textContent = "Server error. Please try again.";
             statusMessage.className = "inline-alert inline-alert-danger";
         } finally {
             searchBtn.disabled = false;
-            searchBtn.textContent = "Get Light Day Data";
+            searchBtn.textContent = "Get Red Ball Data";
         }
     }
 
     if (searchBtn) {
-        searchBtn.addEventListener("click", fetchPurnimaData);
+        searchBtn.addEventListener("click", fetchRedBallData);
     }
 
     if (yearInput) {
         yearInput.addEventListener("keydown", function (event) {
             if (event.key === "Enter") {
-                fetchPurnimaData();
+                fetchRedBallData();
             }
         });
     }

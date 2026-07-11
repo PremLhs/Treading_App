@@ -650,7 +650,7 @@ def generate_amavasya_levels(raw_candles: List[Any], interval: Optional[str] = N
 
     return {
         "status": True,
-        "message": f"Amavasya strategy calculated successfully. Total levels: {len(levels)}",
+        "message": f"Dark Day strategy calculated successfully. Total levels: {len(levels)}",
         "levels": levels,
         "meta": {
             "strategy_interval": STRATEGY_INTERVAL,

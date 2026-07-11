@@ -5,7 +5,7 @@
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Nakshatra Calendar</span>
+            <span class="hero-tag">Flower Day Calendar</span>
             <h1>Flower Days Date Calendar</h1>
             <p>Search for Flower Days between 2024 and 2040</p>
         </div>
@@ -175,9 +175,9 @@ document.addEventListener("DOMContentLoaded", function () {
             selectedYear.textContent = result.data.year;
 
             if (result.data.rows.length) {
-                setStatus(`Pushya Nakshatra data loaded for ${result.data.year}.`, true);
+                setStatus(`Flower Day data loaded for ${result.data.year}.`, true);
             } else {
-                setStatus(`No Pushya Nakshatra data found for ${result.data.year}.`, false);
+                setStatus(`No Flower Day data found for ${result.data.year}.`, false);
             }
         } catch (error) {
             setStatus("Server error. Please try again.", false);

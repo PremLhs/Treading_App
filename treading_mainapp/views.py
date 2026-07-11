@@ -394,7 +394,7 @@ def amavasya_api_view(request):
 
     return JsonResponse({
         "success": True,
-        "message": f"Amavasya data loaded for {year}.",
+        "message": f"Dark Day data loaded for {year}.",
         "data": data
     })
 
@@ -567,10 +567,11 @@ def purnima_api_view(request):
 
     return JsonResponse({
         "success": True,
-        "message": f"Purnima data loaded for {year}.",
+        "message": f"Light Day data loaded for {year}.",
         "data": data
     })
 
+############################################################################################################
 
 import csv
 from pathlib import Path
@@ -741,7 +742,7 @@ def trayodashi_api_view(request):
 
     return JsonResponse({
         "success": True,
-        "message": f"Trayodashi data loaded for {year}.",
+        "message": f"Intra Day data loaded for {year}.",
         "data": data
     })
 
@@ -1477,3 +1478,215 @@ def amavasya_strategy_api_view(request):
 
 
 ########################################################
+from django.http import JsonResponse
+from django.shortcuts import render
+from .pentagon import get_pentagon_data_by_year, load_pentagon_data
+
+def pentagon_view(request):
+    try:
+        all_rows, min_year, max_year = load_pentagon_data()
+
+        year_param = request.GET.get("year")
+        if year_param:
+            try:
+                selected_year = int(year_param)
+            except ValueError:
+                selected_year = min_year
+        else:
+            selected_year = min_year
+
+        data = get_pentagon_data_by_year(selected_year)
+
+        context = {
+            "year": data["year"],
+            "rows": data["rows"],
+            "total_records": data["total_records"],
+            "min_year": data["min_year"],
+            "max_year": data["max_year"],
+        }
+        return render(request, "pentagon.html", context)
+
+    except FileNotFoundError:
+        context = {
+            "year": "",
+            "rows": [],
+            "total_records": 0,
+            "min_year": "",
+            "max_year": "",
+            "error_message": "Pentagon CSV file not found.",
+        }
+        return render(request, "pentagon.html", context)
+
+    except Exception as exc:
+        context = {
+            "year": "",
+            "rows": [],
+            "total_records": 0,
+            "min_year": "",
+            "max_year": "",
+            "error_message": str(exc),
+        }
+        return render(request, "pentagon.html", context)
+
+
+def pentagon_api_view(request):
+    year_param = request.GET.get("year")
+
+    if not year_param:
+        return JsonResponse({
+            "success": False,
+            "message": "Year parameter is required.",
+            "data": {}
+        }, status=400)
+
+    try:
+        year = int(year_param)
+    except ValueError:
+        return JsonResponse({
+            "success": False,
+            "message": "Invalid year format.",
+            "data": {}
+        }, status=400)
+
+    try:
+        data = get_pentagon_data_by_year(year)
+
+        if year < data["min_year"] or year > data["max_year"]:
+            return JsonResponse({
+                "success": False,
+                "message": f"Year must be between {data['min_year']} and {data['max_year']}.",
+                "data": {
+                    "year": year,
+                    "rows": [],
+                    "total_records": 0,
+                    "min_year": data["min_year"],
+                    "max_year": data["max_year"],
+                }
+            }, status=400)
+
+        return JsonResponse({
+            "success": True,
+            "message": "Pentagon data fetched successfully.",
+            "data": data
+        })
+
+    except FileNotFoundError:
+        return JsonResponse({
+            "success": False,
+            "message": "Pentagon CSV file not found.",
+            "data": {}
+        }, status=500)
+
+    except Exception as exc:
+        return JsonResponse({
+            "success": False,
+            "message": str(exc),
+            "data": {}
+        }, status=500)
+    
+
+
+
+##########################################################################
+from .red_ball import get_red_ball_data_by_year, load_red_ball_data
+def red_ball_view(request):
+    try:
+        all_rows, min_year, max_year = load_red_ball_data()
+
+        year_param = request.GET.get("year")
+        if year_param:
+            try:
+                selected_year = int(year_param)
+            except ValueError:
+                selected_year = min_year
+        else:
+            selected_year = min_year
+
+        data = get_red_ball_data_by_year(selected_year)
+
+        context = {
+            "year": data["year"],
+            "rows": data["rows"],
+            "total_records": data["total_records"],
+            "min_year": data["min_year"],
+            "max_year": data["max_year"],
+        }
+        return render(request, "red_ball.html", context)
+
+    except FileNotFoundError:
+        context = {
+            "year": "",
+            "rows": [],
+            "total_records": 0,
+            "min_year": "",
+            "max_year": "",
+            "error_message": "Red Ball CSV file not found.",
+        }
+        return render(request, "red_ball.html", context)
+
+    except Exception as exc:
+        context = {
+            "year": "",
+            "rows": [],
+            "total_records": 0,
+            "min_year": "",
+            "max_year": "",
+            "error_message": str(exc),
+        }
+        return render(request, "red_ball.html", context)
+
+
+def red_ball_api_view(request):
+    year_param = request.GET.get("year")
+
+    if not year_param:
+        return JsonResponse({
+            "success": False,
+            "message": "Year parameter is required.",
+            "data": {}
+        }, status=400)
+
+    try:
+        year = int(year_param)
+    except ValueError:
+        return JsonResponse({
+            "success": False,
+            "message": "Invalid year format.",
+            "data": {}
+        }, status=400)
+
+    try:
+        data = get_red_ball_data_by_year(year)
+
+        if year < data["min_year"] or year > data["max_year"]:
+            return JsonResponse({
+                "success": False,
+                "message": f"Year must be between {data['min_year']} and {data['max_year']}.",
+                "data": {
+                    "year": year,
+                    "rows": [],
+                    "total_records": 0,
+                    "min_year": data["min_year"],
+                    "max_year": data["max_year"],
+                }
+            }, status=400)
+
+        return JsonResponse({
+            "success": True,
+            "message": "Red Ball data fetched successfully.",
+            "data": data
+        })
+
+    except FileNotFoundError:
+        return JsonResponse({
+            "success": False,
+            "message": "Red Ball CSV file not found.",
+            "data": {}
+        }, status=500)
+
+    except Exception as exc:
+        return JsonResponse({
+            "success": False,
+            "message": str(exc),
+            "data": {}
+        }, status=500)

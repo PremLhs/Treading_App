@@ -5,7 +5,7 @@
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Cycle Research</span>
+            <span class="hero-tag">Degree Date Calendar</span>
             <h1>Degree Date Calendar</h1>
             
         </div>
@@ -157,7 +157,7 @@ async function fetchReversalDates() {
 
         renderRows(result.data.rows);
         updateSummary(result.data);
-        statusMessage.textContent = `Reversal dates loaded for ${result.data.year}.`;
+        statusMessage.textContent = `Degree Date loaded for ${result.data.year}.`;
         statusMessage.className = 'panel-card inline-status panel-success';
     } catch (error) {
         statusMessage.textContent = 'Server error. Please try again.';

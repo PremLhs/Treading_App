@@ -52,4 +52,9 @@ urlpatterns = [
 
     path("api/amavasya-strategy/", views.amavasya_strategy_api_view, name="amavasya_strategy_api"),
     
+    path("pentagon/", views.pentagon_view, name="pentagon"),
+    path("api/pentagon/", views.pentagon_api_view, name="pentagon_api"),
+
+    path("red-ball/", views.red_ball_view, name="red_ball"),
+    path("api/red-ball/", views.red_ball_api_view, name="red_ball_api"),
 ]

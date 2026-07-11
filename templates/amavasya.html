@@ -5,7 +5,7 @@
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Tithi Calendar</span>
+            <span class="hero-tag">Dark Day Calendar</span>
             <h1>Dark Day Calendar</h1>
             <p>Search for Dark Days between 2024 and 2040</p>
         </div>
@@ -85,7 +85,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="4" class="empty-cell">No Amavasya data found.</td>
+                                <td colspan="4" class="empty-cell">No Dark Day data found.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -154,7 +154,7 @@ document.addEventListener("DOMContentLoaded", function () {
             renderRows(result.data.rows);
             selectedYear.textContent = result.data.year;
             totalRecords.textContent = result.data.total_records;
-            statusMessage.textContent = `Amavasya data loaded for ${result.data.year}.`;
+            statusMessage.textContent = `Dark Day data loaded for ${result.data.year}.`;
             statusMessage.className = "panel-card inline-status panel-success";
         } catch (error) {
             statusMessage.textContent = "Server error. Please try again.";
