@@ -44,4 +44,5 @@ urlpatterns = [
     path("api/gapup/runtime/", views.gapupscanruntimeapiview, name="gapupscanruntimeapi"),
 
     path("api/amavasya-strategy/", views.amavasya_strategy_api_view, name="amavasya_strategy_api"),
+    
 ]

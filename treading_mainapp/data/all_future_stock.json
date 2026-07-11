@@ -1,0 +1,492 @@
+[
+  {
+    "symbol": "NSE:AARTIIND",
+    "tradingsymbol": "AARTIIND-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ABB",
+    "tradingsymbol": "ABB-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ABBOTINDIA",
+    "tradingsymbol": "ABBOTINDIA-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ABCAPITAL",
+    "tradingsymbol": "ABCAPITAL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ABFRL",
+    "tradingsymbol": "ABFRL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ACC",
+    "tradingsymbol": "ACC-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ALKEM",
+    "tradingsymbol": "ALKEM-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:AMBUJACEM",
+    "tradingsymbol": "AMBUJACEM-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:APOLLOTYRE",
+    "tradingsymbol": "APOLLOTYRE-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ASHOKLEY",
+    "tradingsymbol": "ASHOKLEY-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ASTRAL",
+    "tradingsymbol": "ASTRAL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ATUL",
+    "tradingsymbol": "ATUL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:AUBANK",
+    "tradingsymbol": "AUBANK-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:AUROPHARMA",
+    "tradingsymbol": "AUROPHARMA-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:BALKRISIND",
+    "tradingsymbol": "BALKRISIND-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:BANDHANBNK",
+    "tradingsymbol": "BANDHANBNK-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:BANKBARODA",
+    "tradingsymbol": "BANKBARODA-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:BHARATFORG",
+    "tradingsymbol": "BHARATFORG-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:BHEL",
+    "tradingsymbol": "BHEL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:BIOCON",
+    "tradingsymbol": "BIOCON-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:BOSCHLTD",
+    "tradingsymbol": "BOSCHLTD-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:CANBK",
+    "tradingsymbol": "CANBK-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:CHOLAFIN",
+    "tradingsymbol": "CHOLAFIN-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:COFORGE",
+    "tradingsymbol": "COFORGE-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:COLPAL",
+    "tradingsymbol": "COLPAL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:CONCOR",
+    "tradingsymbol": "CONCOR-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:CROMPTON",
+    "tradingsymbol": "CROMPTON-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:CUMMINSIND",
+    "tradingsymbol": "CUMMINSIND-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:DABUR",
+    "tradingsymbol": "DABUR-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:DALBHARAT",
+    "tradingsymbol": "DALBHARAT-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:DEEPAKNTR",
+    "tradingsymbol": "DEEPAKNTR-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:DIVISLAB",
+    "tradingsymbol": "DIVISLAB-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:DIXON",
+    "tradingsymbol": "DIXON-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ESCORTS",
+    "tradingsymbol": "ESCORTS-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:EXIDEIND",
+    "tradingsymbol": "EXIDEIND-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:FEDERALBNK",
+    "tradingsymbol": "FEDERALBNK-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:GLENMARK",
+    "tradingsymbol": "GLENMARK-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:GODREJCP",
+    "tradingsymbol": "GODREJCP-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:GODREJPROP",
+    "tradingsymbol": "GODREJPROP-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:GUJGASLTD",
+    "tradingsymbol": "GUJGASLTD-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:HAL",
+    "tradingsymbol": "HAL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:HAVELLS",
+    "tradingsymbol": "HAVELLS-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:HINDCOPPER",
+    "tradingsymbol": "HINDCOPPER-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:HINDPETRO",
+    "tradingsymbol": "HINDPETRO-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ICICIGI",
+    "tradingsymbol": "ICICIGI-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ICICIPRULI",
+    "tradingsymbol": "ICICIPRULI-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:IEX",
+    "tradingsymbol": "IEX-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:IGL",
+    "tradingsymbol": "IGL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:INDHOTEL",
+    "tradingsymbol": "INDHOTEL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:INDIAMART",
+    "tradingsymbol": "INDIAMART-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:INDIGO",
+    "tradingsymbol": "INDIGO-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:IOC",
+    "tradingsymbol": "IOC-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:IRCTC",
+    "tradingsymbol": "IRCTC-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ITC",
+    "tradingsymbol": "ITC-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:JINDALSTEL",
+    "tradingsymbol": "JINDALSTEL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:JKCEMENT",
+    "tradingsymbol": "JKCEMENT-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:JSWENERGY",
+    "tradingsymbol": "JSWENERGY-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:JUBLFOOD",
+    "tradingsymbol": "JUBLFOOD-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:LAURUSLABS",
+    "tradingsymbol": "LAURUSLABS-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:LICHSGFIN",
+    "tradingsymbol": "LICHSGFIN-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:LTIM",
+    "tradingsymbol": "LTIM-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:LUPIN",
+    "tradingsymbol": "LUPIN-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:M&MFIN",
+    "tradingsymbol": "M&MFIN-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:MANAPPURAM",
+    "tradingsymbol": "MANAPPURAM-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:MARICO",
+    "tradingsymbol": "MARICO-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:MAXHEALTH",
+    "tradingsymbol": "MAXHEALTH-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:MCX",
+    "tradingsymbol": "MCX-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:MFSL",
+    "tradingsymbol": "MFSL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:NAUKRI",
+    "tradingsymbol": "NAUKRI-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:NATIONALUM",
+    "tradingsymbol": "NATIONALUM-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:NAVINFLUOR",
+    "tradingsymbol": "NAVINFLUOR-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:NMDC",
+    "tradingsymbol": "NMDC-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:OBEROIRLTY",
+    "tradingsymbol": "OBEROIRLTY-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:PAGEIND",
+    "tradingsymbol": "PAGEIND-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:PEL",
+    "tradingsymbol": "PEL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:PERSISTENT",
+    "tradingsymbol": "PERSISTENT-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:PETRONET",
+    "tradingsymbol": "PETRONET-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:PIDILITIND",
+    "tradingsymbol": "PIDILITIND-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:PIIND",
+    "tradingsymbol": "PIIND-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:PNB",
+    "tradingsymbol": "PNB-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:POLYCAB",
+    "tradingsymbol": "POLYCAB-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:RAMCOCEM",
+    "tradingsymbol": "RAMCOCEM-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:RECLTD",
+    "tradingsymbol": "RECLTD-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:SBICARD",
+    "tradingsymbol": "SBICARD-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:SHREECEM",
+    "tradingsymbol": "SHREECEM-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:SIEMENS",
+    "tradingsymbol": "SIEMENS-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:SRF",
+    "tradingsymbol": "SRF-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:TATACHEM",
+    "tradingsymbol": "TATACHEM-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:TATACOMM",
+    "tradingsymbol": "TATACOMM-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:TATAPOWER",
+    "tradingsymbol": "TATAPOWER-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:TORNTPHARM",
+    "tradingsymbol": "TORNTPHARM-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:TVSMOTOR",
+    "tradingsymbol": "TVSMOTOR-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:UNIONBANK",
+    "tradingsymbol": "UNIONBANK-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:UPL",
+    "tradingsymbol": "UPL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:VBL",
+    "tradingsymbol": "VBL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:VEDL",
+    "tradingsymbol": "VEDL-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:VOLTAS",
+    "tradingsymbol": "VOLTAS-EQ",
+    "exchange": "NSE"
+  },
+  {
+    "symbol": "NSE:ZYDUSLIFE",
+    "tradingsymbol": "ZYDUSLIFE-EQ",
+    "exchange": "NSE"
+  }
+]

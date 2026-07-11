@@ -4,7 +4,7 @@ from unittest.mock import patch
 from django.test import SimpleTestCase
 
 from .notification import _build_notification_item, sync_notifications_to_session
-from .services.nifty50_loader import get_nifty50_data, get_nifty50_symbols, get_symbol_token_map
+from .services.nifty50_loader import get_dashboard_symbols, get_nifty50_data, get_nifty50_symbols, get_symbol_token_map
 
 
 class Nifty50ConfigTests(SimpleTestCase):
@@ -24,6 +24,14 @@ class Nifty50ConfigTests(SimpleTestCase):
         self.assertIn("NSE:RELIANCE", token_map)
         self.assertIn("NSE:NIFTY", token_map)
         self.assertIn("NSE:BANKNIFTY", token_map)
+
+    def test_loader_includes_amavasya_chart_symbols(self):
+        symbols = get_dashboard_symbols()
+        token_map = get_symbol_token_map()
+
+        self.assertIn("NSE:AARTIIND", symbols)
+        self.assertIn("NSE:AARTIIND", token_map)
+        self.assertEqual(token_map["NSE:AARTIIND"]["tradingsymbol"], "AARTIIND-EQ")
 
 
 class NotificationSyncTests(SimpleTestCase):

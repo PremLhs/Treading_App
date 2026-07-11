@@ -8,7 +8,7 @@ from django.shortcuts import redirect, render
 
 from .forms import LoginForm
 from .services.angel_api import AngelBroker
-from .services.nifty50_loader import get_nifty50_symbols
+from .services.nifty50_loader import get_dashboard_symbols
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -29,7 +29,7 @@ INDEX_SYMBOLS = [
     "NSE:BANKNIFTY",
 ]
 
-STOCK_SYMBOLS = get_nifty50_symbols()
+STOCK_SYMBOLS = get_dashboard_symbols()
 
 DEFAULT_SYMBOL = "NSE:RELIANCE"
 ALLOWED_INTERVALS = ["1", "3", "5", "15", "30", "60", "D", "W"]
@@ -1472,3 +1472,8 @@ def amavasya_strategy_api_view(request):
             "levels": [],
             "meta": {},
         }, status=200)
+
+
+
+
+########################################################

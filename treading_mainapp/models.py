@@ -148,3 +148,4 @@ class GapScanRun(models.Model):
         return (timezone.now() - self.last_heartbeat).total_seconds() > 900
 
 
+####################################################################################
