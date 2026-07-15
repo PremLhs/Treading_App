@@ -5,6 +5,7 @@ from django.test import SimpleTestCase
 
 from .notification import _build_notification_item, sync_notifications_to_session
 from .services.nifty50_loader import get_dashboard_symbols, get_nifty50_data, get_nifty50_symbols, get_symbol_token_map
+from .views import build_calendar_events
 
 
 class Nifty50ConfigTests(SimpleTestCase):
@@ -32,6 +33,23 @@ class Nifty50ConfigTests(SimpleTestCase):
         self.assertIn("NSE:AARTIIND", symbols)
         self.assertIn("NSE:AARTIIND", token_map)
         self.assertEqual(token_map["NSE:AARTIIND"]["tradingsymbol"], "AARTIIND-EQ")
+
+
+class CalendarEventTests(SimpleTestCase):
+    def test_calendar_includes_pentagon_and_red_ball_events(self):
+        events = build_calendar_events()
+        event_types = {event["extendedProps"]["eventType"] for event in events}
+
+        self.assertIn("pentagon", event_types)
+        self.assertIn("red_ball", event_types)
+
+        pentagon_event = next(event for event in events if event["extendedProps"]["eventType"] == "pentagon")
+        red_ball_event = next(event for event in events if event["extendedProps"]["eventType"] == "red_ball")
+
+        self.assertEqual(pentagon_event["backgroundColor"], "#f472b6")
+        self.assertEqual(pentagon_event["extendedProps"]["symbol"], "⬟")
+        self.assertEqual(red_ball_event["backgroundColor"], "#ef4444")
+        self.assertEqual(red_ball_event["extendedProps"]["symbol"], "●")
 
 
 class NotificationSyncTests(SimpleTestCase):

@@ -18,8 +18,24 @@
             width: 25px;
             height: 25px;
             border-radius: 50%;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             box-shadow: 0 0 0 2px rgba(0,0,0,0.12) inset;
+            font-size: 16px;
+            line-height: 1;
+            background-color: transparent;
+            color: inherit;
+        }
+
+        .calendar-event-marker--symbol {
+            width: auto;
+            height: auto;
+            border-radius: 0;
+            box-shadow: none;
+            background: transparent;
+            font-size: 30px;
+            line-height: 1;
         }
     </style>
 {% endblock %}
@@ -154,9 +170,17 @@ document.addEventListener("DOMContentLoaded", function () {
             const wrap = document.createElement("div");
             wrap.className = "calendar-event-entry";
 
+            const symbol = arg.event.extendedProps.symbol || "●";
             const dot = document.createElement("span");
             dot.className = "calendar-event-marker";
-            dot.style.backgroundColor = markerColor;
+
+            if (symbol !== "●") {
+                dot.classList.add("calendar-event-marker--symbol");
+                dot.textContent = symbol;
+                dot.style.color = markerColor;
+            } else {
+                dot.style.backgroundColor = markerColor;
+            }
 
             wrap.appendChild(dot);
 

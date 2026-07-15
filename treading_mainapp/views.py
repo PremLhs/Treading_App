@@ -957,7 +957,7 @@ EVENT_SOURCES = {
     "amavasya": {
         "file": "amavasya.csv",
         "title": "Amavasya",
-        "color": "#ef4444",
+        "color": "#111827",
         "text_color": "#ffffff",
         "symbol": "●",
     },
@@ -965,6 +965,20 @@ EVENT_SOURCES = {
         "file": "purnima.csv",
         "title": "Purnima",
         "color": "#22c55e",
+        "text_color": "#ffffff",
+        "symbol": "●",
+    },
+    "pentagon": {
+        "file": "Pentagon.csv",
+        "title": "Pentagon",
+        "color": "#b01364",
+        "text_color": "#ffffff",
+        "symbol": "⬟",
+    },
+    "red_ball": {
+        "file": "red_ball.csv",
+        "title": "Red Ball",
+        "color": "#ef4444",
         "text_color": "#ffffff",
         "symbol": "●",
     },
@@ -999,11 +1013,27 @@ EVENT_SOURCES = {
 }
 
 
-def extract_dates_from_csv(file_path):
+def extract_dates_from_csv(file_path, field_map=None, fallback_title=""):
     items = []
 
     if not os.path.exists(file_path):
         return items
+
+    field_map = field_map or {
+        "year": ["year"],
+        "start": ["start"],
+        "title": ["title"],
+    }
+
+    def get_field_value(row, keys):
+        for key in keys:
+            value = row.get(key)
+            if value is None:
+                continue
+            text = str(value).strip()
+            if text:
+                return text
+        return ""
 
     seen = set()
 
@@ -1012,27 +1042,29 @@ def extract_dates_from_csv(file_path):
 
         for row in reader:
             try:
-                year = str(row.get("year", "")).strip()
-                start_text = str(row.get("start", "")).strip()
-                row_title = str(row.get("title", "")).strip()
+                year = get_field_value(row, field_map.get("year", ["year"]))
+                start_text = get_field_value(row, field_map.get("start", ["start"]))
+                row_title = get_field_value(row, field_map.get("title", ["title"])) or fallback_title
 
-                if not year or not start_text:
+                if not start_text:
                     continue
 
                 parsed = None
-                
-                # Try format 1: "Jan 10, 8:11 pm" (amavasya, purnima)
-                try:
-                    parsed = datetime.strptime(
-                        f"{start_text} {year}".upper(),
-                        "%b %d, %I:%M %p %Y"
-                    )
-                except ValueError:
-                    # Try format 2: "2024-01-08 23:59" (trayodashi, pushya)
-                    try:
-                        parsed = datetime.strptime(start_text, "%Y-%m-%d %H:%M")
-                    except ValueError:
-                        continue
+
+                candidates = []
+                if year:
+                    candidates.append(f"{start_text} {year}".upper())
+                candidates.append(start_text)
+
+                for candidate in candidates:
+                    for date_format in ["%b %d, %I:%M %p %Y", "%Y-%m-%d %H:%M", "%Y-%m-%d"]:
+                        try:
+                            parsed = datetime.strptime(candidate, date_format)
+                            break
+                        except ValueError:
+                            continue
+                    if parsed is not None:
+                        break
 
                 if not parsed:
                     continue
@@ -1071,7 +1103,25 @@ def build_calendar_events():
             continue
 
         file_path = os.path.join(data_dir, config["file"])
-        csv_items = extract_dates_from_csv(file_path)
+        field_map = None
+        fallback_title = ""
+
+        if event_key == "pentagon":
+            field_map = {
+                "year": ["Year"],
+                "start": ["Start Date"],
+                "title": ["title"],
+            }
+            fallback_title = config["title"]
+        elif event_key == "red_ball":
+            field_map = {
+                "year": ["Year"],
+                "start": ["Date"],
+                "title": ["title"],
+            }
+            fallback_title = config["title"]
+
+        csv_items = extract_dates_from_csv(file_path, field_map=field_map, fallback_title=fallback_title)
 
         for item in csv_items:
             actual_title = item["title"] if item["title"] else config["title"]
@@ -1172,8 +1222,10 @@ def calendar_view(request):
     year_options = list(range(current_year - 5, current_year + 7))
 
     legend_items = [
-        {"name": "Amavasya", "color": "#ef4444", "symbol": "●"},
+        {"name": "Amavasya", "color": "#111827", "symbol": "●"},
         {"name": "Purnima", "color": "#22c55e", "symbol": "●"},
+        {"name": "Pentagon", "color": "#f472b6", "symbol": "⬟"},
+        {"name": "Red Ball", "color": "#ef4444", "symbol": "●"},
         {"name": "Trayodashi", "color": "#3b82f6", "symbol": "●"},
         {"name": "Moon Mars", "color": "#6c0b2e", "symbol": "●"},
         {"name": "Pushya", "color": "#facc15", "symbol": "●"},
