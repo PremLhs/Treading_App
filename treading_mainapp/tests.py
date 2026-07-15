@@ -1,4 +1,7 @@
+import json
+import tempfile
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import patch
 
 from django.test import SimpleTestCase
@@ -33,6 +36,26 @@ class Nifty50ConfigTests(SimpleTestCase):
         self.assertIn("NSE:AARTIIND", symbols)
         self.assertIn("NSE:AARTIIND", token_map)
         self.assertEqual(token_map["NSE:AARTIIND"]["tradingsymbol"], "AARTIIND-EQ")
+
+    def test_loader_supports_extra_symbol_payload_with_symbols_key(self):
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as handle:
+            json.dump({
+                "symbols": [{
+                    "symbol": "NSE:TESTSTOCK",
+                    "tradingsymbol": "TESTSTOCK-EQ",
+                    "exchange": "NSE",
+                }]
+            }, handle)
+            temp_path = Path(handle.name)
+
+        try:
+            with patch("treading_mainapp.services.nifty50_loader.EXTRA_SYMBOLS_FILE", temp_path):
+                symbols = get_dashboard_symbols()
+        finally:
+            if temp_path.exists():
+                temp_path.unlink()
+
+        self.assertIn("NSE:TESTSTOCK", symbols)
 
 
 class CalendarEventTests(SimpleTestCase):

@@ -29,8 +29,7 @@ INDEX_SYMBOLS = [
     "NSE:BANKNIFTY",
 ]
 
-STOCK_SYMBOLS = get_dashboard_symbols()
-
+# Load dashboard symbols at request time to pick up data file changes without restart
 DEFAULT_SYMBOL = "NSE:RELIANCE"
 ALLOWED_INTERVALS = ["1", "3", "5", "15", "30", "60", "D", "W"]
 
@@ -73,7 +72,8 @@ def dashboard_view(request):
     symbol = request.GET.get("symbol", DEFAULT_SYMBOL).strip()
     interval = request.GET.get("interval", "5").strip().upper()
 
-    all_symbols = INDEX_SYMBOLS + STOCK_SYMBOLS
+    stock_symbols = get_dashboard_symbols()
+    all_symbols = INDEX_SYMBOLS + stock_symbols
 
     if symbol not in all_symbols:
         symbol = DEFAULT_SYMBOL
@@ -88,7 +88,7 @@ def dashboard_view(request):
         "tv_symbol": symbol,
         "tv_interval": interval,
         "index_symbols": INDEX_SYMBOLS,
-        "stock_symbols": STOCK_SYMBOLS,
+        "stock_symbols": stock_symbols,
         "default_symbol": DEFAULT_SYMBOL,
         "broker_connected": broker_response.get("status", False),
         "broker_message": broker_response.get("message", "Unknown broker state."),
@@ -113,7 +113,8 @@ def candles_api_view(request):
     symbol = request.GET.get("symbol", DEFAULT_SYMBOL).strip()
     interval = request.GET.get("interval", "5").strip().upper()
 
-    all_symbols = INDEX_SYMBOLS + STOCK_SYMBOLS
+    stock_symbols = get_dashboard_symbols()
+    all_symbols = INDEX_SYMBOLS + stock_symbols
 
     if symbol not in all_symbols:
         symbol = DEFAULT_SYMBOL
@@ -1442,7 +1443,8 @@ logger = logging.getLogger(__name__)
 @require_GET
 def amavasya_strategy_api_view(request):
     symbol = request.GET.get("symbol", DEFAULT_SYMBOL).strip()
-    all_symbols = INDEX_SYMBOLS + STOCK_SYMBOLS
+    stock_symbols = get_dashboard_symbols()
+    all_symbols = INDEX_SYMBOLS + stock_symbols
 
     if symbol not in all_symbols:
         symbol = DEFAULT_SYMBOL

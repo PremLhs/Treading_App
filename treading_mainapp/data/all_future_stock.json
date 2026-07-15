@@ -1,6 +1,7 @@
-[
-  {
-    "symbol": "NSE:AARTIIND",
+{
+  "symbols": [
+    {
+      "symbol": "NSE:AARTIIND",
     "tradingsymbol": "AARTIIND-EQ",
     "exchange": "NSE"
   },
@@ -488,5 +489,36 @@
     "symbol": "NSE:ZYDUSLIFE",
     "tradingsymbol": "ZYDUSLIFE-EQ",
     "exchange": "NSE"
+  },
+  {
+    "symbol": "NFO:NIFTY",
+    "tradingsymbol": "NIFTY31JUL26FUT",
+    "symboltoken": "AUTO_FROM_MASTER",
+    "exchange": "NFO"
+  },
+  {
+    "symbol": "MCX:GOLD",
+    "tradingsymbol": "GOLD05AUG26FUT",
+    "symboltoken": "AUTO_FROM_MASTER",
+    "exchange": "MCX"
+  },
+  {
+    "symbol": "MCX:SILVER",
+    "tradingsymbol": "SILVER05SEP26FUT",
+    "symboltoken": "AUTO_FROM_MASTER",
+    "exchange": "MCX"
+  },
+  {
+    "symbol": "MCX:COPPER",
+    "tradingsymbol": "COPPER31JUL26FUT",
+    "symboltoken": "AUTO_FROM_MASTER",
+    "exchange": "MCX"
+  },
+  {
+    "symbol": "MCX:CRUDEOIL",
+    "tradingsymbol": "CRUDEOIL17JUL26FUT",
+    "symboltoken": "AUTO_FROM_MASTER",
+    "exchange": "MCX"
   }
-]
+  ]
+}
