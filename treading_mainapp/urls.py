@@ -50,6 +50,9 @@ urlpatterns = [
     path("api/notifications/mark-popup-shown/", views.mark_notifications_popup_shown_view, name="mark_notifications_popup_shown"),
     path("api/notifications/mark-read/", views.mark_notification_read_view, name="mark_notification_read"),
 
+    path("pinbar/", views.pinbar_view, name="pinbar"),
+    path("api/pinbar/", views.pinbar_api_view, name="pinbar_api"),
+
     path("api/amavasya-strategy/", views.amavasya_strategy_api_view, name="amavasya_strategy_api"),
     
     path("pentagon/", views.pentagon_view, name="pentagon"),

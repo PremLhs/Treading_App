@@ -492,33 +492,34 @@
   },
   {
     "symbol": "NFO:NIFTY",
-    "tradingsymbol": "NIFTY31JUL26FUT",
-    "symboltoken": "AUTO_FROM_MASTER",
+    "tradingsymbol": "NIFTY28JUL26FUT",
+    "symboltoken": "61093",
     "exchange": "NFO"
   },
   {
     "symbol": "MCX:GOLD",
     "tradingsymbol": "GOLD05AUG26FUT",
-    "symboltoken": "AUTO_FROM_MASTER",
+    "symboltoken": "466583",
     "exchange": "MCX"
   },
   {
     "symbol": "MCX:SILVER",
-    "tradingsymbol": "SILVER05SEP26FUT",
-    "symboltoken": "AUTO_FROM_MASTER",
+    "tradingsymbol": "SILVER04SEP26FUT",
+    "symboltoken": "471725",
     "exchange": "MCX"
   },
   {
     "symbol": "MCX:COPPER",
     "tradingsymbol": "COPPER31JUL26FUT",
-    "symboltoken": "AUTO_FROM_MASTER",
+    "symboltoken": "562048",
     "exchange": "MCX"
   },
   {
     "symbol": "MCX:CRUDEOIL",
-    "tradingsymbol": "CRUDEOIL17JUL26FUT",
-    "symboltoken": "AUTO_FROM_MASTER",
+    "tradingsymbol": "CRUDEOIL20JUL26FUT",
+    "symboltoken": "520702",
     "exchange": "MCX"
   }
+
   ]
 }

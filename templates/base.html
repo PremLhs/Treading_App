@@ -405,10 +405,11 @@
         }
 
         .notification-dropdown {
-            position: absolute;
-            top: calc(100% + 14px);
-            right: 0;
+            position: fixed;
+            top: 80px;
+            right: 18px;
             width: min(390px, calc(100vw - 32px));
+            z-index: 9999;
             border-radius: 20px;
             border: 1px solid rgba(38, 63, 76, 0.44);
             background:
@@ -551,20 +552,25 @@
         }
 
         .notification-modal-backdrop {
-            position: fixed;
-            inset: 0;
-            z-index: 400;
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2147483647 !important;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px;
-            background: rgba(1, 9, 14, 0.66);
+            background: rgba(1, 9, 14, 0.86);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             animation: fade-in 240ms ease;
         }
 
         .notification-modal-card {
+            position: relative;
+            z-index: 2147483648;
             width: min(100%, 520px);
             border-radius: 24px;
             border: 1px solid rgba(38, 63, 76, 0.44);
@@ -991,7 +997,7 @@
                             </div>
                         </div>
 
-                        <a href="{% url 'logout' %}" class="nav-item nav-item-cta">Logout</a>
+                        <a href="{% url 'logout' %}" class="nav-item nav-item-cta">🔓</a>
                     {% else %}
                         <a href="{% url 'login' %}" class="nav-item">Login</a>
                     {% endif %}
@@ -1009,26 +1015,26 @@
                     </div>
                 {% endif %}
 
-                {% include "notification_banner.html" %}
                 {% block content %}{% endblock %}
             </div>
         </main>
     </div>
 
-    {% if popup_notifications %}
-    <div class="notification-modal-backdrop" id="notificationModal">
+    <div class="notification-modal-backdrop" id="notificationModal" style="display: {% if popup_notifications %}flex{% else %}none{% endif %};">
         <div class="notification-modal-card">
             <div class="notification-modal-header">
                 <h3>Event Alerts</h3>
             </div>
 
-            <div class="notification-modal-body">
-                {% for item in popup_notifications %}
-                    <div class="notification-modal-item {{ item.color_class }}">
-                        <div class="notification-modal-title">{{ item.message }}</div>
-                        <div class="notification-modal-subtitle">{{ item.submessage }}</div>
-                    </div>
-                {% endfor %}
+            <div class="notification-modal-body" id="notificationModalBody">
+                {% if popup_notifications %}
+                    {% for item in popup_notifications %}
+                        <div class="notification-modal-item {{ item.color_class }}">
+                            <div class="notification-modal-title">{{ item.message }}</div>
+                            <div class="notification-modal-subtitle">{{ item.submessage }}</div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
             </div>
 
             <div class="notification-modal-actions">
@@ -1036,7 +1042,6 @@
             </div>
         </div>
     </div>
-    {% endif %}
 
     <script>
         function getCookie(name) {
@@ -1061,25 +1066,135 @@
         const modal = document.getElementById("notificationModal");
         const modalOkBtn = document.getElementById("notificationModalOkBtn");
 
+        function setNotificationBadge(count) {
+            let badge = document.getElementById("notificationBellBadge");
+            if (count > 0) {
+                if (!badge && bellBtn) {
+                    badge = document.createElement("span");
+                    badge.id = "notificationBellBadge";
+                    badge.className = "notification-bell-badge";
+                    bellBtn.appendChild(badge);
+                }
+                if (badge) {
+                    badge.textContent = count;
+                    badge.style.display = "inline-flex";
+                }
+            } else if (badge) {
+                badge.remove();
+            }
+        }
+
+        function renderNotificationDropdown(items) {
+            const body = document.getElementById("notificationDropdownBody");
+            if (!body) return;
+
+            if (!Array.isArray(items) || items.length === 0) {
+                body.innerHTML = '<div class="notification-empty">No notifications available.</div>';
+                return;
+            }
+
+            body.innerHTML = items.map(item => `
+                <a href="${item.page_url}" class="notification-dropdown-item ${item.color_class} ${!item.read ? 'is-unread' : ''}" data-notification-id="${item.id}">
+                    <div class="notification-dropdown-title">${item.message}</div>
+                    <div class="notification-dropdown-subtitle">${item.submessage}</div>
+                </a>
+            `).join("");
+
+            document.querySelectorAll(".notification-dropdown-item").forEach(function (item) {
+                item.addEventListener("click", async function (e) {
+                    const notificationId = item.getAttribute("data-notification-id");
+                    const pageUrl = item.getAttribute("href");
+
+                    try {
+                        await fetch("{% url 'mark_notification_read' %}", {
+                            method: "POST",
+                            headers: {
+                                "X-CSRFToken": csrftoken,
+                                "Content-Type": "application/x-www-form-urlencoded",
+                            },
+                            body: new URLSearchParams({ notification_id: notificationId })
+                        });
+                    } catch (error) {
+                        console.error("Read mark error:", error);
+                    }
+
+                    if (pageUrl) {
+                        window.location.href = pageUrl;
+                    }
+                });
+            });
+        }
+
+        async function updateNotificationBadgeAndList() {
+            try {
+                const res = await fetch("{% url 'notifications_list' %}", { cache: "no-store" });
+                if (!res.ok) return;
+                const data = await res.json();
+                setNotificationBadge(data.unread_count || 0);
+                renderNotificationDropdown(data.notifications || []);
+            } catch (err) {
+                console.error("Failed to refresh notifications:", err);
+            }
+        }
+
+        async function fetchPinbarUpdates() {
+            try {
+                const res = await fetch("{% url 'pinbar_api' %}?_=" + Date.now(), { headers: { "X-Requested-With": "XMLHttpRequest" }, cache: "no-store" });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data || !data.success) return;
+
+                const items = data.notifications || [];
+                if (typeof window.updatePinbarTable === 'function') {
+                    window.updatePinbarTable(data.signals || []);
+                }
+                if (!items || items.length === 0) return;
+
+                const modalBody = document.getElementById("notificationModalBody");
+                if (!modalBody) return;
+
+                modalBody.innerHTML = items.map(item => `
+                    <div class="notification-modal-item ${item.color_class}">
+                        <div class="notification-modal-title">${item.message}</div>
+                        <div class="notification-modal-subtitle">${item.submessage}</div>
+                    </div>
+                `).join("");
+
+                if (modal) {
+                    modal.style.display = "flex";
+                }
+
+                try {
+                    await fetch("{% url 'mark_notifications_popup_shown' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": csrftoken,
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                        body: "",
+                    });
+                } catch (err) {
+                    console.error("Failed to mark popup shown:", err);
+                }
+
+                updateNotificationBadgeAndList();
+            } catch (err) {
+                console.error("Error fetching pinbar updates:", err);
+            }
+        }
+
         if (bellBtn && dropdown) {
             bellBtn.addEventListener("click", function (e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const isShowing = dropdown.classList.contains("show");
                 dropdown.classList.toggle("show");
-                console.log("Bell clicked, dropdown now showing:", !isShowing);
             });
 
             document.addEventListener("click", function (e) {
                 if (dropdown.classList.contains("show") && !dropdown.contains(e.target) && !bellBtn.contains(e.target)) {
                     dropdown.classList.remove("show");
-                    console.log("Dropdown closed by outside click");
                 }
             });
-            
-            console.log("Bell button event listeners attached");
-        } else {
-            console.warn("Bell button or dropdown not found", { bellBtn, dropdown });
         }
 
         if (modal && modalOkBtn) {
@@ -1101,31 +1216,11 @@
             });
         }
 
-        document.querySelectorAll(".notification-dropdown-item").forEach(function (item) {
-            item.addEventListener("click", async function (e) {
-                const notificationId = item.getAttribute("data-notification-id");
-                const pageUrl = item.getAttribute("href");
-
-                try {
-                    await fetch("{% url 'mark_notification_read' %}", {
-                        method: "POST",
-                        headers: {
-                            "X-CSRFToken": csrftoken,
-                            "Content-Type": "application/x-www-form-urlencoded",
-                        },
-                        body: new URLSearchParams({
-                            notification_id: notificationId
-                        })
-                    });
-                } catch (error) {
-                    console.error("Read mark error:", error);
-                }
-
-                if (pageUrl) {
-                    window.location.href = pageUrl;
-                }
-            });
-        });
+        updateNotificationBadgeAndList();
+        if (bellBtn) {
+            fetchPinbarUpdates();
+            setInterval(fetchPinbarUpdates, 30000);
+        }
     </script>
 
     {% block extra_js %}{% endblock %}

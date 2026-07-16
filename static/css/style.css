@@ -1323,7 +1323,7 @@ ul.errorlist {
 }
 
 .notification-bell-badge {
-    position: absolute;
+    position: fixed;
     top: -4px;
     right: -2px;
     min-width: 20px;
@@ -1340,7 +1340,7 @@ ul.errorlist {
 }
 
 .notification-dropdown {
-    position: absolute;
+    position: fixed;
     top: 54px;
     right: 0;
     width: 340px;
@@ -1349,7 +1349,7 @@ ul.errorlist {
     border-radius: 16px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
     display: none;
-    z-index: 999;
+    z-index: 9999;
     overflow: hidden;
 }
 

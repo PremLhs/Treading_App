@@ -5,23 +5,16 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
+from django.views.decorators.http import require_GET, require_POST
 
 from .forms import LoginForm
+from .notification import get_notification_context, add_custom_notification_to_session, get_unread_popup_notifications
+from .pinbar import scan_pinbar_signals
 from .services.angel_api import AngelBroker
 from .services.nifty50_loader import get_dashboard_symbols
-
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.utils import timezone
 from .models import GapUpStatus
 import treading_mainapp.gapup
-
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.views.decorators.http import require_GET
-
 from .moon_mars import get_moon_mars_events_by_year
 
 INDEX_SYMBOLS = [
@@ -869,10 +862,152 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from .notification import get_notification_context
 
+PINBAR_SCAN_CACHE: dict[str, dict] = {}
+
+
+def _get_pinbar_cache_key(request):
+    session_key = request.session.session_key
+    if session_key:
+        return f"pinbar_scan_{session_key}"
+    return f"pinbar_scan_{request.COOKIES.get('sessionid', 'anonymous')}"
+
+
+def _get_current_15m_boundary(now=None):
+    now = now or timezone.localtime()
+    now = now.replace(second=0, microsecond=0)
+    boundary_minute = (now.minute // 15) * 15
+    return now.replace(minute=boundary_minute)
+
+
+def _pinbar_scan_cached(request):
+    cache_key = _get_pinbar_cache_key(request)
+    cache = request.session.get("pinbar_scan_cache") or PINBAR_SCAN_CACHE.get(cache_key)
+    if not cache or not cache.get("boundary"):
+        return None
+
+    latest_boundary = _get_current_15m_boundary()
+    if cache.get("boundary") == latest_boundary.isoformat():
+        return cache.get("signals", [])
+    return None
+
+
+def _pinbar_scan_store(request, scan_results):
+    cache_key = _get_pinbar_cache_key(request)
+    cached_value = {
+        "boundary": _get_current_15m_boundary().isoformat(),
+        "signals": scan_results,
+    }
+    PINBAR_SCAN_CACHE[cache_key] = cached_value
+    request.session["pinbar_scan_cache"] = cached_value
+    request.session.modified = True
+
+
 def with_global_notifications(request, context=None):
     context = context or {}
     context.update(get_notification_context(request))
     return context
+
+
+@login_required
+def pinbar_view(request):
+    scan_results = []
+    notification_count = 0
+
+    try:
+        cached_signals = _pinbar_scan_cached(request)
+        if cached_signals is not None:
+            scan_results = cached_signals
+        else:
+            scan_results = scan_pinbar_signals()
+            _pinbar_scan_store(request, scan_results)
+
+        for result in scan_results:
+            if result.get("is_pin_bar") and not result.get("error"):
+                candle_period = result.get("candle_period") or result.get("candle_time") or "unknown"
+                notification_id = f"pinbar-{result.get('symbol')}-{result.get('trade_date')}-{candle_period}"
+                notification = {
+                    "id": notification_id,
+                    "label": "Pin Bar Alert",
+                    "message": f"Pin bar created on {result.get('symbol')}.",
+                    "submessage": f"Period: {candle_period} | {result.get('pinbar_type', '').capitalize()} | Close: {result.get('close')}",
+                    "page_url": "/pinbar/",
+                    "color_class": "notification-danger" if result.get("pinbar_type") == "bearish" else "notification-success",
+                    "event_date": result.get("trade_date"),
+                    "event_time": candle_period,
+                    "sort_order": 0,
+                }
+                add_custom_notification_to_session(request, notification)
+                notification_count += 1
+    except Exception as exc:
+        scan_results = [{
+            "symbol": "N/A",
+            "trade_date": str(timezone.localdate()),
+            "is_pin_bar": False,
+            "pinbar_type": None,
+            "candle_time": None,
+            "open": None,
+            "high": None,
+            "low": None,
+            "close": None,
+            "body": None,
+            "upper_wick": None,
+            "lower_wick": None,
+            "range": None,
+            "reason": str(exc),
+            "error": True,
+        }]
+
+    context = {
+        "page_title": "Pin Bar Scanner",
+        "signals": scan_results,
+        "notification_count": notification_count,
+        "hide_global_notifications": True,
+    }
+    return render(request, "pinbar.html", with_global_notifications(request, context))
+
+
+@login_required
+def pinbar_api_view(request):
+    try:
+        cached_signals = _pinbar_scan_cached(request)
+        if cached_signals is not None:
+            scan_results = cached_signals
+        else:
+            scan_results = scan_pinbar_signals()
+            _pinbar_scan_store(request, scan_results)
+
+        for result in scan_results:
+            if result.get("is_pin_bar") and not result.get("error"):
+                candle_period = result.get("candle_period") or result.get("candle_time") or "unknown"
+                notification_id = f"pinbar-{result.get('symbol')}-{result.get('trade_date')}-{candle_period}"
+                notification = {
+                    "id": notification_id,
+                    "label": "Pin Bar Alert",
+                    "message": f"Pin bar created on {result.get('symbol')}.",
+                    "submessage": f"Period: {candle_period} | {result.get('pinbar_type', '').capitalize()} | Close: {result.get('close')}",
+                    "page_url": "/pinbar/",
+                    "color_class": "notification-danger" if result.get("pinbar_type") == "bearish" else "notification-success",
+                    "event_date": result.get("trade_date"),
+                    "event_time": candle_period,
+                    "sort_order": 0,
+                }
+                add_custom_notification_to_session(request, notification)
+
+        unread_notifications = get_unread_popup_notifications(request)
+
+        return JsonResponse({
+            "success": True,
+            "message": "Pin bar scan completed.",
+            "signals": scan_results,
+            "notifications": unread_notifications,
+        })
+    except Exception as exc:
+        return JsonResponse({
+            "success": False,
+            "message": str(exc),
+            "signals": [],
+            "notifications": [],
+        }, status=500)
 
 
 @login_required
@@ -933,14 +1068,6 @@ def notifications_list_view(request):
         "unread_count": unread_count,
         "notifications": inbox,
     })
-
-from .notification import get_notification_context
-
-def with_global_notifications(request, context=None):
-    context = context or {}
-    context.update(get_notification_context(request))
-    return context
-
 
 
 ##################################Calendar##########################################

@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}Pin Bar Scanner{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="hero-banner">
+        <div class="hero-banner-content">
+            <span class="hero-tag">Pin Bar Scanner</span>
+            <h1>15-Minute Pin Bar Scan</h1>
+            <p>Scans exactly these five symbols for pin bar signals and saves popup notifications:</p>
+            <ul class="pinbar-symbol-list">
+                <li>NFO:NIFTY</li>
+                <li>MCX:GOLD</li>
+                <li>MCX:SILVER</li>
+                <li>MCX:COPPER</li>
+                <li>MCX:CRUDEOIL</li>
+            </ul>
+        </div>
+        <div class="hero-banner-actions">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Dashboard</a>
+            <a href="{% url 'notifications_page' %}" class="btn btn-secondary">Notifications</a>
+        </div>
+    </div>
+
+    <div class="dashboard-toolbar-panel">
+        <div class="dashboard-top-row">
+            <div class="panel-card">
+                <div class="panel-head">
+                    <span class="panel-kicker">Scan Results</span>
+                    <h3>{{ notification_count }} pin bar alerts generated</h3>
+                </div>
+                <div class="panel-body">
+                    <p class="panel-main-text">Results reflect the latest 15-minute candle for each symbol. Alerts are stored in session and will show as popups.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-card chart-workspace">
+        <div class="chart-workspace-head">
+            <div>
+                <span class="panel-kicker">Pin Bar Signal Table</span>
+                <h3>Detected Signals</h3>
+            </div>
+        </div>
+
+        <div class="chart-stage">
+            <div class="panel-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Date</th>
+                            <th>Period</th>
+                            <th>Candle</th>
+                            <th>Pin Bar</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for signal in signals %}
+                            <tr class="{% if signal.is_pin_bar and not signal.error %}highlight-row{% endif %}">
+                                <td>{{ signal.symbol }}</td>
+                                <td>{{ signal.trade_date }}</td>
+                                <td>{{ signal.candle_period|default:signal.candle_time|default:'-' }}</td>
+                                <td>{{ signal.open|default:'-' }} / {{ signal.high|default:'-' }} / {{ signal.low|default:'-' }} / {{ signal.close|default:'-' }}</td>
+                                <td>{% if signal.is_pin_bar and not signal.error %}{{ signal.pinbar_type|capfirst }}{% else %}No{% endif %}</td>
+                                <td>{{ signal.reason }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6">No pin bar signals available.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(144, 202, 249, 0.18);
+        text-align: left;
+        font-size: 0.95rem;
+        color: #2f3a4a;
+    }
+
+    .data-table th {
+        background: rgba(227, 243, 255, 0.92);
+        font-weight: 700;
+    }
+
+    .highlight-row {
+        background: rgba(220, 252, 231, 0.50);
+    }
+
+    .data-table tbody tr:hover {
+        background: rgba(255, 250, 240, 0.72);
+    }
+
+    .live-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 12px;
+        color: #1f2937;
+        font-size: 0.95rem;
+    }
+
+    .live-status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #22c55e;
+        animation: pulse 1.6s infinite alternate;
+    }
+
+    @keyframes pulse {
+        from { transform: scale(1); opacity: 1; }
+        to { transform: scale(1.18); opacity: 0.7; }
+    }
+</style>
+<script>
+    async function updateNotificationBadgeAndList() {
+        try {
+            const res = await fetch("{% url 'notifications_list' %}");
+            if (!res.ok) return;
+            const data = await res.json();
+            const badge = document.getElementById("notificationBellBadge");
+            const body = document.getElementById("notificationDropdownBody");
+
+            if (data.unread_count) {
+                if (badge) {
+                    badge.textContent = data.unread_count;
+                    badge.style.display = "inline-flex";
+                } else if (bellBtn) {
+                    const newBadge = document.createElement("span");
+                    newBadge.id = "notificationBellBadge";
+                    newBadge.className = "notification-bell-badge";
+                    newBadge.textContent = data.unread_count;
+                    bellBtn.appendChild(newBadge);
+                }
+            } else if (badge) {
+                badge.remove();
+            }
+
+            if (body && Array.isArray(data.notifications)) {
+                body.innerHTML = data.notifications.map(item => `
+                    <a href="${item.page_url}" class="notification-dropdown-item ${item.color_class} ${!item.read ? 'is-unread' : ''}" data-notification-id="${item.id}">
+                        <div class="notification-dropdown-title">${item.message}</div>
+                        <div class="notification-dropdown-subtitle">${item.submessage}</div>
+                    </a>
+                `).join("");
+
+                // Reattach click handlers for new items
+                document.querySelectorAll(".notification-dropdown-item").forEach(function (item) {
+                    item.addEventListener("click", async function (e) {
+                        const notificationId = item.getAttribute("data-notification-id");
+                        const pageUrl = item.getAttribute("href");
+
+                        try {
+                            await fetch("{% url 'mark_notification_read' %}", {
+                                method: "POST",
+                                headers: {
+                                    "X-CSRFToken": csrftoken,
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                },
+                                body: new URLSearchParams({ notification_id: notificationId })
+                            });
+                        } catch (error) {
+                            console.error("Read mark error:", error);
+                        }
+
+                        if (pageUrl) {
+                            window.location.href = pageUrl;
+                        }
+                    });
+                });
+            }
+        } catch (err) {
+            console.error("Failed to refresh notifications:", err);
+        }
+    }
+
+    function updatePinbarTable(signals) {
+        const tbody = document.querySelector(".data-table tbody");
+        const rowCount = tbody ? tbody.children.length : 0;
+        if (!tbody) {
+            return;
+        }
+
+        tbody.innerHTML = "";
+
+        if (!signals || signals.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6">No pin bar signals available.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        signals.forEach(signal => {
+            const isPinBar = signal.is_pin_bar && !signal.error;
+            const rowClass = isPinBar ? "highlight-row" : "";
+            const candlePeriod = signal.candle_period || signal.candle_time || "-";
+            const candle = `${signal.open || "-"} / ${signal.high || "-"} / ${signal.low || "-"} / ${signal.close || "-"}`;
+            const pinBarText = isPinBar ? signal.pinbar_type?.charAt(0).toUpperCase() + signal.pinbar_type?.slice(1) : "No";
+
+            tbody.insertAdjacentHTML("beforeend", `
+                <tr class="${rowClass}">
+                    <td>${signal.symbol}</td>
+                    <td>${signal.trade_date || "-"}</td>
+                    <td>${candlePeriod}</td>
+                    <td>${candle}</td>
+                    <td>${pinBarText}</td>
+                    <td>${signal.reason || "-"}</td>
+                </tr>
+            `);
+        });
+    }
+
+    window.updatePinbarTable = updatePinbarTable;
+</script>
+{% endblock %}

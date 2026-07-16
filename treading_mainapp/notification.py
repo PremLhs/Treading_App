@@ -290,26 +290,103 @@ def sync_notifications_to_session(request):
     inbox_map = {
         item["id"]: item
         for item in inbox
-        if item.get("id") in active_ids
+        if item.get("id")
+    }
+
+    preserved_alerts = {
+        item_id: item
+        for item_id, item in inbox_map.items()
+        if item.get("type") == "alert"
+    }
+
+    event_notifications = {
+        item_id: item
+        for item_id, item in inbox_map.items()
+        if item_id in active_ids
     }
 
     for item in active_notifications:
-        existing_item = inbox_map.get(item["id"])
+        existing_item = event_notifications.get(item["id"])
 
         if existing_item:
             is_new_occurrence = existing_item.get("type") != item.get("type")
-            inbox_map[item["id"]] = {
+            event_notifications[item["id"]] = {
                 **existing_item,
                 **item,
                 "read": False if is_new_occurrence else existing_item.get("read", False),
                 "popup_shown": False if is_new_occurrence else existing_item.get("popup_shown", False),
             }
         else:
-            inbox_map[item["id"]] = {
+            event_notifications[item["id"]] = {
                 **item,
                 "read": False,
                 "popup_shown": False,
             }
+
+    merged_inbox = {**preserved_alerts, **event_notifications}
+
+    updated_inbox = sorted(
+        merged_inbox.values(),
+        key=lambda item: (
+            item.get("read", False),
+            item.get("sort_order", 99),
+            item.get("event_time", ""),
+        ),
+    )
+
+    request.session["notification_inbox"] = updated_inbox
+    request.session.modified = True
+
+    return updated_inbox
+
+
+def _create_custom_notification_item(
+    notification_id,
+    title,
+    message,
+    submessage,
+    page_url,
+    color_class,
+    event_date=None,
+    event_time="",
+    sort_order=0,
+):
+    return {
+        "id": notification_id,
+        "type": "alert",
+        "label": title,
+        "message": message,
+        "submessage": submessage,
+        "page_url": page_url,
+        "color_class": color_class,
+        "event_date": event_date,
+        "event_time": event_time,
+        "sort_order": sort_order,
+        "created_on": datetime.now().isoformat(),
+    }
+
+
+def add_custom_notification_to_session(request, notification):
+    inbox = request.session.get("notification_inbox", [])
+    inbox_map = {item["id"]: item for item in inbox if item.get("id")}
+    existing_item = inbox_map.get(notification.get("id"))
+
+    if existing_item:
+        is_new_occurrence = existing_item.get("message") != notification.get("message")
+        inbox_map[notification["id"]] = {
+            **existing_item,
+            **notification,
+            "type": existing_item.get("type", "alert"),
+            "read": False if is_new_occurrence else existing_item.get("read", False),
+            "popup_shown": False if is_new_occurrence else existing_item.get("popup_shown", False),
+        }
+    else:
+        inbox_map[notification["id"]] = {
+            **notification,
+            "type": notification.get("type", "alert"),
+            "read": False,
+            "popup_shown": False,
+        }
 
     updated_inbox = sorted(
         inbox_map.values(),
@@ -324,6 +401,7 @@ def sync_notifications_to_session(request):
     request.session.modified = True
 
     return updated_inbox
+
 
 def get_unread_popup_notifications(request):
     inbox = sync_notifications_to_session(request)
