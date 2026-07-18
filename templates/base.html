@@ -56,7 +56,9 @@
             --shadow-md: 0 18px 38px rgba(50, 44, 33, 0.10);
             --shadow-lg: 0 28px 70px rgba(6, 18, 28, 0.38);
 
-            --container: 1360px;
+            --container: min(1920px, calc(100vw - 24px));
+            --container-gutter: 12px;
+            --container-gutter-mobile: 8px;
             --header-height: 74px;
             --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -79,7 +81,10 @@
             overflow-x: hidden;
             font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             color: #5d4d37;
-            background: radial-gradient(circle at 18% 22%, rgba(0, 135, 162, 0.18), transparent 24%), radial-gradient(circle at 82% 78%, rgba(9, 88, 118, 0.20), transparent 28%), linear-gradient(351deg, #f8f7e9 0%, #fbfde8 50%, #f7f7f2 100%);
+            background:
+                radial-gradient(circle at 18% 22%, rgba(0, 135, 162, 0.18), transparent 24%),
+                radial-gradient(circle at 82% 78%, rgba(9, 88, 118, 0.20), transparent 28%),
+                linear-gradient(351deg, #f8f7e9 0%, #fbfde8 50%, #f7f7f2 100%);
             line-height: 1.5;
             position: relative;
         }
@@ -104,8 +109,7 @@
             inset: 0;
             z-index: -2;
             pointer-events: none;
-            background:
-                radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.34) 100%);
+            background: radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.34) 100%);
         }
 
         .app-shell::before,
@@ -179,7 +183,8 @@
         }
 
         .container {
-            width: min(100% - 32px, var(--container));
+            width: min(calc(100% - (var(--container-gutter) * 2)), var(--container));
+            max-width: none;
             margin-inline: auto;
         }
 
@@ -187,10 +192,10 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            padding-top: 4px;
             backdrop-filter: blur(20px);
             background: rgb(194 194 178 / 78%);
-            border-bottom: 1px solid var(--line);
-        }
+            border-bottom: 1px solid rgba(86, 76, 55, 0.08);
         }
 
         .site-header::before,
@@ -205,18 +210,21 @@
             align-items: center;
             justify-content: space-between;
             gap: 18px;
-            padding: 0 22px;
-            border-radius: 22px;
+            padding: 0 14px;
+            border-radius: 18px;
             border: 1px solid rgba(20, 53, 70, 0.52);
             background: linear-gradient(180deg, rgb(253 255 235 / 96%), rgb(238 243 207 / 98%));
-            box-shadow: 0 18px 44px rgb(0 0 0 / 28%), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 0 1px rgba(20, 70, 90, 0.25);
+            box-shadow:
+                0 18px 44px rgb(0 0 0 / 28%),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                0 0 0 1px rgba(20, 70, 90, 0.25);
             overflow: hidden;
         }
 
         .header-inner::before {
             content: "";
             position: absolute;
-            inset: auto 10% -1px 10%;
+            inset: auto 8% -1px 8%;
             height: 1px;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent);
             opacity: 0.78;
@@ -238,23 +246,23 @@
 
         .brand-mark {
             position: relative;
-            width: 191px;
-            height: 65px;
-            display: flex;
-            background: linear-gradient(180deg, rgb(240 241 220 / 96%), rgb(212 213 197 / 98%));
-            border: 1px solid rgba(55, 113, 138, 0.42);
-            color: #0e1d2c;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            flex-shrink: 0;
+            width: 220px;
+            height: 110px;
+            padding: 0;
+            background: linear-gradient(180deg, rgb(253 255 235 / 96%), rgb(238 243 207 / 98%));
+            border: 1px solid rgba(20, 53, 70, 0.08);
+            box-shadow: none;
             overflow: hidden;
             border-radius: 14px;
         }
 
         .brand-logo {
-            width: 200px;
-            height: 134px;
+            width: 100%;
+            max-width: 220px;
+            height: auto;
             object-fit: contain;
             object-position: left center;
             display: block;
@@ -305,7 +313,7 @@
             border: 1px solid transparent;
             background: transparent;
             color: rgba(3, 49, 95, 0.84);
-            font-size: 1.2rem;
+            font-size: 1.0rem;
             font-weight: 600;
             letter-spacing: 0.01em;
             transition:
@@ -412,8 +420,7 @@
             z-index: 9999;
             border-radius: 20px;
             border: 1px solid rgba(38, 63, 76, 0.44);
-            background:
-                linear-gradient(180deg, rgba(8, 30, 40, 0.98), rgba(5, 21, 31, 0.98));
+            background: linear-gradient(180deg, rgba(8, 30, 40, 0.98), rgba(5, 21, 31, 0.98));
             box-shadow: var(--shadow-lg);
             overflow: hidden;
             backdrop-filter: blur(18px);
@@ -499,15 +506,15 @@
         }
 
         .main-wrap {
-            padding: 22px 0 34px;
+            padding: 4px 0 6px;
         }
 
         .main-wrap > .container {
             position: relative;
-            min-height: calc(100vh - 146px);
-            padding: 22px;
+            min-height: calc(100vh - 126px);
+            padding: 2px;
             border: 1px solid rgba(26, 76, 95, 0.42);
-            border-radius: 28px;
+            border-radius: 18px;
             background: linear-gradient(180deg, rgb(246 244 229), rgb(231 229 213));
             box-shadow:
                 0 30px 70px rgba(0, 0, 0, 0.30),
@@ -519,8 +526,8 @@
         .main-wrap > .container::before {
             content: "";
             position: absolute;
-            inset: 16px;
-            border-radius: 22px;
+            inset: 2px;
+            border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.035);
             pointer-events: none;
         }
@@ -530,8 +537,7 @@
             position: absolute;
             inset: 0;
             pointer-events: none;
-            background:
-                radial-gradient(circle at top right, rgba(138, 226, 186, 0.06), transparent 20%);
+            background: radial-gradient(circle at top right, rgba(138, 226, 186, 0.06), transparent 20%);
         }
 
         .flash-stack {
@@ -574,8 +580,7 @@
             width: min(100%, 520px);
             border-radius: 24px;
             border: 1px solid rgba(38, 63, 76, 0.44);
-            background:
-                linear-gradient(180deg, rgba(8, 30, 40, 0.98), rgba(5, 21, 31, 0.98));
+            background: linear-gradient(180deg, rgba(8, 30, 40, 0.98), rgba(5, 21, 31, 0.98));
             box-shadow: var(--shadow-lg);
             overflow: hidden;
             animation: scale-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -744,8 +749,7 @@
         .form-card {
             border-radius: 20px;
             border: 1px solid rgba(86, 76, 55, 0.10);
-            background:
-                linear-gradient(180deg, rgba(248, 245, 238, 0.98), rgba(244, 239, 230, 0.98));
+            background: linear-gradient(180deg, rgba(248, 245, 238, 0.98), rgba(244, 239, 230, 0.98));
             box-shadow: var(--shadow-sm);
             padding: 20px;
             transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
@@ -827,7 +831,7 @@
 
         @media (max-width: 1180px) {
             .header-inner {
-                padding: 46px 16px;
+                padding: 14px;
                 align-items: flex-start;
                 flex-direction: column;
                 min-height: auto;
@@ -850,20 +854,22 @@
         @media (max-width: 768px) {
             :root {
                 --header-height: auto;
+                --container: 100%;
             }
 
             .container {
-                width: min(100% - 16px, var(--container));
+                width: min(calc(100% - (var(--container-gutter-mobile) * 2)), var(--container));
             }
 
             .site-header {
-                top: 8px;
+                top: 0;
+                padding-top: 3px;
             }
 
             .header-inner {
-                padding: 14px;
+                padding: 12px;
                 gap: 14px;
-                border-radius: 18px;
+                border-radius: 16px;
             }
 
             .brand-link {
@@ -871,14 +877,14 @@
             }
 
             .brand-mark {
-                width: 120px;
+                width: 118px;
                 height: 44px;
                 border-radius: 12px;
             }
 
             .brand-logo {
-                width: 126px;
-                height: 54px;
+                width: 124px;
+                height: 52px;
             }
 
             .brand-text strong {
@@ -910,12 +916,17 @@
             }
 
             .main-wrap {
-                padding-top: 16px;
+                padding-top: 8px;
             }
 
             .main-wrap > .container {
-                padding: 16px;
-                border-radius: 22px;
+                padding: 2px;
+                border-radius: 16px;
+            }
+
+            .main-wrap > .container::before {
+                inset: 2px;
+                border-radius: 14px;
             }
         }
 
@@ -943,7 +954,7 @@
                     <a href="{% url 'dashboard' %}" class="brand-link">
                         <div class="brand-mark">
                             <img
-                                src="{% static 'image/e9f861aa-37b4-410b-97e8-bef12e414bdc.png' %}"
+                                src="{% static 'image/c7fb74f4-e7e5-4fc5-839c-e18c33ac35e0.png' %}"
                                 alt="O Trade Logo"
                                 class="brand-logo"
                                 loading="eager"
@@ -1060,7 +1071,6 @@
         }
 
         const csrftoken = getCookie("csrftoken");
-
         const bellBtn = document.getElementById("notificationBellBtn");
         const dropdown = document.getElementById("notificationDropdown");
         const modal = document.getElementById("notificationModal");
@@ -1101,7 +1111,7 @@
             `).join("");
 
             document.querySelectorAll(".notification-dropdown-item").forEach(function (item) {
-                item.addEventListener("click", async function (e) {
+                item.addEventListener("click", async function () {
                     const notificationId = item.getAttribute("data-notification-id");
                     const pageUrl = item.getAttribute("href");
 
@@ -1139,13 +1149,16 @@
 
         async function fetchPinbarUpdates() {
             try {
-                const res = await fetch("{% url 'pinbar_api' %}?_=" + Date.now(), { headers: { "X-Requested-With": "XMLHttpRequest" }, cache: "no-store" });
+                const res = await fetch("{% url 'pinbar_api' %}?_=" + Date.now(), {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    cache: "no-store"
+                });
                 if (!res.ok) return;
                 const data = await res.json();
                 if (!data || !data.success) return;
 
                 const items = data.notifications || [];
-                if (typeof window.updatePinbarTable === 'function') {
+                if (typeof window.updatePinbarTable === "function") {
                     window.updatePinbarTable(data.signals || []);
                 }
                 if (!items || items.length === 0) return;
@@ -1198,29 +1211,44 @@
         }
 
         if (modal && modalOkBtn) {
-            modalOkBtn.addEventListener("click", async function () {
+            modalOkBtn.addEventListener("click", function () {
+                modal.style.display = "none";
+            });
+
+            modal.addEventListener("click", function (e) {
+                if (e.target === modal) {
+                    modal.style.display = "none";
+                }
+            });
+        }
+
+        document.querySelectorAll(".notification-dropdown-item").forEach(function (item) {
+            item.addEventListener("click", async function () {
+                const notificationId = item.getAttribute("data-notification-id");
+                const pageUrl = item.getAttribute("href");
+
                 try {
-                    await fetch("{% url 'mark_notifications_popup_shown' %}", {
+                    await fetch("{% url 'mark_notification_read' %}", {
                         method: "POST",
                         headers: {
                             "X-CSRFToken": csrftoken,
                             "Content-Type": "application/x-www-form-urlencoded",
                         },
-                        body: ""
+                        body: new URLSearchParams({ notification_id: notificationId })
                     });
                 } catch (error) {
-                    console.error("Popup mark error:", error);
+                    console.error("Read mark error:", error);
                 }
 
-                modal.style.display = "none";
+                if (pageUrl) {
+                    window.location.href = pageUrl;
+                }
             });
-        }
+        });
 
         updateNotificationBadgeAndList();
-        if (bellBtn) {
-            fetchPinbarUpdates();
-            setInterval(fetchPinbarUpdates, 30000);
-        }
+        setInterval(updateNotificationBadgeAndList, 30000);
+        setInterval(fetchPinbarUpdates, 60000);
     </script>
 
     {% block extra_js %}{% endblock %}

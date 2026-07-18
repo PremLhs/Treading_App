@@ -54,7 +54,7 @@
     .page-shell {
         max-width: 1560px;
         margin: 0 auto;
-        padding: 24px;
+        padding: 6px 4px;
         color: var(--text);
         background:
             radial-gradient(circle at top left, rgba(255, 242, 194, 0.34), transparent 20%),
@@ -87,17 +87,17 @@
         overflow: hidden;
         display: grid;
         grid-template-columns: 1fr;
-        gap: 24px;
-        padding: 28px;
-        border-radius: var(--radius-xl);
+        gap: 0px;
+        padding: 10px;
+        border-radius: 24px;
         background:
             radial-gradient(circle at top left, rgba(255, 242, 194, 0.72), transparent 32%),
             radial-gradient(circle at 88% 22%, rgba(194, 255, 211, 0.38), transparent 26%),
             radial-gradient(circle at bottom right, rgba(194, 207, 255, 0.40), transparent 30%),
             linear-gradient(135deg, rgba(255, 252, 245, 0.98), rgba(255, 246, 250, 0.98));
         border: 1px solid rgba(224, 208, 180, 0.64);
-        box-shadow: var(--shadow-lg);
-        margin-bottom: 22px;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 18px;
     }
 
     .hero-banner::after {
@@ -119,16 +119,16 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 14px;
+        padding: 6px 12px;
         border-radius: 999px;
         background: linear-gradient(180deg, rgba(255, 242, 194, 0.70), rgba(255, 224, 194, 0.62));
         color: #6f604b;
-        font-size: 12px;
+        font-size: 11px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         font-weight: 800;
         border: 1px solid rgba(233, 194, 142, 0.44);
-        margin-bottom: 14px;
+        margin-bottom: 10px;
     }
 
     .hero-banner h1 {
@@ -150,13 +150,13 @@
 
     .hero-banner-actions {
         display: flex;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         justify-content: flex-start;
         overflow-x: auto;
-        padding-bottom: 4px;
-        margin-top: 12px;
+        padding-bottom: 2px;
+        margin-top: 8px;
     }
 
     .hero-banner-actions::-webkit-scrollbar {
@@ -167,15 +167,15 @@
         appearance: none;
         border: 1px solid transparent;
         border-radius: 14px;
-        padding: 11px 16px;
+        padding: 9px 14px;
         text-decoration: none;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
         line-height: 1;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 44px;
+        min-height: 36px;
         transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
         white-space: nowrap;
     }
@@ -292,21 +292,21 @@
     }
 
     .dashboard-toolbar-panel {
-        padding: 20px 20px 24px;
-        border-radius: 26px;
+        padding: 3px 3px 3px;
+        border-radius: 22px;
         border: 1px solid rgba(224, 208, 180, 0.54);
         background:
             linear-gradient(180deg, rgba(255, 252, 245, 0.98), rgba(255, 245, 236, 0.98));
-        box-shadow: 0 28px 70px rgba(82, 68, 49, 0.08);
-        margin-bottom: 24px;
+        box-shadow: 0 18px 40px rgba(82, 68, 49, 0.08);
+        margin-bottom: 20px;
     }
 
     .dashboard-top-row {
         display: grid;
-        grid-template-columns: minmax(280px, 1.1fr) minmax(320px, 1.4fr);
-        gap: 16px;
+        grid-template-columns: minmax(260px, 1.1fr) minmax(260px, 1.2fr);
+        gap: 12px;
         align-items: center;
-        margin-bottom: 18px;
+        margin-bottom: 16px;
     }
 
     .dashboard-control-buttons {
@@ -389,14 +389,14 @@
 
     .dashboard-toolbar-form .toolbar-select,
     .dashboard-toolbar-form .toolbar-input {
-        min-height: 46px;
+        min-height: 42px;
         border-radius: 14px;
         background: rgba(255, 251, 243, 0.98);
         border: 1px solid rgba(167, 139, 213, 0.18);
-        padding: 0 14px;
+        padding: 0 12px;
         width: 100%;
         color: #1f2937;
-        font-size: 0.95rem;
+        font-size: 0.92rem;
     }
 
     .dashboard-toolbar-form .toolbar-input:focus,
@@ -802,14 +802,14 @@
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 18px;
-        padding: 22px 22px 16px;
+        gap: 14px;
+        padding: 16px 18px 12px;
         border-bottom: 1px solid rgba(224, 208, 180, 0.24);
     }
 
     .chart-workspace-head h3 {
         margin: 4px 0 0;
-        font-size: 22px;
+        font-size: 20px;
         line-height: 1.15;
         font-weight: 800;
         color: #3b342b;
@@ -839,8 +839,8 @@
     .chart-toolbar {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
-        padding: 16px 22px;
+        gap: 8px;
+        padding: 12px 18px;
         border-bottom: 1px solid rgba(224, 208, 180, 0.22);
         background: linear-gradient(180deg, rgba(255, 247, 239, 0.68), rgba(255,255,255,0.22));
     }
@@ -874,8 +874,8 @@
     .chart-status-row {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-        padding: 16px 22px;
+        gap: 10px;
+        padding: 12px 18px;
         border-bottom: 1px solid rgba(224, 208, 180, 0.22);
         background: linear-gradient(180deg, rgba(255, 248, 239, 0.42), rgba(255,255,255,0));
     }
@@ -898,12 +898,12 @@
     }
 
     .chart-stage {
-        padding: 18px 22px 22px;
+        padding: 14px 18px 18px;
     }
 
     .chart-box-pro {
         position: relative;
-        min-height: 600px;
+        min-height: 500px;
         border-radius: 22px;
         border: 1px solid rgba(224, 208, 180, 0.26);
         background:
@@ -1066,7 +1066,7 @@
             <a href="{% url 'trayodashi' %}" class="btn btn-secondary">Intra Day</a>
             <a href="{% url 'pushya' %}" class="btn btn-secondary">Flower</a>
             <a href="{% url 'calendar' %}" class="btn btn-secondary">Calendar</a>
-            <a href="{% url 'gapup' %}" class="btn btn-secondary">DD Date</a>
+            <a href="{% url 'gapup' %}" class="btn btn-secondary">DD Stock</a>
             <a href="{% url 'moon_marse' %}" class="btn btn-secondary">Top/Bottom</a>
             <a href="{% url 'pentagon' %}" class="btn btn-secondary">Pentagon</a>
             <a href="{% url 'red_ball' %}" class="btn btn-secondary">Red Ball</a>

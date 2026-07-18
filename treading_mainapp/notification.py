@@ -282,6 +282,21 @@ def get_event_notifications():
     return notifications
 
 
+def _notification_expired(notification_item):
+    created_on = notification_item.get("created_on")
+    if not created_on:
+        return False
+
+    try:
+        created_dt = datetime.fromisoformat(str(created_on))
+    except ValueError:
+        return False
+
+    now = datetime.now(created_dt.tzinfo) if created_dt.tzinfo else datetime.now()
+    expiry_time = created_dt + timedelta(hours=6)
+    return now >= expiry_time
+
+
 def sync_notifications_to_session(request):
     active_notifications = get_event_notifications()
     active_ids = {item["id"] for item in active_notifications}
@@ -296,7 +311,7 @@ def sync_notifications_to_session(request):
     preserved_alerts = {
         item_id: item
         for item_id, item in inbox_map.items()
-        if item.get("type") == "alert"
+        if item.get("type") == "alert" and not _notification_expired(item)
     }
 
     event_notifications = {
@@ -379,6 +394,7 @@ def add_custom_notification_to_session(request, notification):
             "type": existing_item.get("type", "alert"),
             "read": False if is_new_occurrence else existing_item.get("read", False),
             "popup_shown": False if is_new_occurrence else existing_item.get("popup_shown", False),
+            "created_on": existing_item.get("created_on") or notification.get("created_on"),
         }
     else:
         inbox_map[notification["id"]] = {
@@ -386,6 +402,7 @@ def add_custom_notification_to_session(request, notification):
             "type": notification.get("type", "alert"),
             "read": False,
             "popup_shown": False,
+            "created_on": notification.get("created_on", datetime.now().isoformat()),
         }
 
     updated_inbox = sorted(
