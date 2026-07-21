@@ -5,70 +5,60 @@
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Light Day Data</span>
-            <h1>Light Day Calendar</h1>
-            <p>Search for Light Days between 2024 and 2040</p>
-        </div>
-
-        <div class="hero-banner-actions">
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Home</a>
-            <a href="{% url 'amavasya' %}" class="btn btn-secondary">Dark Day</a>
+            <h1>Light Day Dates Calendar</h1>
         </div>
     </div>
 
     <div class="panel-card premium-table-panel">
-        <div class="panel-head">
-            <div>
-                <span class="panel-kicker">Year Search</span>
-                <h3>Light Days Lookup</h3>
+        <div class="amavasya-toolbar">
+            <div class="field-wrap year-search-wrap">
+                <label for="purnimaYearInput">Enter Year</label>
+                <input
+                    type="number"
+                    id="purnimaYearInput"
+                    class="toolbar-input"
+                    placeholder="Enter year like 2026"
+                    value="{{ year }}"
+                    min="{{ min_year|default:1900 }}"
+                    max="{{ max_year|default:2100 }}"
+                >
+            </div>
+            <button type="button" class="btn btn-primary" id="purnimaSearchBtn">
+                Get Light Day Data
+            </button>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <span>Selected Year</span>
+                <strong id="purnimaSelectedYear">{{ year }}</strong>
+            </div>
+            <div class="summary-card">
+                <span>Total Records</span>
+                <strong id="purnimaTotalRecords">{{ total_records }}</strong>
+            </div>
+            <div class="summary-card">
+                <span>Minimum Year</span>
+                <strong id="purnimaMinYear">{{ min_year|default:"-" }}</strong>
+            </div>
+            <div class="summary-card">
+                <span>Maximum Year</span>
+                <strong id="purnimaMaxYear">{{ max_year|default:"-" }}</strong>
             </div>
         </div>
 
-        <div class="panel-body">
+        <div class="panel-card inline-status panel-success" id="purnimaStatusMessage">
             {% if error_message %}
-                <div class="inline-alert inline-alert-danger" id="purnimaStatusMessage">
-                    {{ error_message }}
-                </div>
+                {{ error_message }}
             {% else %}
-                <div class="inline-alert inline-alert-success" id="purnimaStatusMessage">
-                    Default year Light Day data loaded successfully.
-                </div>
+                Default current year data loaded.
             {% endif %}
+        </div>
 
-            <div class="amavasya-toolbar">
-                <div class="field-wrap year-search-wrap">
-                    <label for="purnimaYearInput">Year</label>
-                    <input
-                        type="number"
-                        id="purnimaYearInput"
-                        class="toolbar-input"
-                        placeholder="Enter year like 2026"
-                        value="{{ year }}"
-                        min="{{ min_year|default:1900 }}"
-                        max="{{ max_year|default:2100 }}"
-                    >
-                </div>
-                <button type="button" class="btn btn-primary toolbar-btn" id="purnimaSearchBtn">
-                    Get Light Day Data
-                </button>
-            </div>
-
-            <div class="summary-grid moon-summary-grid">
-                <div class="summary-card">
-                    <span>Selected Year</span>
-                    <strong id="purnimaSelectedYear">{{ year }}</strong>
-                </div>
-                <div class="summary-card">
-                    <span>Total Records</span>
-                    <strong id="purnimaTotalRecords">{{ total_records }}</strong>
-                </div>
-                <div class="summary-card">
-                    <span>Minimum Year</span>
-                    <strong id="purnimaMinYear">{{ min_year|default:"-" }}</strong>
-                </div>
-                <div class="summary-card">
-                    <span>Maximum Year</span>
-                    <strong id="purnimaMaxYear">{{ max_year|default:"-" }}</strong>
+        <div class="table-shell">
+            <div class="table-shell-head">
+                <div>
+                    <h3>Light Day Dates Table</h3>
                 </div>
             </div>
 
@@ -94,7 +84,7 @@
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="4" class="empty-cell">No Purnima data found.</td>
+                                <td colspan="4" class="empty-cell">No data found.</td>
                             </tr>
                         {% endif %}
                     </tbody>
@@ -141,14 +131,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!year) {
             statusMessage.textContent = "Please enter a year.";
-            statusMessage.className = "inline-alert inline-alert-danger";
+            statusMessage.className = "panel-card inline-status panel-danger";
             return;
         }
 
         searchBtn.disabled = true;
         searchBtn.textContent = "Loading...";
         statusMessage.textContent = "Loading Purnima data...";
-        statusMessage.className = "inline-alert inline-alert-success";
+        statusMessage.className = "panel-card inline-status panel-success";
 
         try {
             const response = await fetch(`/api/purnima/?year=${encodeURIComponent(year)}`);
@@ -156,17 +146,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (!response.ok || !result.success) {
                 statusMessage.textContent = result.message || "Something went wrong.";
-                statusMessage.className = "inline-alert inline-alert-danger";
+                statusMessage.className = "panel-card inline-status panel-danger";
                 return;
             }
 
             renderRows(result.data.rows);
             updateSummary(result.data);
             statusMessage.textContent = `Light Day data loaded for ${result.data.year}.`;
-            statusMessage.className = "inline-alert inline-alert-success";
+            statusMessage.className = "panel-card inline-status panel-success";
         } catch (error) {
             statusMessage.textContent = "Server error. Please try again.";
-            statusMessage.className = "inline-alert inline-alert-danger";
+            statusMessage.className = "panel-card inline-status panel-danger";
         } finally {
             searchBtn.disabled = false;
             searchBtn.textContent = "Get Light Day Data";

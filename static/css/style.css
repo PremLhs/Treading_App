@@ -233,7 +233,7 @@ svg {
 
 .page-shell {
     display: grid;
-    gap: 0px;
+    gap: 10px;
 }
 
 .hero-banner {
@@ -631,23 +631,23 @@ svg {
 .summary-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 16px;
-    margin-bottom: 18px;
+    gap: 10px;
+    margin-bottom: 12px;
 }
 
 .summary-card {
-    padding: 14px;
-    border-radius: 18px;
+    padding: 8px 10px;
+    border-radius: 12px;
     background: rgb(15 42 220 / 3%);
-    border: 3px solid rgb(0 0 0 / 8%);
+    border: 2px solid rgb(0 0 0 / 8%);
     box-shadow: inset 0 1px 0 rgba(221, 212, 212, 0.02);
 }
 
 .summary-card span {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -657,14 +657,14 @@ svg {
     display: block;
     color: #ffffff;
     font-family: 'Manrope', sans-serif;
-    font-size: 21px;
-    line-height: 1.2;
+    font-size: 16px;
+    line-height: 1.1;
     letter-spacing: -0.02em;
 }
 
 .inline-status {
-    margin: 0 0 18px;
-    padding: 16px 18px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
 }
 
 .table-shell {

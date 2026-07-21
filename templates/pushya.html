@@ -5,74 +5,58 @@
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Flower Day Calendar</span>
             <h1>Flower Days Date Calendar</h1>
-            <p>Search for Flower Days between 2024 and 2040</p>
-        </div>
-        <div class="hero-banner-actions">
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Home</a>
         </div>
     </div>
 
-    <div class="panel-card toolbar-panel">
-        <div class="panel-head">
-            <span class="panel-kicker">Filter Data</span>
-            <h3>Select Year</h3>
-        </div>
+    <div class="panel-card premium-table-panel">
+        <form method="get" action="{% url 'pushya' %}" class="amavasya-toolbar">
+            <div class="field-wrap year-search-wrap">
+                <label for="yearInput">Enter Year</label>
+                <input
+                    type="number"
+                    id="yearInput"
+                    name="year"
+                    class="toolbar-input"
+                    placeholder="Enter year like 2026"
+                    value="{{ selected_year }}"
+                    min="{{ available_years|first }}"
+                    max="{{ available_years|last }}"
+                >
+            </div>
+            <button type="submit" class="btn btn-primary">Get Flower Days Dates</button>
+        </form>
 
-        <div class="panel-body">
-            <div class="amavasya-toolbar">
-                <div class="field-wrap year-search-wrap">
-                    <label for="yearInput">Enter Year</label>
-                    <input
-                        type="number"
-                        id="yearInput"
-                        class="toolbar-input"
-                        placeholder="Enter year like 2026"
-                        value="{{ selected_year }}"
-                        min="{{ available_years|first }}"
-                        max="{{ available_years|last }}"
-                    >
-                </div>
-                <button type="button" class="btn btn-primary toolbar-btn" id="loadDataBtn">Load Data</button>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <span>Total Events</span>
+                <strong id="totalCount">{{ total_count }}</strong>
+            </div>
+            <div class="summary-card">
+                <span>Selected Year</span>
+                <strong id="selectedYear">{{ selected_year }}</strong>
+            </div>
+            <div class="summary-card">
+                <span>Event Type</span>
+                <strong>Flower Days</strong>
             </div>
         </div>
-    </div>
 
-    <div class="stats-strip">
-        <div class="stat-card">
-            <span>Total Events</span>
-            <strong id="totalCount">{{ total_count }}</strong>
-        </div>
-        <div class="stat-card">
-            <span>Selected Year</span>
-            <strong id="selectedYear">{{ selected_year }}</strong>
-        </div>
-        <div class="stat-card">
-            <span>Event Type</span>
-            <strong>Flower Days</strong>
-        </div>
-    </div>
-
-    <div class="panel-card broker-card panel-success" id="statusBox">
-        <div class="panel-body">
-            <p class="panel-main-text">
-                {% if rows %}
-                    Flower Days data loaded successfully.
-                {% else %}
-                    No Flower Days data found for the selected year.
-                {% endif %}
-            </p>
-        </div>
-    </div>
-
-    <div class="panel-card quick-panel">
-        <div class="panel-head">
-            <span class="panel-kicker">Calendar Data</span>
-            <h3>Flower Days Dates</h3>
+        <div class="panel-card inline-status panel-success" id="statusBox">
+            {% if rows %}
+                Flower Days data loaded successfully.
+            {% else %}
+                No Flower Days data found for the selected year.
+            {% endif %}
         </div>
 
-        <div class="panel-body">
+        <div class="table-shell">
+            <div class="table-shell-head">
+                <div>
+                    <h3>Flower Day Dates Table</h3>
+                </div>
+            </div>
+
             <div class="table-wrap">
                 <table class="reversal-table">
                     <thead>
@@ -97,7 +81,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="empty-cell">No Flower Days data found for the selected year.</td>
+                            <td colspan="6" class="empty-cell">No data found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -108,97 +92,3 @@
 </section>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const yearInput = document.getElementById("yearInput");
-    const loadDataBtn = document.getElementById("loadDataBtn");
-    const selectedYear = document.getElementById("selectedYear");
-    const statusBox = document.getElementById("statusBox");
-
-    function setStatus(message, ok = true) {
-        statusBox.className = ok
-            ? "panel-card broker-card panel-success"
-            : "panel-card broker-card panel-danger";
-
-        statusBox.innerHTML = `
-            <div class="panel-body">
-                <p class="panel-main-text">${message}</p>
-            </div>
-        `;
-    }
-
-    function renderRows(rows) {
-        if (!rows || !rows.length) {
-            resultsBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="empty-cell">No Pushya Nakshatra data found for the selected year.</td>
-                </tr>
-            `;
-            return;
-        }
-
-        resultsBody.innerHTML = rows.map(item => `
-            <tr>
-                <td>${item.year}</td>
-                <td>${item.month}</td>
-                <td>${item.title}</td>
-                <td>${item.start_display}</td>
-                <td>${item.end_display}</td>
-                <td>${item.duration_hours}</td>
-            </tr>
-        `).join("");
-    }
-
-    async function loadPushyaData() {
-        const year = yearInput.value.trim();
-
-        if (!year) {
-            setStatus("Please enter a year.", false);
-            return;
-        }
-
-        loadDataBtn.disabled = true;
-        loadDataBtn.textContent = "Loading...";
-
-        try {
-            const response = await fetch(`/api/pushya/?year=${encodeURIComponent(year)}`);
-            const result = await response.json();
-
-            if (!response.ok || !result.success) {
-                setStatus(result.message || "Something went wrong.", false);
-                return;
-            }
-
-            renderRows(result.data.rows);
-            totalCount.textContent = result.data.total_count;
-            selectedYear.textContent = result.data.year;
-
-            if (result.data.rows.length) {
-                setStatus(`Flower Day data loaded for ${result.data.year}.`, true);
-            } else {
-                setStatus(`No Flower Day data found for ${result.data.year}.`, false);
-            }
-        } catch (error) {
-            setStatus("Server error. Please try again.", false);
-        } finally {
-            loadDataBtn.disabled = false;
-            loadDataBtn.textContent = "Load Data";
-        }
-    }
-
-    if (loadDataBtn) {
-        loadDataBtn.addEventListener("click", loadPushyaData);
-    }
-
-    if (yearInput) {
-        yearInput.addEventListener("keydown", function (event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                loadPushyaData();
-            }
-        });
-    }
-});
-</script>
-{% endblock %}

@@ -5,9 +5,7 @@
 <div class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Pin Bar Scanner</span>
-            <h1>15-Minute Pin Bar Scan</h1>
-            <p>Scans exactly these five symbols for pin bar signals and saves popup notifications:</p>
+            <h1>Pin Bar Scan</h1>
             <ul class="pinbar-symbol-list">
                 <li>NFO:NIFTY</li>
                 <li>MCX:GOLD</li>
@@ -24,7 +22,7 @@
 
     <div class="dashboard-toolbar-panel">
         <div class="dashboard-top-row">
-            <div class="panel-card">
+            <div class="panel-card scan-summary-card">
                 <div class="panel-head">
                     <span class="panel-kicker">Scan Results</span>
                     <h3>{{ notification_count }} pin bar alerts generated</h3>
@@ -125,6 +123,82 @@
         border-radius: 50%;
         background: #22c55e;
         animation: pulse 1.6s infinite alternate;
+    }
+
+    .pinbar-symbol-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 14px 0 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .pinbar-symbol-list li {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #0f5132;
+        font-weight: 700;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        font-size: 0.95rem;
+    }
+
+    .scan-summary-card {
+        border: 1px solid rgba(16, 185, 129, 0.22);
+        background: linear-gradient(180deg, rgba(16, 185, 129, 0.11), rgba(255, 255, 255, 0.7));
+    }
+
+    .scan-summary-card .panel-head h3 {
+        color: #0f5132;
+    }
+
+    .scan-summary-card .panel-head .panel-kicker {
+        color: #0f766e;
+    }
+
+    .scan-summary-card .panel-main-text {
+        color: #134e4a;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        min-width: 860px;
+        color: #e2e8f0;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 16px 18px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        text-align: left;
+        font-size: 0.95rem;
+    }
+
+    .data-table th {
+        background: rgba(255, 255, 255, 0.05);
+        color: #bae6fd;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .data-table tbody tr:nth-child(odd) {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .data-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .highlight-row {
+        background: rgba(52, 211, 153, 0.15);
     }
 
     @keyframes pulse {

@@ -15,14 +15,14 @@
         }
 
         .calendar-event-marker {
-            width: 25px;
-            height: 25px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 0 2px rgba(0,0,0,0.12) inset;
-            font-size: 16px;
+            box-shadow: none;
+            font-size: 14px;
             line-height: 1;
             background-color: transparent;
             color: inherit;
@@ -34,8 +34,253 @@
             border-radius: 0;
             box-shadow: none;
             background: transparent;
-            font-size: 30px;
+            font-size: 20px;
             line-height: 1;
+        }
+
+        /* Legend badges styling */
+        .calendar-legend-wrap {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .calendar-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #f0f1f3;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #2c3e50;
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .calendar-legend-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Calendar panel styling */
+        .calendar-panel {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .calendar-panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 5px 5px !important;
+            background: #f9fafc;
+            border-bottom: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+        }
+
+        .panel-head h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #c41e3a;
+        }
+
+        .panel-kicker {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        /* Calendar filter bar */
+        .calendar-filter-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .calendar-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+        }
+
+        .calendar-filter-nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .calendar-filter-field {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            min-width: 82px;
+        }
+
+        .calendar-filter-field label {
+            display: none;
+        }
+
+        .calendar-filter-select {
+            min-width: 100px;
+            padding: 6px 10px;
+            min-height: 38px;
+            border-radius: 10px;
+        }
+
+        .calendar-nav-btn {
+            width: 30px;
+            height: 30px;
+            font-size: 0.95rem;
+        }
+
+        .btn {
+            padding: 6px 10px;
+            min-height: 34px;
+            font-size: 0.85rem;
+        }
+
+        .calendar-filter-select {
+            padding: 6px 10px;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #2c3e50;
+            cursor: pointer;
+            min-width: 100px;
+        }
+
+        .calendar-filter-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Navigation styling */
+        .calendar-nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            background: #1e293b;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .calendar-nav-btn:hover {
+            background: #0f172a;
+        }
+
+        .btn {
+            padding: 6px 14px;
+            background: #1e293b;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            min-height: 32px;
+        }
+
+        .btn:hover {
+            background: #0f172a;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #1e293b;
+        }
+
+        .btn-secondary:hover {
+            background: #0f172a;
+        }
+
+        /* FullCalendar customization */
+        .fc {
+            font-family: inherit;
+        }
+
+        .fc .fc-col-header-cell {
+            background: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: #fff !important;
+            font-size: 0.9rem !important;
+            font-weight: 700 !important;
+            padding: 14px 0 !important;
+            text-align: center;
+        }
+
+        .fc .fc-daygrid-day {
+            border: 1px solid #e5e7eb !important;
+            background: #fff !important;
+            min-height: 120px;
+            position: relative;
+        }
+
+        .fc .fc-daygrid-day-number {
+            padding: 8px 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #374151;
+            text-align: left;
+        }
+
+        .fc .fc-daygrid-day.fc-day-other {
+            background: #f3f4f6 !important;
+        }
+
+        .fc .fc-daygrid-day.fc-day-today {
+            background: #dbeafe !important;
+            border-color: #3b82f6 !important;
+        }
+
+        .fc .fc-daygrid-day-frame {
+            padding: 0 !important;
+        }
+
+        .fc-daygrid-day-events {
+            margin-top: 8px !important;
+            padding: 0 8px !important;
+        }
+
+        .fc-daygrid-event {
+            margin: 4px 0 !important;
+        }
+
+        .panel-body {
+            padding: 20px !important;
         }
     </style>
 {% endblock %}
@@ -43,70 +288,77 @@
 {% block content %}
 <section class="page-shell">
     <div class="hero-banner">
-        <div class="hero-banner-content">
-            <span class="hero-tag">Event Calendar</span>
-            <h1>Trading Calendar</h1>
-            <p>View and manage your trading events and important dates in a convenient calendar format.</p>
-        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 20px;">
+            <div class="hero-banner-content">
+                <h1>Trading Calendar</h1>
+            </div>
 
-        <div class="hero-banner-actions calendar-legend-wrap">
-                {% for item in legend_items %}
-                    <div class="calendar-legend-item">
-                        <span class="calendar-legend-dot" style="background-color: {{ item.color }};"></span>
-                        <span>
-                            {% if item.name == 'Amavasya' %}
-                                Dark Day
-                            {% elif item.name == 'Purnima' %}
-                                Light Day
-                            {% elif item.name == 'Trayodashi' %}
-                                Intra Day
-                            {% elif item.name == 'Pushya' %}
-                                Flower
-                            {% elif item.name == 'Moon Mars' %}
-                                Top/Bottom
-                            {% elif item.name == 'Reversal' %}
-                                Degree Date
-                            {% else %}
-                                {{ item.name }}
-                            {% endif %}
-                        </span>
-                    </div>
-                {% endfor %}
+            <div class="hero-banner-actions calendar-legend-wrap">
+                    {% for item in legend_items %}
+                        <div class="calendar-legend-item">
+                            <span class="calendar-legend-dot" style="background-color: {{ item.color }};"></span>
+                            <span>
+                                {% if item.name == 'Amavasya' %}
+                                    Dark Day
+                                {% elif item.name == 'Purnima' %}
+                                    Light Day
+                                {% elif item.name == 'Trayodashi' %}
+                                    Intra Day
+                                {% elif item.name == 'Pushya' %}
+                                    Flower
+                                {% elif item.name == 'Moon Mars' %}
+                                    Top/Bottom
+                                {% elif item.name == 'Reversal' %}
+                                    Degree Date
+                                {% else %}
+                                    {{ item.name }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    {% endfor %}
+            </div>
         </div>
     </div>
 
     <div class="panel-card calendar-panel">
         <div class="panel-head calendar-panel-head">
-            <div>
-                <span class="panel-kicker">Monthly Overview</span>
-                <h3>CSV Event Calendar</h3>
-            </div>
+            
 
             <div class="calendar-filter-bar">
-                <div class="calendar-filter-field">
-                    <label for="calendarMonth">Month</label>
-                    <select id="calendarMonth" class="calendar-filter-select">
-                        {% for month in month_options %}
-                            <option value="{{ month.value }}" {% if month.value == default_month %}selected{% endif %}>
-                                {{ month.label }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                <div class="calendar-filter-group">
+                    <div class="calendar-filter-nav">
+                        <button type="button" class="calendar-nav-btn" id="calendarPrevBtn">‹</button>
+                        <button type="button" class="calendar-nav-btn" id="calendarNextBtn">›</button>
+                    </div>
+
+                    <div class="calendar-filter-field">
+                        <select id="calendarMonth" class="calendar-filter-select" aria-label="Select month">
+                            {% for month in month_options %}
+                                <option value="{{ month.value }}" {% if month.value == default_month %}selected{% endif %}>
+                                    {{ month.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="calendar-filter-field">
+                        <select id="calendarYear" class="calendar-filter-select" aria-label="Select year">
+                            {% for year in year_options %}
+                                <option value="{{ year }}" {% if year == default_year %}selected{% endif %}>
+                                    {{ year }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="button" id="calendarGoBtn" class="btn btn-primary">Go</button>
                 </div>
 
-                <div class="calendar-filter-field">
-                    <label for="calendarYear">Year</label>
-                    <select id="calendarYear" class="calendar-filter-select">
-                        {% for year in year_options %}
-                            <option value="{{ year }}" {% if year == default_year %}selected{% endif %}>
-                                {{ year }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                <div class="calendar-filter-group">
+                    <button type="button" class="btn btn-secondary" id="calendarTodayBtn">Today</button>
+                    <button type="button" id="calendarRefreshBtn" class="btn btn-secondary">Refresh</button>
+                   
                 </div>
-
-                <button type="button" id="calendarGoBtn" class="btn btn-primary">Go</button>
-                <button type="button" id="calendarRefreshBtn" class="btn btn-secondary">Refresh</button>
             </div>
         </div>
 
@@ -129,6 +381,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const yearSelect = document.getElementById("calendarYear");
     const goBtn = document.getElementById("calendarGoBtn");
     const refreshBtn = document.getElementById("calendarRefreshBtn");
+    const prevBtn = document.getElementById("calendarPrevBtn");
+    const nextBtn = document.getElementById("calendarNextBtn");
+    const todayBtn = document.getElementById("calendarTodayBtn");
+    const viewMonthBtn = document.getElementById("calendarViewMonth");
 
     if (!calendarEl || !rawEvents || !monthSelect || !yearSelect) return;
 
@@ -146,18 +402,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: "dayGridMonth",
         initialDate: `${yearSelect.value}-${String(monthSelect.value).padStart(2, "0")}-01`,
-        height: "100%",
+        height: "auto",
         expandRows: false,
         timeZone: "Asia/Kolkata",
-        dayMaxEvents: 4,
+        dayMaxEvents: 8,
         fixedWeekCount: false,
         navLinks: true,
         displayEventTime: false,
-        headerToolbar: {
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,listMonth"
-        },
+        headerToolbar: false,
         events: calendarEvents,
         eventDisplay: "block",
         eventClassNames: function(arg) {
@@ -213,6 +465,32 @@ document.addEventListener("DOMContentLoaded", function () {
     if (refreshBtn) {
         refreshBtn.addEventListener("click", function () {
             window.location.reload();
+        });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener("click", function () {
+            calendar.prev();
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", function () {
+            calendar.next();
+        });
+    }
+
+    if (todayBtn) {
+        todayBtn.addEventListener("click", function () {
+            calendar.today();
+        });
+    }
+
+    if (viewMonthBtn) {
+        viewMonthBtn.addEventListener("click", function () {
+            calendar.changeView("dayGridMonth");
+            viewMonthBtn.classList.add("btn-primary");
+            viewMonthBtn.classList.remove("btn-secondary");
         });
     }
 });

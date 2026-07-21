@@ -5,39 +5,16 @@
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Red Ball Calendar</span>
-            <h1>Red Ball Calendar</h1>
-            <p>Search for Red Ball dates between {{ min_year|default:"2024" }} and {{ max_year|default:"2040" }}</p>
-        </div>
-
-        <div class="hero-banner-actions">
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Home</a>
-            <a href="{% url 'pentagon' %}" class="btn btn-secondary">Pentagon</a>
+            <h1>Red Ball Day Dates Calendar</h1>
         </div>
     </div>
 
     <div class="panel-card premium-table-panel">
-        <div class="panel-head">
-            <div>
-                <span class="panel-kicker">Red Ball Search</span>
-                <h3>Find Red Ball Dates by Year</h3>
-            </div>
-        </div>
 
         <div class="panel-body">
-            {% if error_message %}
-                <div class="inline-alert inline-alert-danger" id="redBallStatusMessage">
-                    {{ error_message }}
-                </div>
-            {% else %}
-                <div class="inline-alert inline-alert-success" id="redBallStatusMessage">
-                    Default year Red Ball data loaded successfully.
-                </div>
-            {% endif %}
-
             <div class="amavasya-toolbar">
                 <div class="field-wrap year-search-wrap">
-                    <label for="redBallYearInput">Year</label>
+                    <label for="redBallYearInput">Enter Year</label>
                     <input
                         type="number"
                         id="redBallYearInput"
@@ -53,7 +30,7 @@
                 </button>
             </div>
 
-            <div class="summary-grid moon-summary-grid">
+            <div class="summary-grid amavasya-summary-grid">
                 <div class="summary-card">
                     <span>Selected Year</span>
                     <strong id="redBallSelectedYear">{{ year }}</strong>
@@ -68,7 +45,23 @@
                 </div>
             </div>
 
-            <div class="table-wrap">
+            {% if error_message %}
+                <div class="panel-card inline-status panel-danger" id="redBallStatusMessage">
+                    {{ error_message }}
+                </div>
+            {% else %}
+                <div class="panel-card inline-status panel-success" id="redBallStatusMessage">
+                    Default year Red Ball data loaded successfully.
+                </div>
+            {% endif %}
+
+            <div class="table-shell">
+                <div class="table-shell-head">
+                    <div>
+                        <h3>Red Ball Dates Table</h3>
+                    </div>
+                </div>
+
                 <table class="reversal-table moon-table">
                     <thead>
                         <tr>

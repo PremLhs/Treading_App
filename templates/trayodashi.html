@@ -5,122 +5,89 @@
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Intra Day Calendar</span>
-            <h1>Intra Day Dates</h1>
-            <p>Search for Intra Day Dates between 2024 and 2040</p>
-        </div>
-
-        <div class="hero-banner-actions">
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Home</a>
+            <h1>Intra Day Dates Calendar</h1>
         </div>
     </div>
 
-    <div class="panel-card quick-panel">
-        <div class="panel-head">
-            <span class="panel-kicker">Year Search</span>
-            <h3>Load Intra Day Data</h3>
+    <div class="panel-card premium-table-panel">
+        <div class="amavasya-toolbar">
+            <div class="field-wrap year-search-wrap">
+                <label for="yearInput">Enter Year</label>
+                <input
+                    type="number"
+                    id="yearInput"
+                    class="toolbar-input"
+                    value="{{ year }}"
+                    min="{{ min_year|default:1900 }}"
+                    max="{{ max_year|default:2100 }}"
+                    placeholder="Enter year like 2024"
+                >
+            </div>
+            <button type="button" class="btn btn-primary" id="searchBtn">
+                Get Intra Day Dates
+            </button>
         </div>
 
-        <div class="panel-body">
-            {% if error_message %}
-                <div class="status-box status-box-danger" id="statusMessage">{{ error_message }}</div>
-            {% else %}
-                <div class="status-box status-box-success" id="statusMessage">Default year data loaded successfully.</div>
-            {% endif %}
-
-            <div class="amavasya-toolbar">
-                <div class="field-wrap year-search-wrap">
-                    <label for="yearInput">Enter Year</label>
-                    <input
-                        type="number"
-                        id="yearInput"
-                        class="toolbar-input"
-                        value="{{ year }}"
-                        min="{{ min_year|default:1900 }}"
-                        max="{{ max_year|default:2100 }}"
-                        placeholder="Enter year like 2024"
-                    >
-                </div>
-
-                <button type="button" class="btn btn-primary toolbar-btn" id="searchBtn">
-                    Load Year Data
-                </button>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <span>Selected Year</span>
+                <strong id="selectedYear">{{ year }}</strong>
             </div>
-
-            {% if min_year and max_year %}
-            <div class="year-chip-row">
-                {% for y in ""|center:0 %}
-                {% endfor %}
-                {% for y in years_list %}
-                    <a href="{% url 'trayodashi' %}?year={{ y }}" class="quick-chip {% if y == year %}active{% endif %}">
-                        {{ y }}
-                    </a>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="overview-grid overview-grid-compact">
-        <div class="panel-card info-stat-card">
-            <div class="panel-head">
-                <span class="panel-kicker">Selected Year</span>
-                <h3 id="selectedYear">{{ year }}</h3>
-            </div>
-        </div>
-
-        <div class="panel-card info-stat-card">
-            <div class="panel-head">
-                <span class="panel-kicker">Available Range</span>
-                <h3 id="yearRange">
+            <div class="summary-card">
+                <span>Available Range</span>
+                <strong id="yearRange">
                     {% if min_year and max_year %}{{ min_year }} - {{ max_year }}{% else %}N/A{% endif %}
-                </h3>
+                </strong>
+            </div>
+            <div class="summary-card">
+                <span>Total Records</span>
+                <strong id="totalRecords">{{ total_records }}</strong>
             </div>
         </div>
 
-        <div class="panel-card info-stat-card">
-            <div class="panel-head">
-                <span class="panel-kicker">Total Records</span>
-                <h3 id="totalRecords">{{ total_records }}</h3>
-            </div>
-        </div>
-    </div>
-
-    <div class="panel-card premium-chart-panel">
-        <div class="chart-panel-top">
-            <div>
-                <span class="panel-kicker">Year-wise Listing</span>
-                <h3>Intra Day Dates</h3>
-            </div>
+        <div class="panel-card inline-status panel-success" id="statusMessage">
+            {% if error_message %}
+                {{ error_message }}
+            {% else %}
+                Default current year data loaded.
+            {% endif %}
         </div>
 
-        <div class="table-wrap">
-            <table class="reversal-table">
-                <thead>
-                    <tr>
-                        <th>Month</th>
-                        <th></th>
-                        <th>Title</th>
-                        <th>Start</th>
-                        <th>End</th>
-                    </tr>
-                </thead>
-                <tbody id="resultsBody">
-                    {% for item in rows %}
-                    <tr>
-                        <td>{{ item.month }}</td>
-                        <td>{{ item.paksha }}</td>
-                        <td>{{ item.title }}</td>
-                        <td>{{ item.start }}</td>
-                        <td>{{ item.end }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="empty-cell">No data found for this year.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="table-shell">
+            <div class="table-shell-head">
+                <div>
+                    <h3>Intra Day Dates Table</h3>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="reversal-table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th></th>
+                            <th>Title</th>
+                            <th>Start</th>
+                            <th>End</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        {% for item in rows %}
+                        <tr>
+                            <td>{{ item.month }}</td>
+                            <td>{{ item.paksha }}</td>
+                            <td>{{ item.title }}</td>
+                            <td>{{ item.start }}</td>
+                            <td>{{ item.end }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="empty-cell">No data found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </section>
@@ -138,11 +105,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function renderRows(rows) {
         if (!rows || !rows.length) {
-            resultsBody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="empty-cell">No data found for this year.</td>
-                </tr>
-            `;
+            resultsBody.innerHTML = '<tr><td colspan="5" class="empty-cell">No data found.</td></tr>';
             return;
         }
 
@@ -162,14 +125,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!year) {
             statusMessage.textContent = "Please enter a year.";
-            statusMessage.className = "status-box status-box-danger";
+            statusMessage.className = "panel-card inline-status panel-danger";
             return;
         }
 
         searchBtn.disabled = true;
         searchBtn.textContent = "Loading...";
-        statusMessage.textContent = "Loading Trayodashi data...";
-        statusMessage.className = "status-box status-box-success";
+        statusMessage.textContent = "Loading Intra Day data...";
+        statusMessage.className = "panel-card inline-status panel-success";
 
         try {
             const response = await fetch(`/api/trayodashi/?year=${encodeURIComponent(year)}`);
@@ -177,7 +140,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (!response.ok || !result.success) {
                 statusMessage.textContent = result.message || "Something went wrong.";
-                statusMessage.className = "status-box status-box-danger";
+                statusMessage.className = "panel-card inline-status panel-danger";
                 renderRows([]);
                 totalRecords.textContent = "0";
                 selectedYear.textContent = year;
@@ -188,10 +151,10 @@ document.addEventListener("DOMContentLoaded", function () {
             selectedYear.textContent = result.data.year;
             totalRecords.textContent = result.data.total_records;
             statusMessage.textContent = result.message;
-            statusMessage.className = "status-box status-box-success";
+            statusMessage.className = "panel-card inline-status panel-success";
         } catch (error) {
             statusMessage.textContent = "Server error. Please try again.";
-            statusMessage.className = "status-box status-box-danger";
+            statusMessage.className = "panel-card inline-status panel-danger";
         } finally {
             searchBtn.disabled = false;
             searchBtn.textContent = "Load Year Data";

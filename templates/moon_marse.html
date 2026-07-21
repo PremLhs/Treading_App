@@ -5,28 +5,13 @@
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Top/Bottom Days Calendar</span>
-            <h1>Top/Bottom Days Dates</h1>
-            <p>Search for Top/Bottom Days Dates between 2024 and 2040</p>
-        </div>
-
-        <div class="hero-banner-actions">
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Home</a>
-            <a href="{% url 'calendar' %}" class="btn btn-secondary">Calendar</a>
-            <a href="{% url 'reversal_dates' %}" class="btn btn-secondary">Degree Date</a>
-            <a href="{% url 'amavasya' %}" class="btn btn-secondary">Dark Days</a>
+            <h1>Top/Bottom Days Dates Calendar</h1>
         </div>
     </div>
 
-    <div class="overview-grid">
-        <div class="panel-card toolbar-panel">
-            <div class="panel-head">
-                <span class="panel-kicker">Year Filter</span>
-                <h3>Load Top/Bottom Days Data</h3>
-            </div>
-
-            <div class="panel-body">
-                <form method="get" class="amavasya-toolbar">
+    <div class="panel-card reversal-panel">
+        <div class="panel-body">
+                <form method="get" action="{% url 'moon_marse' %}" class="amavasya-toolbar">
                     <div class="field-wrap year-search-wrap">
                         <label for="year">Enter Year</label>
                         <input
@@ -41,57 +26,35 @@
                         >
                     </div>
 
-                    <button type="submit" class="btn btn-primary toolbar-btn">Load Dates</button>
+                    <button type="submit" class="btn btn-primary toolbar-btn">Get Top/Bottom Dates</button>
                 </form>
-            </div>
-        </div>
-
-        <div class="panel-card debug-panel">
-            <div class="panel-head">
-                <span class="panel-kicker">Event Summary</span>
-                <h3>Selected Year Overview</h3>
-            </div>
-
-            <div class="panel-body">
-                <div class="debug-grid">
-                    <div class="debug-tile">
-                        <span>Selected Year</span>
-                        <strong>{{ selected_year|default:"N/A" }}</strong>
-                    </div>
-                    <div class="debug-tile">
-                        <span>Total Events</span>
-                        <strong>{{ moon_mars_total }}</strong>
-                    </div>
-                    <div class="debug-tile">
-                        <span>Category</span>
-                        <strong>Top/Bottom Days</strong>
-                    </div>
-                    <div class="debug-tile">
-                        <span>Title</span>
-                        <strong>{{ moon_mars_events.0.title|default:"-" }}</strong>
-                    </div>
+            <div class="summary-grid amavasya-summary-grid">
+                <div class="summary-card">
+                    <span>Selected Year</span>
+                    <strong>{{ selected_year|default:"N/A" }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Available Range</span>
+                    <strong>{{ available_years|first }} - {{ available_years|last }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>Total Records</span>
+                    <strong>{{ moon_mars_total }}</strong>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="panel-card moon-mars-table-panel">
-        <div class="chart-panel-top">
-            <div>
-                <span class="panel-kicker">Structured Data View</span>
-                <h3>Top/Bottom Days Event Table</h3>
+            <div class="panel-card inline-status panel-success" id="statusMessage">
+                Default year Top/Bottom Days data loaded successfully.
             </div>
 
-            <div class="chart-badges">
-                <span class="chart-badge">Year: {{ selected_year }}</span>
-                <span class="chart-badge">Events: {{ moon_mars_total }}</span>
-            </div>
-        </div>
+            <div class="table-shell">
+                <div class="table-shell-head">
+                    <h3>Top/Bottom Days Event Table</h3>
+                </div>
 
-        <div class="panel-body">
-            {% if moon_mars_events %}
-                <div class="custom-table-wrap">
-                    <table class="custom-data-table moon-mars-table">
+                <div class="table-wrap">
+                    {% if moon_mars_events %}
+                    <table class="reversal-table">
                         <thead>
                             <tr>
                                 <th>S.No.</th>
@@ -105,32 +68,35 @@
                         </thead>
                         <tbody>
                             {% for item in moon_mars_events %}
-                                <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>{{ item.year }}</td>
-                                    <td>{{ item.month }}</td>
-                                    <td>{{ item.title }}</td>
-                                    <td>{{ item.start_display }}</td>
-                                    <td>{{ item.end_display }}</td>
-                                    <td>
-                                        {% if item.duration_hours %}
-                                            {{ item.duration_hours }} hrs
-                                        {% else %}
-                                            TBA
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ item.year }}</td>
+                                <td>{{ item.month }}</td>
+                                <td>{{ item.title }}</td>
+                                <td>{{ item.start_display }}</td>
+                                <td>{{ item.end_display }}</td>
+                                <td>
+                                    {% if item.duration_hours %}
+                                        {{ item.duration_hours }} hrs
+                                    {% else %}
+                                        TBA
+                                    {% endif %}
+                                </td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+                    {% else %}
+                    <table class="reversal-table">
+                        <tbody>
+                            <tr>
+                                <td colspan="7" class="empty-cell">No Top/Bottom Days data found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {% endif %}
                 </div>
-            {% else %}
-                <div class="table-empty-state">
-                    <div class="table-empty-icon">📅</div>
-                    <h4>No data found</h4>
-                    <p>No Top/Bottom Days records are available for the selected year.</p>
-                </div>
-            {% endif %}
+            </div>
         </div>
     </div>
 </section>

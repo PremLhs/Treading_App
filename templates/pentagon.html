@@ -5,39 +5,17 @@
 <section class="page-shell">
     <div class="hero-banner">
         <div class="hero-banner-content">
-            <span class="hero-tag">Pentagon Calendar</span>
-            <h1>Pentagon Calendar</h1>
-            <p>Search for Pentagon dates between {{ min_year|default:"2024" }} and {{ max_year|default:"2040" }}</p>
-        </div>
-
-        <div class="hero-banner-actions">
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Home</a>
-            <a href="{% url 'reversal_dates' %}" class="btn btn-secondary">Degree Date</a>
+            <h1>Pentagon Day Dates Calendar </h1>
         </div>
     </div>
 
-    <div class="panel-card premium-table-panel">
-        <div class="panel-head">
-            <div>
-                <span class="panel-kicker">Pentagon Search</span>
-                <h3>Find Pentagon Dates by Year</h3>
-            </div>
-        </div>
+    <div class="panel-card reversal-panel">
+      
 
         <div class="panel-body">
-            {% if error_message %}
-                <div class="inline-alert inline-alert-danger" id="pentagonStatusMessage">
-                    {{ error_message }}
-                </div>
-            {% else %}
-                <div class="inline-alert inline-alert-success" id="pentagonStatusMessage">
-                    Default year Pentagon data loaded successfully.
-                </div>
-            {% endif %}
-
             <div class="amavasya-toolbar">
                 <div class="field-wrap year-search-wrap">
-                    <label for="pentagonYearInput">Year</label>
+                    <label for="pentagonYearInput">Enter Year</label>
                     <input
                         type="number"
                         id="pentagonYearInput"
@@ -53,7 +31,9 @@
                 </button>
             </div>
 
-            <div class="summary-grid moon-summary-grid">
+           
+
+            <div class="summary-grid amavasya-summary-grid">
                 <div class="summary-card">
                     <span>Selected Year</span>
                     <strong id="pentagonSelectedYear">{{ year }}</strong>
@@ -68,8 +48,25 @@
                 </div>
             </div>
 
-            <div class="table-wrap">
-                <table class="reversal-table moon-table">
+            {% if error_message %}
+                <div class="panel-card inline-status panel-danger" id="pentagonStatusMessage">
+                    {{ error_message }}
+                </div>
+            {% else %}
+                <div class="panel-card inline-status panel-success" id="pentagonStatusMessage">
+                    Default year Pentagon data loaded successfully.
+                </div>
+            {% endif %}
+
+            <div class="table-shell">
+                <div class="table-shell-head">
+                    <div>
+                        <h3>Pentagon Dates Table</h3>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="reversal-table moon-table">
                     <thead>
                         <tr>
                             <th>Start Date</th>
@@ -147,14 +144,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!year) {
             statusMessage.textContent = "Please enter a year.";
-            statusMessage.className = "inline-alert inline-alert-danger";
+            statusMessage.className = "panel-card inline-status panel-danger";
             return;
         }
 
         searchBtn.disabled = true;
         searchBtn.textContent = "Loading...";
         statusMessage.textContent = "Loading Pentagon data...";
-        statusMessage.className = "inline-alert inline-alert-success";
+        statusMessage.className = "panel-card inline-status panel-success";
 
         try {
             const response = await fetch(`/api/pentagon/?year=${encodeURIComponent(year)}`);
@@ -162,7 +159,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (!response.ok || !result.success) {
                 statusMessage.textContent = result.message || "Something went wrong.";
-                statusMessage.className = "inline-alert inline-alert-danger";
+                statusMessage.className = "panel-card inline-status panel-danger";
                 renderRows([]);
                 updateSummary(result.data || {});
                 return;
@@ -171,10 +168,10 @@ document.addEventListener("DOMContentLoaded", function () {
             renderRows(result.data.rows);
             updateSummary(result.data);
             statusMessage.textContent = `Pentagon data loaded for ${result.data.year}.`;
-            statusMessage.className = "inline-alert inline-alert-success";
+            statusMessage.className = "panel-card inline-status panel-success";
         } catch (error) {
             statusMessage.textContent = "Server error. Please try again.";
-            statusMessage.className = "inline-alert inline-alert-danger";
+            statusMessage.className = "panel-card inline-status panel-danger";
         } finally {
             searchBtn.disabled = false;
             searchBtn.textContent = "Get Pentagon Dates";
