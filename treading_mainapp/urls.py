@@ -54,6 +54,7 @@ urlpatterns = [
     path("api/pinbar/", views.pinbar_api_view, name="pinbar_api"),
 
     path("api/amavasya-strategy/", views.amavasya_strategy_api_view, name="amavasya_strategy_api"),
+    path("chart-full/", views.chart_full_view, name="chart_full"),
     
     path("pentagon/", views.pentagon_view, name="pentagon"),
     path("api/pentagon/", views.pentagon_api_view, name="pentagon_api"),

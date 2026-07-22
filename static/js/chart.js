@@ -991,6 +991,18 @@ function bindToolbarEvents() {
 
     if (toggleAmavasyaBtn) {
         toggleAmavasyaBtn.addEventListener("click", async () => {
+            // open a new tab showing the chart in full-window mode with Amavasya enabled
+            try {
+                    const s = encodeURIComponent(getSelectedSymbol());
+                    const iv = encodeURIComponent(getSelectedInterval());
+                    // open the dedicated chart-full route with query params (absolute path)
+                    const newUrl = `/chart-full/?amavasya=1&symbol=${s}&interval=${iv}`;
+                window.open(newUrl, '_blank');
+            } catch (err) {
+                logWarn('Failed to open chart in new tab', err);
+            }
+
+            // toggle amavasya on the current page as well
             indicatorsState.amavasya = !indicatorsState.amavasya;
             applyIndicatorVisibility();
 
@@ -1002,6 +1014,31 @@ function bindToolbarEvents() {
                 setStatus("Loaded");
             }
         });
+    }
+}
+
+// Helpers to open chart in new tab and apply fullscreen layout when hash present
+function applyFullscreenModeIfRequested() {
+    try {
+        if (window.location.hash === '#chartfull') {
+            document.documentElement.classList.add('fullscreen-chart-mode');
+            // hide any overflow on body
+            document.body.style.overflow = 'hidden';
+            // attempt to resize chart to full viewport after a short delay
+            setTimeout(() => {
+                if (chart) {
+                    try { chart.resize(window.innerWidth, window.innerHeight - 4); } catch (e) { logWarn('resize failed', e); }
+                }
+            }, 200);
+
+            window.addEventListener('resize', () => {
+                if (chart) {
+                    try { chart.resize(window.innerWidth, window.innerHeight - 4); } catch (e) { logWarn('resize failed', e); }
+                }
+            });
+        }
+    } catch (err) {
+        logWarn('Failed to apply fullscreen mode', err);
     }
 }
 
@@ -1079,7 +1116,75 @@ async function initializeChartsApp() {
 
 document.addEventListener("DOMContentLoaded", async () => {
     try {
+        // If page is served at /chart-full/, read query params and enable amavasya
+        try {
+            if (window.location.pathname && window.location.pathname.indexOf('/chart-full') !== -1) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const am = urlParams.get('amavasya');
+                const s = urlParams.get('symbol');
+                const iv = urlParams.get('interval');
+
+                if (am === '1') indicatorsState.amavasya = true;
+                try {
+                    if (typeof window.APP_CONFIG === 'object') {
+                        if (s) window.APP_CONFIG.symbol = s;
+                        if (iv) window.APP_CONFIG.interval = iv;
+                    }
+                } catch (e) { /* ignore */ }
+                // No DOM surgery required — server renders the full header + toolbar.
+            } else {
+                // backward compatibility: support #chartfull?hash-style opening
+                try {
+                    const hash = (window.location.hash || "").replace(/^#/, "");
+                    const [flag, q] = hash.split("?");
+                    if (flag === 'chartfull') {
+                        // parse query-like portion after '?'
+                        const params = {};
+                        if (q) {
+                            q.split('&').forEach(pair => {
+                                const [k, v] = pair.split('=');
+                                if (k) params[k] = v ? decodeURIComponent(v) : '';
+                            });
+                        }
+
+                        if (params.amavasya === '1') indicatorsState.amavasya = true;
+                        try {
+                            if (typeof window.APP_CONFIG === 'object') {
+                                if (params.symbol) window.APP_CONFIG.symbol = params.symbol;
+                                if (params.interval) window.APP_CONFIG.interval = params.interval;
+                            }
+                        } catch (e) { /* ignore */ }
+
+                        // Apply embed mode DOM changes so header + toolbar + chart-workspace remain visible
+                        try {
+                            const siteHeader = document.querySelector('.site-header');
+                            const toolbar = document.querySelector('.dashboard-toolbar-panel');
+                            const chartWorkspace = document.querySelector('.chart-workspace');
+
+                            // create a page-shell container to preserve background and padding
+                            const pageShell = document.createElement('section');
+                            pageShell.className = 'page-shell embedded-chart-shell';
+
+                            if (siteHeader) pageShell.appendChild(siteHeader);
+                            if (toolbar) pageShell.appendChild(toolbar);
+                            if (chartWorkspace) pageShell.appendChild(chartWorkspace);
+
+                            if (pageShell.children.length) {
+                                document.body.innerHTML = '';
+                                document.body.appendChild(pageShell);
+                                document.documentElement.classList.add('fullscreen-chart-mode');
+                            }
+                        } catch (e) { /* ignore */ }
+                    }
+                } catch (e) { /* ignore */ }
+            }
+        } catch (e) {
+            /* ignore */
+        }
+
         await initializeChartsApp();
+        // If page was opened with #chartfull, apply fullscreen adjustments
+        applyFullscreenModeIfRequested();
     } catch (error) {
         logError("Initialization failed", error);
 

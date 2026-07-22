@@ -91,6 +91,43 @@ def dashboard_view(request):
 
 
 @login_required
+def chart_full_view(request):
+    """Render the chart in a chart-only page suitable for opening in a new tab.
+
+    Accepts query params: symbol, interval, amavasya
+    """
+    symbol = request.GET.get("symbol", DEFAULT_SYMBOL).strip()
+    interval = request.GET.get("interval", "5").strip().upper()
+
+    stock_symbols = get_dashboard_symbols()
+    all_symbols = INDEX_SYMBOLS + stock_symbols
+
+    if symbol not in all_symbols:
+        symbol = DEFAULT_SYMBOL
+
+    if interval not in ALLOWED_INTERVALS:
+        interval = "5"
+
+    broker = AngelBroker()
+    broker_response = broker.connect()
+
+    context = {
+        "tv_symbol": symbol,
+        "tv_interval": interval,
+        "index_symbols": INDEX_SYMBOLS,
+        "stock_symbols": stock_symbols,
+        "default_symbol": DEFAULT_SYMBOL,
+        "broker_connected": broker_response.get("status", False),
+        "broker_message": broker_response.get("message", "Unknown broker state."),
+        "env_status": broker_response.get("env_status", {}),
+    }
+
+    # render in embed mode (hide global header/nav)
+    context["embed_mode"] = True
+    return render(request, "dashboard/chart.html", with_global_notifications(request, context))
+
+
+@login_required
 def broker_health_view(request):
     broker = AngelBroker()
     broker_response = broker.connect()

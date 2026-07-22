@@ -304,8 +304,7 @@
         }
 
         .nav-item {
-            position: relative;
-            display: inline-flex;
+            position: relative; display: inline-flex;
             align-items: center;
             justify-content: center;
             min-height: 28px;
@@ -314,15 +313,10 @@
             border: 1px solid transparent;
             background: transparent;
             color: rgba(3, 49, 95, 0.84);
-            font-size: 0.85rem;
-            font-weight: 600;
+            font-size: 1.2rem;
+            font-weight: 650;
             letter-spacing: 0.01em;
-            transition:
-                color var(--transition),
-                background var(--transition),
-                border-color var(--transition),
-                transform var(--transition),
-                box-shadow var(--transition);
+            transition: color var(--transition), background var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition);
         }
 
         .nav-item:hover,
@@ -950,6 +944,7 @@
     <a href="#mainContent" class="skip-link">Skip to content</a>
 
     <div class="app-shell">
+        {% if not embed_mode %}
         <header class="site-header">
             <div class="container header-inner">
                 <div class="brand-block">
@@ -1018,6 +1013,7 @@
                 </nav>
             </div>
         </header>
+        {% endif %}
 
         <main id="mainContent" class="main-wrap">
             <div class="container">
